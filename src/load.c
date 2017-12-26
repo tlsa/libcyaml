@@ -442,6 +442,72 @@ static cyaml_err_t cyaml__data_handle_pointer(
 }
 
 /**
+ * Handle a YAML event corresponding to a YAML data value.
+ *
+ * \param[in]  ctx     The CYAML loading context.
+ * \param[in]  schema  CYAML schema for the expected value.
+ * \param[in]  data    Pointer to where value's data should be written.
+ * \param[in]  event   The YAML event to handle.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__read_value(
+		cyaml_ctx_t *ctx,
+		const cyaml_schema_type_t *schema,
+		uint8_t *data,
+		yaml_event_t *event)
+{
+	cyaml_event_t cyaml_event = cyaml__get_event_type(event);
+	cyaml_err_t err = CYAML_OK;
+
+	if ((schema->type != CYAML_SEQUENCE) &&
+	    (schema->type != CYAML_SEQUENCE_FIXED)) {
+		/* Since sequences extend their allocation for each entry,
+		 * the're handled in the sequence-specific code.
+		 */
+		cyaml__data_handle_pointer(ctx, schema, event, &data);
+	}
+
+	switch (schema->type) {
+	case CYAML_INT:  /* Fall through. */
+	case CYAML_UINT: /* Fall through. */
+	case CYAML_BOOL: /* Fall through. */
+	case CYAML_ENUM: /* Fall through. */
+	case CYAML_STRING:
+		/** \todo */
+		break;
+	case CYAML_FLAGS:
+		/** \todo */
+		break;
+	case CYAML_MAPPING:
+		if (cyaml_event != CYAML_EVT_MAPPING_START) {
+			return CYAML_ERR_INVALID_VALUE;
+		}
+		err = cyaml__stack_push(ctx, CYAML_STATE_IN_MAPPING,
+				schema, data);
+		break;
+	case CYAML_SEQUENCE: /* Fall through. */
+	case CYAML_SEQUENCE_FIXED:
+		if (cyaml_event != CYAML_EVT_SEQ_START) {
+			cyaml__log(ctx->config, CYAML_LOG_ERROR,
+					"Unexpected event: %s\n",
+					cyaml__libyaml_event_type_str(event));
+			return CYAML_ERR_INVALID_VALUE;
+		}
+		err = cyaml__stack_push(ctx, CYAML_STATE_IN_SEQUENCE,
+				schema, data);
+		break;
+	case CYAML_IGNORE:
+		/** \todo */
+		break;
+	default:
+		err = CYAML_ERR_BAD_TYPE_IN_SCHEMA;
+		break;
+	}
+
+	return err;
+}
+
+/**
  * Handle a YAML event adding a new entry to a sequence.
  *
  * \param[in]  ctx    The CYAML loading context.
@@ -482,7 +548,11 @@ static cyaml_err_t cyaml__new_sequence_entry(
 	}
 
 	/* Read the actual value */
-	/** \todo */
+	err = cyaml__read_value(ctx, schema->sequence.schema,
+			value_data, event);
+	if (err != CYAML_OK) {
+		return err;
+	}
 
 	return CYAML_OK;
 }
@@ -673,6 +743,9 @@ static cyaml_err_t cyaml__read_mapping_value(
 	cyaml_event_t mask = CYAML_EVT_SCALAR |
 	                     CYAML_EVT_SEQ_START |
 	                     CYAML_EVT_MAPPING_START;
+	const cyaml_schema_mapping_t *entry =
+			state->mapping.schema + state->mapping.schema_idx;
+	cyaml_data_t *data = state->data + entry->data_offset;
 
 	err = cyaml_get_next_event(ctx, mask, &event);
 	if (err != CYAML_OK) {
@@ -685,8 +758,12 @@ static cyaml_err_t cyaml__read_mapping_value(
 	 * to move. */
 	state->mapping.state = CYAML_MAPPING_STATE_KEY;
 
-	/** \todo read value */
+	err = cyaml__read_value(ctx, &entry->value, data, &event);
+	if (err != CYAML_OK) {
+		goto out;
+	}
 
+out:
 	yaml_event_delete(&event);
 	return err;
 }
