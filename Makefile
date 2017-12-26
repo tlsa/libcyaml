@@ -40,7 +40,7 @@ else
 	LDFLAGS_COV =
 endif
 
-LIB_SRC_FILES = util.c
+LIB_SRC_FILES = free.c util.c
 LIB_SRC := $(addprefix src/,$(LIB_SRC_FILES))
 LIB_OBJ = $(patsubst %.c,%.o, $(addprefix $(BUILDDIR)/,$(LIB_SRC)))
 
