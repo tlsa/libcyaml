@@ -16,3 +16,33 @@ arranged in memory.
 
 * Make it easy to load YAML into client's custom C data structures.
 * Good compromise between flexibility and simplicity.
+
+Building
+--------
+
+To build the library (debug mode), run:
+
+    make
+
+To build a release version:
+
+    make VARIANT=release
+
+To run the tests, run any of the following, which generate various
+levels of output verbosity (optionally setting `VARIANT=release`):
+
+    make test
+    make test-quiet
+    make test-verbose
+    make test-debug
+
+To run the tests under `valgrind`, a similar set of targets is available:
+
+    make valgrind
+    make valgrind-quiet
+    make valgrind-verbose
+    make valgrind-debug
+
+To generate a test coverage report, `gcovr` is required:
+
+    make coverage
