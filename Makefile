@@ -55,6 +55,15 @@ all: $(BUILDDIR)/libcyaml.so
 test: $(TEST_BINS)
 	@for i in $(^); do $$i || exit; done
 
+test-quiet: $(TEST_BINS)
+	@for i in $(^); do $$i -q || exit; done
+
+test-verbose: $(TEST_BINS)
+	@for i in $(^); do $$i -v || exit; done
+
+test-debug: $(TEST_BINS)
+	@for i in $(^); do $$i -d || exit; done
+
 $(BUILDDIR)/libcyaml.so: $(LIB_OBJ)
 	$(AR) $(ARFLAGS) $(LDFLAGS_COV) -o $@ $^
 
@@ -65,7 +74,7 @@ $(LIB_OBJ): $(BUILDDIR)/%.o : %.c
 clean:
 	rm -rf build/
 
-.PHONY: all test \
+.PHONY: all test test-quiet test-verbose test-debug \
 		clean
 
 TEST_DEPS = $(BUILDDIR)/libcyaml.so
