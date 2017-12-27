@@ -442,6 +442,68 @@ static cyaml_err_t cyaml__data_handle_pointer(
 }
 
 /**
+ * Read a value of type \ref CYAML_INT.
+ *
+ * \param[in]  ctx     The CYAML loading context.
+ * \param[in]  schema  The schema for the value to be read.
+ * \param[in]  value   String containing scaler value.
+ * \param[in]  data    The place to write the value in the output data.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__read_int(
+		const cyaml_ctx_t *ctx,
+		const cyaml_schema_type_t *schema,
+		const char *value,
+		uint8_t *data)
+{
+	char *end = NULL;
+	long long temp = strtoll(value, &end, 0);
+	int64_t max = ((~(uint64_t)0) >> ((8 - schema->data_size) * 8)) / 2;
+	int64_t min = (-max) - 1;
+
+	CYAML_UNUSED(ctx);
+
+	if (end == value || errno == ERANGE ||
+	    temp < min || temp > max) {
+		return CYAML_ERR_INVALID_VALUE;
+	}
+
+	return cyaml_data_write(temp, schema->data_size, data);
+}
+
+/**
+ * Read a scalar value.
+ *
+ * \param[in]  ctx     The CYAML loading context.
+ * \param[in]  schema  The schema for the value to be read.
+ * \param[in]  data    The place to write the value in the output data.
+ * \param[in]  event   The `libyaml` event providing the scalar value data.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__read_scalar_value(
+		const cyaml_ctx_t *ctx,
+		const cyaml_schema_type_t *schema,
+		cyaml_data_t *data,
+		yaml_event_t *event)
+{
+	const char *value = (const char *)event->data.scalar.value;
+	typedef cyaml_err_t (*cyaml_read_scalar_fn)(
+			const cyaml_ctx_t *ctx,
+			const cyaml_schema_type_t *schema,
+			const char *value,
+			uint8_t *data_target);
+	static const cyaml_read_scalar_fn fn[CYAML__TYPE_COUNT] = {
+		[CYAML_INT]    = cyaml__read_int,
+	};
+
+	cyaml__log(ctx->config, CYAML_LOG_INFO, "  <%s>\n", value);
+
+	assert(fn[schema->type] != NULL);
+
+	return fn[schema->type](ctx, schema, value, data);
+}
+
+/**
  * Handle a YAML event corresponding to a YAML data value.
  *
  * \param[in]  ctx     The CYAML loading context.
@@ -473,7 +535,10 @@ static cyaml_err_t cyaml__read_value(
 	case CYAML_BOOL: /* Fall through. */
 	case CYAML_ENUM: /* Fall through. */
 	case CYAML_STRING:
-		/** \todo */
+		if (cyaml_event != CYAML_EVT_SCALAR) {
+			return CYAML_ERR_INVALID_VALUE;
+		}
+		err = cyaml__read_scalar_value(ctx, schema, data, event);
 		break;
 	case CYAML_FLAGS:
 		/** \todo */
