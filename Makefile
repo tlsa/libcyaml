@@ -44,7 +44,7 @@ LIB_SRC_FILES = free.c load.c util.c
 LIB_SRC := $(addprefix src/,$(LIB_SRC_FILES))
 LIB_OBJ = $(patsubst %.c,%.o, $(addprefix $(BUILDDIR)/,$(LIB_SRC)))
 
-TEST_SRC_FILES = units/free.c units/test.c
+TEST_SRC_FILES = units/free.c units/load.c units/test.c
 TEST_SRC := $(addprefix test/,$(TEST_SRC_FILES))
 TEST_OBJ = $(patsubst %.c,%.o, $(addprefix $(BUILDDIR)/,$(TEST_SRC)))
 
