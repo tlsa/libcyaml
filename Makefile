@@ -16,6 +16,7 @@ CC = gcc
 AR = $(CC)
 LD = $(CC)
 MKDIR =	mkdir -p
+VALGRIND = valgrind --leak-check=full --track-origins=yes
 
 INCLUDE = -I include -I src
 CCFLAGS += $(INCLUDE)
@@ -64,6 +65,18 @@ test-verbose: $(TEST_BINS)
 test-debug: $(TEST_BINS)
 	@for i in $(^); do $$i -d || exit; done
 
+valgrind: $(TEST_BINS)
+	@for i in $(^); do $(VALGRIND) $$i || exit; done
+
+valgrind-quiet: $(TEST_BINS)
+	@for i in $(^); do $(VALGRIND) $$i -q || exit; done
+
+valgrind-verbose: $(TEST_BINS)
+	@for i in $(^); do $(VALGRIND) $$i -v || exit; done
+
+valgrind-debug: $(TEST_BINS)
+	@for i in $(^); do $(VALGRIND) $$i -d || exit; done
+
 $(BUILDDIR)/libcyaml.so: $(LIB_OBJ)
 	$(AR) $(ARFLAGS) $(LDFLAGS_COV) -o $@ $^
 
@@ -75,6 +88,7 @@ clean:
 	rm -rf build/
 
 .PHONY: all test test-quiet test-verbose test-debug \
+		valgrind valgrind-quiet valgrind-verbose valgrind-debug \
 		clean
 
 TEST_DEPS = $(BUILDDIR)/libcyaml.so
