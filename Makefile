@@ -53,6 +53,12 @@ TEST_BINS = $(BUILDDIR)/test/units/libcyaml
 
 all: $(BUILDDIR)/libcyaml.so
 
+coverage: test-verbose
+	@$(MKDIR) $(BUILDDIR)
+	@gcovr -e 'test/.*' -r .
+	@gcovr -e 'test/.*' -x -o build/coverage.xml -r .
+	@gcovr -e 'test/.*' --html --html-details -o build/coverage.html -r .
+
 test: $(TEST_BINS)
 	@for i in $(^); do $$i || exit; done
 
@@ -89,7 +95,7 @@ clean:
 
 .PHONY: all test test-quiet test-verbose test-debug \
 		valgrind valgrind-quiet valgrind-verbose valgrind-debug \
-		clean
+		clean coverage
 
 TEST_DEPS = $(BUILDDIR)/libcyaml.so
 
