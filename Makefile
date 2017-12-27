@@ -44,7 +44,16 @@ LIB_SRC_FILES = free.c load.c util.c
 LIB_SRC := $(addprefix src/,$(LIB_SRC_FILES))
 LIB_OBJ = $(patsubst %.c,%.o, $(addprefix $(BUILDDIR)/,$(LIB_SRC)))
 
+TEST_SRC_FILES = units/free.c units/test.c
+TEST_SRC := $(addprefix test/,$(TEST_SRC_FILES))
+TEST_OBJ = $(patsubst %.c,%.o, $(addprefix $(BUILDDIR)/,$(TEST_SRC)))
+
+TEST_BINS = $(BUILDDIR)/test/units/libcyaml
+
 all: $(BUILDDIR)/libcyaml.so
+
+test: $(TEST_BINS)
+	@for i in $(^); do $$i || exit; done
 
 $(BUILDDIR)/libcyaml.so: $(LIB_OBJ)
 	$(AR) $(ARFLAGS) $(LDFLAGS_COV) -o $@ $^
@@ -56,5 +65,14 @@ $(LIB_OBJ): $(BUILDDIR)/%.o : %.c
 clean:
 	rm -rf build/
 
-.PHONY: all \
+.PHONY: all test \
 		clean
+
+TEST_DEPS = $(BUILDDIR)/libcyaml.so
+
+$(BUILDDIR)/test/units/libcyaml: $(TEST_OBJ) $(TEST_DEPS)
+	$(LD) $(LDFLAGS_COV) -o $@ $^ $(LDFLAGS)
+
+$(TEST_OBJ): $(BUILDDIR)/%.o : %.c
+	@$(MKDIR) $(BUILDDIR)/test/units
+	$(CC) $(CCFLAGS) $(CCFLAGS_COV) -c -o $@ $<
