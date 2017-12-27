@@ -1045,3 +1045,40 @@ cyaml_err_t cyaml_load_file(
 
 	return CYAML_OK;
 }
+
+/* Exported function, documented in include/cyaml/cyaml.h */
+cyaml_err_t cyaml_load_data(
+		const uint8_t *input,
+		size_t input_len,
+		const cyaml_config_t *config,
+		const cyaml_schema_type_t *schema,
+		cyaml_data_t **data_out)
+{
+	cyaml_err_t err;
+	yaml_parser_t parser;
+
+	err = cyaml__validate_load_params(config, schema, data_out);
+	if (err != CYAML_OK) {
+		return err;
+	}
+
+	/* Initialize parser */
+	if (!yaml_parser_initialize(&parser)) {
+		return CYAML_ERR_LIBYAML_PARSER_INIT;
+	}
+
+	/* Set input data */
+	yaml_parser_set_input_string(&parser, input, input_len);
+
+	/* Parse the input */
+	err = cyaml__load(config, schema, data_out, &parser);
+	if (err != CYAML_OK) {
+		yaml_parser_delete(&parser);
+		return err;
+	}
+
+	/* Cleanup */
+	yaml_parser_delete(&parser);
+
+	return CYAML_OK;
+}
