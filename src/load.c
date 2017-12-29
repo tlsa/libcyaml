@@ -564,6 +564,38 @@ static cyaml_err_t cyaml__read_enum(
 }
 
 /**
+ * Read a value of type \ref CYAML_STRING.
+ *
+ * \param[in]  ctx     The CYAML loading context.
+ * \param[in]  schema  The schema for the value to be read.
+ * \param[in]  value   String containing scaler value.
+ * \param[in]  data    The place to write the value in the output data.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__read_string(
+		const cyaml_ctx_t *ctx,
+		const cyaml_schema_type_t *schema,
+		const char *value,
+		uint8_t *data)
+{
+	size_t str_len = strlen(value);
+
+	CYAML_UNUSED(ctx);
+
+	if (schema->string.min > schema->string.max) {
+		return CYAML_ERR_BAD_MIN_MAX_SCHEMA;
+	} else if (str_len < schema->string.min) {
+		return CYAML_ERR_STRING_LENGTH_MIN;
+	} else if (str_len > schema->string.max) {
+		return CYAML_ERR_STRING_LENGTH_MAX;
+	}
+
+	memcpy(data, value, str_len + 1);
+
+	return CYAML_OK;
+}
+
+/**
  * Read a scalar value.
  *
  * \param[in]  ctx     The CYAML loading context.
@@ -589,6 +621,7 @@ static cyaml_err_t cyaml__read_scalar_value(
 		[CYAML_UINT]   = cyaml__read_uint,
 		[CYAML_BOOL]   = cyaml__read_bool,
 		[CYAML_ENUM]   = cyaml__read_enum,
+		[CYAML_STRING] = cyaml__read_string,
 	};
 
 	cyaml__log(ctx->config, CYAML_LOG_INFO, "  <%s>\n", value);
