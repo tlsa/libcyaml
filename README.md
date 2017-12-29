@@ -46,3 +46,8 @@ To run the tests under `valgrind`, a similar set of targets is available:
 To generate a test coverage report, `gcovr` is required:
 
     make coverage
+
+To generate both public API documentation, and documentation of CYAML's
+internals, `doxygen` is required:
+
+    make docs
