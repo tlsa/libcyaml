@@ -501,6 +501,38 @@ static cyaml_err_t cyaml__read_uint(
 }
 
 /**
+ * Read a value of type \ref CYAML_BOOL.
+ *
+ * \param[in]  ctx     The CYAML loading context.
+ * \param[in]  schema  The schema for the value to be read.
+ * \param[in]  value   String containing scaler value.
+ * \param[in]  data    The place to write the value in the output data.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__read_bool(
+		const cyaml_ctx_t *ctx,
+		const cyaml_schema_type_t *schema,
+		const char *value,
+		uint8_t *data)
+{
+	bool temp = true;
+	static const char * const false_strings[] = {
+		"false", "no", "disable", "0",
+	};
+
+	CYAML_UNUSED(ctx);
+
+	for (uint32_t i = 0; i < CYAML_ARRAY_LEN(false_strings); i++) {
+		if (strcasecmp(value, false_strings[i]) == 0) {
+			temp = false;
+			break;
+		}
+	}
+
+	return cyaml_data_write(temp, schema->data_size, data);
+}
+
+/**
  * Read a scalar value.
  *
  * \param[in]  ctx     The CYAML loading context.
@@ -524,6 +556,7 @@ static cyaml_err_t cyaml__read_scalar_value(
 	static const cyaml_read_scalar_fn fn[CYAML__TYPE_COUNT] = {
 		[CYAML_INT]    = cyaml__read_int,
 		[CYAML_UINT]   = cyaml__read_uint,
+		[CYAML_BOOL]   = cyaml__read_bool,
 	};
 
 	cyaml__log(ctx->config, CYAML_LOG_INFO, "  <%s>\n", value);
