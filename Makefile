@@ -90,12 +90,18 @@ $(LIB_OBJ): $(BUILDDIR)/%.o : %.c
 	$(MKDIR) $(BUILDDIR)/src
 	$(CC) $(CCFLAGS) -fPIC $(CCFLAGS_COV) -c -o $@ $<
 
+docs:
+	$(MKDIR) build/docs/api
+	$(MKDIR) build/docs/devel
+	doxygen docs/api.doxygen.conf
+	doxygen docs/devel.doxygen.conf
+
 clean:
 	rm -rf build/
 
 .PHONY: all test test-quiet test-verbose test-debug \
 		valgrind valgrind-quiet valgrind-verbose valgrind-debug \
-		clean coverage
+		clean coverage docs
 
 TEST_DEPS = $(BUILDDIR)/libcyaml.so
 
