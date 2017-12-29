@@ -533,6 +533,37 @@ static cyaml_err_t cyaml__read_bool(
 }
 
 /**
+ * Read a value of type \ref CYAML_ENUM.
+ *
+ * \param[in]  ctx     The CYAML loading context.
+ * \param[in]  schema  The schema for the value to be read.
+ * \param[in]  value   String containing scaler value.
+ * \param[in]  data    The place to write the value in the output data.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__read_enum(
+		const cyaml_ctx_t *ctx,
+		const cyaml_schema_type_t *schema,
+		const char *value,
+		uint8_t *data)
+{
+	for (uint32_t i = 0; i < schema->enumeration.count; i++) {
+		if (strcmp(value, schema->enumeration.strings[i]) == 0) {
+			return cyaml_data_write(i, schema->data_size, data);
+		}
+	}
+
+	if (schema->flags & CYAML_FLAG_STRICT) {
+		cyaml__log(ctx->config, CYAML_LOG_ERROR,
+				"Invalid enumeration value: %s\n", value);
+		return CYAML_ERR_INVALID_VALUE;
+
+	}
+
+	return cyaml__read_int(ctx, schema, value, data);
+}
+
+/**
  * Read a scalar value.
  *
  * \param[in]  ctx     The CYAML loading context.
@@ -557,6 +588,7 @@ static cyaml_err_t cyaml__read_scalar_value(
 		[CYAML_INT]    = cyaml__read_int,
 		[CYAML_UINT]   = cyaml__read_uint,
 		[CYAML_BOOL]   = cyaml__read_bool,
+		[CYAML_ENUM]   = cyaml__read_enum,
 	};
 
 	cyaml__log(ctx->config, CYAML_LOG_INFO, "  <%s>\n", value);
