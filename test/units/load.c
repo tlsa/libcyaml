@@ -383,6 +383,45 @@ static bool test_load_mapping_entry_string_ptr(
 	return ttest_pass(&tc);
 }
 
+static bool test_load_mapping_entry_ignore_scalar(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"ignore: foo\n";
+	struct target_struct {
+		bool foo;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_mapping mapping_schema[] = {
+		CYAML_MAPPING_IGNORE("ignore", CYAML_FLAG_DEFAULT),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->foo != false) {
+		return ttest_fail(&tc, "Incorrect value");
+	}
+
+	return ttest_pass(&tc);
+}
+
 bool load_tests(
 		ttest_report_ctx_t *rc,
 		cyaml_log_t log_level,
@@ -405,6 +444,7 @@ bool load_tests(
 	pass &= test_load_mapping_entry_bool_true(rc, &config);
 	pass &= test_load_mapping_entry_bool_false(rc, &config);
 	pass &= test_load_mapping_entry_string_ptr(rc, &config);
+	pass &= test_load_mapping_entry_ignore_scalar(rc, &config);
 
 	return pass;
 }
