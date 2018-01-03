@@ -632,6 +632,74 @@ static cyaml_err_t cyaml__read_scalar_value(
 }
 
 /**
+ * Entirely consume an ignored value.
+ *
+ * This ignores all the descendants of the value, e.g. if the `ignored` key's
+ * value is of type \ref CYAML_IGNORE, all of the following is ignored:
+ *
+ * ```
+ * ignored:
+ *     - foo: 7
+ *       bar: 9
+ *     - foo: 1
+ *       bar: 2
+ * ```
+ *
+ * \param[in]  ctx          The CYAML loading context.
+ * \param[in]  cyaml_event  The event for the value to ignore.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__consume_ignored_value(
+		cyaml_ctx_t *ctx,
+		cyaml_event_t cyaml_event)
+{
+	cyaml_event_t mask =
+			CYAML_EVT_SCALAR |
+			CYAML_EVT_MAPPING_START |
+			CYAML_EVT_MAPPING_END |
+			CYAML_EVT_SEQ_START |
+			CYAML_EVT_SEQ_END;
+	cyaml_err_t err = CYAML_OK;
+	yaml_event_t event;
+	unsigned level;
+
+	switch (cyaml_event) {
+	case CYAML_EVT_SCALAR:
+		break;
+	case CYAML_EVT_SEQ_START: /* Fall through. */
+	case CYAML_EVT_MAPPING_START:
+		level = 1;
+		while (level > 0) {
+			err = cyaml_get_next_event(ctx, mask, &event);
+			if (err != CYAML_OK) {
+				return err;
+			}
+			switch (cyaml__get_event_type(&event)) {
+			case CYAML_EVT_SEQ_START: /* Fall through */
+			case CYAML_EVT_MAPPING_START:
+				level++;
+				break;
+
+			case CYAML_EVT_SEQ_END: /* Fall through */
+			case CYAML_EVT_MAPPING_END:
+				level--;
+				break;
+
+			default:
+				break;
+			}
+			yaml_event_delete(&event);
+		}
+		break;
+	default:
+		err = CYAML_ERR_INVALID_VALUE;
+		break;
+	}
+
+	return err;
+}
+
+/**
  * Handle a YAML event corresponding to a YAML data value.
  *
  * \param[in]  ctx     The CYAML loading context.
@@ -690,7 +758,7 @@ static cyaml_err_t cyaml__read_value(
 				schema, data);
 		break;
 	case CYAML_IGNORE:
-		/** \todo */
+		err = cyaml__consume_ignored_value(ctx, cyaml_event);
 		break;
 	default:
 		err = CYAML_ERR_BAD_TYPE_IN_SCHEMA;
