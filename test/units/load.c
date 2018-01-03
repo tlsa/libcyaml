@@ -238,6 +238,58 @@ static bool test_load_mapping_entry_bool_false(
 	return ttest_pass(&tc);
 }
 
+static bool test_load_mapping_entry_enum(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	enum test_enum {
+		TEST_ENUM_FIRST,
+		TEST_ENUM_SECOND,
+		TEST_ENUM_THIRD,
+		TEST_ENUM__COUNT,
+	} value = TEST_ENUM_SECOND;
+	static const char * const strings[TEST_ENUM__COUNT] = {
+		[TEST_ENUM_FIRST]  = "first",
+		[TEST_ENUM_SECOND] = "second",
+		[TEST_ENUM_THIRD]  = "third",
+	};
+	static const unsigned char yaml[] =
+		"test_enum: second\n";
+	struct target_struct {
+		enum test_enum test_value_enum;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_mapping mapping_schema[] = {
+		CYAML_MAPPING_ENUM("test_enum", CYAML_FLAG_DEFAULT,
+				struct target_struct, test_value_enum,
+				strings, TEST_ENUM__COUNT),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->test_value_enum != value) {
+		return ttest_fail(&tc, "Incorrect value");
+	}
+
+	return ttest_pass(&tc);
+}
+
 bool load_tests(
 		ttest_report_ctx_t *rc,
 		cyaml_log_t log_level,
@@ -252,6 +304,7 @@ bool load_tests(
 
 	ttest_heading(rc, "Load single entry mapping tests: simple types");
 
+	pass &= test_load_mapping_entry_enum(rc, &config);
 	pass &= test_load_mapping_entry_uint(rc, &config);
 	pass &= test_load_mapping_entry_int_pos(rc, &config);
 	pass &= test_load_mapping_entry_int_neg(rc, &config);
