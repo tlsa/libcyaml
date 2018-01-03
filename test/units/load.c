@@ -290,6 +290,57 @@ static bool test_load_mapping_entry_enum(
 	return ttest_pass(&tc);
 }
 
+static bool test_load_mapping_entry_string(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const char *value = "Hello World!";
+	static const unsigned char yaml[] =
+		"test_string: Hello World!\n";
+	struct target_struct {
+		char test_value_string[50];
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_mapping mapping_schema[] = {
+		CYAML_MAPPING_STRING("test_string", CYAML_FLAG_DEFAULT,
+				struct target_struct, test_value_string, 0),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (strcmp(data_tgt->test_value_string, value) != 0) {
+		fprintf(stderr, "expected: %s\n", value);
+		for (unsigned i = 0; i < strlen(value) + 1; i++) {
+			fprintf(stderr, "%2.2x ", value[i]);
+		}
+		fprintf(stderr, "\n");
+		fprintf(stderr, "     got: %s\n", data_tgt->test_value_string);
+		for (unsigned i = 0; i < sizeof(data_tgt->test_value_string); i++) {
+			fprintf(stderr, "%2.2x ", value[i]);
+		}
+		fprintf(stderr, "\n");
+		return ttest_fail(&tc, "Incorrect value");
+	}
+
+	return ttest_pass(&tc);
+}
+
 bool load_tests(
 		ttest_report_ctx_t *rc,
 		cyaml_log_t log_level,
@@ -306,6 +357,7 @@ bool load_tests(
 
 	pass &= test_load_mapping_entry_enum(rc, &config);
 	pass &= test_load_mapping_entry_uint(rc, &config);
+	pass &= test_load_mapping_entry_string(rc, &config);
 	pass &= test_load_mapping_entry_int_pos(rc, &config);
 	pass &= test_load_mapping_entry_int_neg(rc, &config);
 	pass &= test_load_mapping_entry_bool_true(rc, &config);
