@@ -632,6 +632,106 @@ static cyaml_err_t cyaml__read_scalar_value(
 }
 
 /**
+ * Set a flag in a \ref CYAML_FLAGS value.
+ *
+ * \param[in]      ctx        The CYAML loading context.
+ * \param[in]      schema     The schema for the value to be read.
+ * \param[in]      value      String containing scaler value.
+ * \param[in,out]  flags_out  Current flags, updated on success.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__set_flag(
+		const cyaml_ctx_t *ctx,
+		const cyaml_schema_type_t *schema,
+		const char *value,
+		uint64_t *flags_out)
+{
+	for (uint32_t i = 0; i < schema->enumeration.count; i++) {
+		if (strcmp(value, schema->enumeration.strings[i]) == 0) {
+			*flags_out |= (1 << i);
+			return CYAML_OK;
+		}
+	}
+
+	if (!(schema->flags & CYAML_FLAG_STRICT)) {
+		char *end = NULL;
+		long long temp = strtoll(value, &end, 0);
+		uint64_t max = (~(uint64_t)0) >> ((8 - schema->data_size) * 8);
+
+		if (!(end == value || errno == ERANGE ||
+		      temp < 0 || (uint64_t)temp > max)) {
+			*flags_out |= temp;
+			return CYAML_OK;
+		}
+	}
+
+	cyaml__log(ctx->config, CYAML_LOG_ERROR, "Unknown flag: %s\n", value);
+
+	return CYAML_ERR_INVALID_VALUE;
+}
+
+/**
+ * Read a value of type \ref CYAML_FLAGS.
+ *
+ * Since \ref CYAML_FLAGS is a composite value (a sequence of scalars), rather
+ * than a simple scaler, this consumes events from the YAML input stream.
+ *
+ * \param[in]  ctx     The CYAML loading context.
+ * \param[in]  schema  The schema for the value to be read.
+ * \param[in]  data    The place to write the value in the output data.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__read_flags_value(
+		cyaml_ctx_t *ctx,
+		const cyaml_schema_type_t *schema,
+		cyaml_data_t *data)
+{
+	bool exit = false;
+	uint64_t value = 0;
+	yaml_event_t event;
+	cyaml_err_t err = CYAML_OK;
+	uint8_t entry_size = schema->data_size;
+	cyaml_event_t mask = CYAML_EVT_SCALAR | CYAML_EVT_SEQ_END;
+
+	while (!exit) {
+		err = cyaml_get_next_event(ctx, mask, &event);
+		if (err != CYAML_OK) {
+			return err;
+		}
+
+		switch (cyaml__get_event_type(&event)) {
+		case CYAML_EVT_SCALAR:
+			err = cyaml__set_flag(ctx, schema,
+					(const char *)event.data.scalar.value,
+					&value);
+			if (err != CYAML_OK) {
+				yaml_event_delete(&event);
+				return err;
+			}
+			break;
+		case CYAML_EVT_SEQ_END:
+			exit = true;
+			break;
+		default:
+			assert(mask & cyaml__get_event_type(&event));
+			break;
+		}
+
+		yaml_event_delete(&event);
+	}
+
+	err = cyaml_data_write(value, entry_size, data);
+	if (err != CYAML_OK) {
+		return err;
+	}
+
+	cyaml__log(ctx->config, CYAML_LOG_INFO,
+			"  <Flags: 0x%"PRIx64">\n", value);
+
+	return err;
+}
+
+/**
  * Entirely consume an ignored value.
  *
  * This ignores all the descendants of the value, e.g. if the `ignored` key's
@@ -737,7 +837,10 @@ static cyaml_err_t cyaml__read_value(
 		err = cyaml__read_scalar_value(ctx, schema, data, event);
 		break;
 	case CYAML_FLAGS:
-		/** \todo */
+		if (cyaml_event != CYAML_EVT_SEQ_START) {
+			return CYAML_ERR_INVALID_VALUE;
+		}
+		err = cyaml__read_flags_value(ctx, schema, data);
 		break;
 	case CYAML_MAPPING:
 		if (cyaml_event != CYAML_EVT_MAPPING_START) {
