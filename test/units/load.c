@@ -465,6 +465,70 @@ static bool test_load_mapping_entry_ignore_scalar(
 	return ttest_pass(&tc);
 }
 
+static bool test_load_mapping_entry_flags(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	enum test_flags {
+		TEST_FLAGS_NONE   = 0,
+		TEST_FLAGS_FIRST  = (1 << 0),
+		TEST_FLAGS_SECOND = (1 << 1),
+		TEST_FLAGS_THIRD  = (1 << 2),
+		TEST_FLAGS_FOURTH = (1 << 3),
+		TEST_FLAGS_FIFTH  = (1 << 4),
+		TEST_FLAGS_SIXTH  = (1 << 5),
+	} value = TEST_FLAGS_SECOND | TEST_FLAGS_FIFTH | 1024;
+	#define TEST_FLAGS__COUNT 6
+	static const char * const strings[TEST_FLAGS__COUNT] = {
+		"first",
+		"second",
+		"third",
+		"fourth",
+		"fifth",
+		"sixth",
+	};
+	static const unsigned char yaml[] =
+		"test_flags:\n"
+		"    - second\n"
+		"    - fifth\n"
+		"    - 1024\n";
+	struct target_struct {
+		enum test_flags test_value_flags;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_mapping mapping_schema[] = {
+		CYAML_MAPPING_FLAGS("test_flags", CYAML_FLAG_DEFAULT,
+				struct target_struct, test_value_flags,
+				strings, TEST_FLAGS__COUNT),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->test_value_flags != value) {
+		return ttest_fail(&tc, "Incorrect value: "
+				"expected: 0x%x, got: 0x%x\n",
+				value, data_tgt->test_value_flags);
+	}
+
+	return ttest_pass(&tc);
+}
+
 bool load_tests(
 		ttest_report_ctx_t *rc,
 		cyaml_log_t log_level,
@@ -489,6 +553,10 @@ bool load_tests(
 	pass &= test_load_mapping_entry_string_ptr(rc, &config);
 	pass &= test_load_mapping_entry_ignore_deep(rc, &config);
 	pass &= test_load_mapping_entry_ignore_scalar(rc, &config);
+
+	ttest_heading(rc, "Load single entry mapping tests: complex types");
+
+	pass &= test_load_mapping_entry_flags(rc, &config);
 
 	return pass;
 }
