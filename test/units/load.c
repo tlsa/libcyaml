@@ -529,6 +529,24 @@ static bool test_load_mapping_entry_flags(
 	return ttest_pass(&tc);
 }
 
+static bool test_load_mapping_entry_mapping(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	UNUSED(config);
+	ttest_ctx_t tc = ttest_start(report, __func__, NULL, NULL);
+	return ttest_todo(&tc);
+}
+
+static bool test_load_mapping_entry_mapping_ptr(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	UNUSED(config);
+	ttest_ctx_t tc = ttest_start(report, __func__, NULL, NULL);
+	return ttest_todo(&tc);
+}
+
 bool load_tests(
 		ttest_report_ctx_t *rc,
 		cyaml_log_t log_level,
@@ -557,6 +575,8 @@ bool load_tests(
 	ttest_heading(rc, "Load single entry mapping tests: complex types");
 
 	pass &= test_load_mapping_entry_flags(rc, &config);
+	pass &= test_load_mapping_entry_mapping(rc, &config);
+	pass &= test_load_mapping_entry_mapping_ptr(rc, &config);
 
 	return pass;
 }
