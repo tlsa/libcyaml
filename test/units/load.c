@@ -547,6 +547,66 @@ static bool test_load_mapping_entry_mapping_ptr(
 	return ttest_todo(&tc);
 }
 
+static bool test_load_mapping_entry_sequence_int(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	int ref[] = { 1, 1, 2, 3, 5, 8 };
+	static const unsigned char yaml[] =
+		"sequence:\n"
+		"    - 1\n"
+		"    - 1\n"
+		"    - 2\n"
+		"    - 3\n"
+		"    - 5\n"
+		"    - 8\n";
+	struct target_struct {
+		int seq[CYAML_ARRAY_LEN(ref)];
+		uint32_t seq_count;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_type entry_schema = {
+		CYAML_TYPE_INT(CYAML_FLAG_DEFAULT, *(data_tgt->seq)),
+	};
+	static const struct cyaml_schema_mapping mapping_schema[] = {
+		CYAML_MAPPING_SEQUENCE("sequence", CYAML_FLAG_DEFAULT,
+				struct target_struct, seq, &entry_schema,
+				0, CYAML_ARRAY_LEN(ref)),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (CYAML_ARRAY_LEN(ref) != data_tgt->seq_count) {
+		return ttest_fail(&tc, "Incorrect sequence count");
+	}
+
+	for (unsigned i = 0; i < CYAML_ARRAY_LEN(ref); i++) {
+		if (data_tgt->seq[i] != ref[i]) {
+			return ttest_fail(&tc, "Incorrect value (i=%u): "
+					"got: %i, expected: %i", i,
+					data_tgt->seq[i], ref[i]);
+		}
+	}
+
+	return ttest_pass(&tc);
+}
+
 bool load_tests(
 		ttest_report_ctx_t *rc,
 		cyaml_log_t log_level,
@@ -577,6 +637,10 @@ bool load_tests(
 	pass &= test_load_mapping_entry_flags(rc, &config);
 	pass &= test_load_mapping_entry_mapping(rc, &config);
 	pass &= test_load_mapping_entry_mapping_ptr(rc, &config);
+
+	ttest_heading(rc, "Load single entry mapping tests: sequences");
+
+	pass &= test_load_mapping_entry_sequence_int(rc, &config);
 
 	return pass;
 }
