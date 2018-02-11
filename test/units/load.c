@@ -797,6 +797,42 @@ static bool test_load_mapping_entry_sequence_bool(
 	return ttest_pass(&tc);
 }
 
+static bool test_load_mapping_entry_sequence_flags(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	UNUSED(config);
+	ttest_ctx_t tc = ttest_start(report, __func__, NULL, NULL);
+	return ttest_todo(&tc);
+}
+
+static bool test_load_mapping_entry_sequence_string(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	UNUSED(config);
+	ttest_ctx_t tc = ttest_start(report, __func__, NULL, NULL);
+	return ttest_todo(&tc);
+}
+
+static bool test_load_mapping_entry_sequence_mapping(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	UNUSED(config);
+	ttest_ctx_t tc = ttest_start(report, __func__, NULL, NULL);
+	return ttest_todo(&tc);
+}
+
+static bool test_load_mapping_entry_sequence_mapping_ptr(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	UNUSED(config);
+	ttest_ctx_t tc = ttest_start(report, __func__, NULL, NULL);
+	return ttest_todo(&tc);
+}
+
 static bool test_load_mapping_entry_sequence_sequence_fixed_int(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1285,6 +1321,42 @@ static bool test_load_mapping_entry_sequence_ptr_bool(
 	return ttest_pass(&tc);
 }
 
+static bool test_load_mapping_entry_sequence_ptr_flags(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	UNUSED(config);
+	ttest_ctx_t tc = ttest_start(report, __func__, NULL, NULL);
+	return ttest_todo(&tc);
+}
+
+static bool test_load_mapping_entry_sequence_ptr_string(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	UNUSED(config);
+	ttest_ctx_t tc = ttest_start(report, __func__, NULL, NULL);
+	return ttest_todo(&tc);
+}
+
+static bool test_load_mapping_entry_sequence_ptr_mapping(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	UNUSED(config);
+	ttest_ctx_t tc = ttest_start(report, __func__, NULL, NULL);
+	return ttest_todo(&tc);
+}
+
+static bool test_load_mapping_entry_sequence_ptr_mapping_ptr(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	UNUSED(config);
+	ttest_ctx_t tc = ttest_start(report, __func__, NULL, NULL);
+	return ttest_todo(&tc);
+}
+
 bool load_tests(
 		ttest_report_ctx_t *rc,
 		cyaml_log_t log_level,
@@ -1322,6 +1394,10 @@ bool load_tests(
 	pass &= test_load_mapping_entry_sequence_enum(rc, &config);
 	pass &= test_load_mapping_entry_sequence_uint(rc, &config);
 	pass &= test_load_mapping_entry_sequence_bool(rc, &config);
+	pass &= test_load_mapping_entry_sequence_flags(rc, &config);
+	pass &= test_load_mapping_entry_sequence_string(rc, &config);
+	pass &= test_load_mapping_entry_sequence_mapping(rc, &config);
+	pass &= test_load_mapping_entry_sequence_mapping_ptr(rc, &config);
 	pass &= test_load_mapping_entry_sequence_sequence_fixed_int(rc, &config);
 	pass &= test_load_mapping_entry_sequence_sequence_fixed_ptr_int(rc, &config);
 	pass &= test_load_mapping_entry_sequence_sequence_fixed_flat_int(rc, &config);
@@ -1332,6 +1408,10 @@ bool load_tests(
 	pass &= test_load_mapping_entry_sequence_ptr_enum(rc, &config);
 	pass &= test_load_mapping_entry_sequence_ptr_uint(rc, &config);
 	pass &= test_load_mapping_entry_sequence_ptr_bool(rc, &config);
+	pass &= test_load_mapping_entry_sequence_ptr_flags(rc, &config);
+	pass &= test_load_mapping_entry_sequence_ptr_string(rc, &config);
+	pass &= test_load_mapping_entry_sequence_ptr_mapping(rc, &config);
+	pass &= test_load_mapping_entry_sequence_ptr_mapping_ptr(rc, &config);
 
 	return pass;
 }
