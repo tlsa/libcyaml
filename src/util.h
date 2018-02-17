@@ -17,6 +17,12 @@
 /** Macro to squash unused variable compiler warnings. */
 #define CYAML_UNUSED(_x) ((void)(_x))
 
+/** CYAML bitfield type. */
+typedef uint32_t cyaml_bitfield_t;
+
+/** Number of bits in \ref cyaml_bitfield_t. */
+#define CYAML_BITFIELD_BITS (sizeof(cyaml_bitfield_t) * CHAR_BIT)
+
 /**
  * Log to client's logging function, if provided.
  *

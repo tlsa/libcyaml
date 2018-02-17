@@ -67,6 +67,8 @@ typedef struct cyaml_state {
 		/** Additional state for values of \ref CYAML_MAPPING type. */
 		struct {
 			const cyaml_schema_mapping_t *schema;
+			/** Bit field of mapping fields found. */
+			cyaml_bitfield_t *fields;
 			/** Mapping load state machine sub-state. */
 			enum cyaml_mapping_state_e state;
 			uint16_t schema_idx;
@@ -270,6 +272,117 @@ static cyaml_err_t cyaml__stack_ensure(
 }
 
 /**
+ * Count the entries in a mapping schema array.
+ *
+ * The mapping schema array must be terminated by an entry with a NULL key.
+ *
+ * \param[in]  mapping_schema  Array of mapping schema fields.
+ * \return Number of entries in mapping_schema array.
+ */
+static uint16_t cyaml__get_entry_count_from_mapping_schema(
+		const cyaml_schema_mapping_t *mapping_schema)
+{
+	const cyaml_schema_mapping_t *entry = mapping_schema;
+
+	while (entry->key != NULL) {
+		entry++;
+	}
+
+	return entry - mapping_schema;
+}
+
+/**
+ * Create \ref CYAML_STATE_IN_MAPPING state's bitfield array allocation.
+ *
+ * The bitfield is used to record whether the mapping as all the required
+ * fields by mapping schema array index.
+ *
+ * \param[in]  state  CYAML load state for a \ref CYAML_STATE_IN_MAPPING state.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__mapping_bitfieid_create(
+		cyaml_state_t *state)
+{
+	cyaml_bitfield_t *bitfield;
+	unsigned count = cyaml__get_entry_count_from_mapping_schema(
+			state->mapping.schema);
+
+	bitfield = calloc(count / CYAML_BITFIELD_BITS + 1, sizeof(bitfield));
+	if (bitfield == NULL) {
+		return CYAML_ERR_OOM;
+	}
+
+	state->mapping.fields = bitfield;
+
+	return CYAML_OK;
+}
+
+/**
+ * Destroy a \ref CYAML_STATE_IN_MAPPING state's bitfield array allocation.
+ *
+ * \param[in]  state  CYAML load state for a \ref CYAML_STATE_IN_MAPPING state.
+ */
+static void cyaml__mapping_bitfieid_destroy(
+		cyaml_state_t *state)
+{
+	free(state->mapping.fields);
+}
+
+/**
+ * Set the bit for the current mapping's current field, to indicate it exists.
+ *
+ * Current CYAML load state must be \ref CYAML_STATE_IN_MAPPING.
+ *
+ * \param[in]  ctx     The CYAML loading context.
+ */
+static void cyaml__mapping_bitfieid_set(
+		cyaml_ctx_t *ctx)
+{
+	cyaml_state_t *state = ctx->state;
+	unsigned idx = state->mapping.schema_idx;
+
+	state->mapping.fields[idx / CYAML_BITFIELD_BITS] |=
+			1 << (idx % CYAML_BITFIELD_BITS);
+}
+
+/**
+ * Check a mapping had all the required fields.
+ *
+ * Checks all the bits are set in the bitfield, which correspond to
+ * entries in the mapping schema array which are not marked with the
+ * \ref CYAML_FLAG_OPTIONAL flag.
+ *
+ * Current CYAML load state must be \ref CYAML_STATE_IN_MAPPING.
+ *
+ * \param[in]  ctx     The CYAML loading context.
+ * \return \ref CYAML_OK if all required fields are present, or
+ *         \ref CYAML_ERR_MAPPING_FIELD_MISSING any are missing.
+ */
+static cyaml_err_t cyaml__mapping_bitfieid_validate(
+		cyaml_ctx_t *ctx)
+{
+	cyaml_state_t *state = ctx->state;
+	unsigned count = cyaml__get_entry_count_from_mapping_schema(
+			state->mapping.schema);
+
+	for (unsigned i = 0; i < count; i++) {
+		if (state->mapping.schema[i].value.flags & CYAML_FLAG_OPTIONAL) {
+			continue;
+		}
+		if (state->mapping.fields[i / CYAML_BITFIELD_BITS] &
+				(1 << (i % CYAML_BITFIELD_BITS))) {
+			continue;
+		}
+		cyaml__log(ctx->config, CYAML_LOG_ERROR,
+				"Missing required mapping field: %s\n",
+				state->mapping.schema[i].key);
+		return CYAML_ERR_MAPPING_FIELD_MISSING;
+	}
+
+	return CYAML_OK;
+}
+
+/**
  * Push a new entry onto the CYAML load context's stack.
  *
  * \param[in]  ctx     The CYAML loading context.
@@ -301,6 +414,10 @@ static cyaml_err_t cyaml__stack_push(
 		assert(schema->type == CYAML_MAPPING);
 		s.mapping.schema = schema->mapping.schema;
 		s.mapping.state = CYAML_MAPPING_STATE_KEY;
+		err = cyaml__mapping_bitfieid_create(&s);
+		if (err != CYAML_OK) {
+			return err;
+		}
 		break;
 	case CYAML_STATE_IN_SEQUENCE:
 		switch (schema->type) {
@@ -345,6 +462,14 @@ static cyaml_err_t cyaml__stack_pop(
 
 	if (idx == 0) {
 		return CYAML_ERR_INTERNAL_ERROR;
+	}
+
+	switch (ctx->state->state) {
+	case CYAML_STATE_IN_MAPPING:
+		cyaml__mapping_bitfieid_destroy(ctx->state);
+		break;
+	default:
+		break;
 	}
 
 	idx--;
@@ -1072,10 +1197,15 @@ static cyaml_err_t cyaml__read_mapping_key(
 			err = CYAML_ERR_INVALID_KEY;
 			goto out;
 		}
+		cyaml__mapping_bitfieid_set(ctx);
 		/* Toggle mapping sub-state to value */
 		ctx->state->mapping.state = CYAML_MAPPING_STATE_VALUE;
 		break;
 	case CYAML_EVT_MAPPING_END:
+		err = cyaml__mapping_bitfieid_validate(ctx);
+		if (err != CYAML_OK) {
+			goto out;
+		}
 		err = cyaml__stack_pop(ctx);
 		if (err != CYAML_OK) {
 			goto out;
