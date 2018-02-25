@@ -1205,7 +1205,14 @@ static cyaml_err_t cyaml__read_mapping_key(
 		cyaml__log(ctx->config, CYAML_LOG_INFO, "[%s]\n", key);
 
 		if (ctx->state->mapping.schema_idx == CYAML_SCHEMA_IDX_NONE) {
-			err = CYAML_ERR_INVALID_KEY;
+			if (!(ctx->config->flags &
+					CYAML_CFG_IGNORE_UNKNOWN_KEYS)) {
+				cyaml__log(ctx->config, CYAML_LOG_DEBUG,
+						"Unexpected key: %s\n", key);
+				err = CYAML_ERR_INVALID_KEY;
+				goto out;
+			}
+			err = cyaml__consume_ignored_value(ctx, cyaml_event);
 			goto out;
 		}
 		cyaml__mapping_bitfieid_set(ctx);
