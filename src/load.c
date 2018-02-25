@@ -422,6 +422,9 @@ static cyaml_err_t cyaml__stack_push(
 	case CYAML_STATE_IN_SEQUENCE:
 		switch (schema->type) {
 		case CYAML_SEQUENCE_FIXED:
+			if (schema->sequence.min != schema->sequence.max) {
+				return CYAML_ERR_SEQUENCE_FIXED_COUNT;
+			}
 			/* Fall through. */
 		case CYAML_SEQUENCE:
 			s.sequence.count_data = ctx->state->data +
