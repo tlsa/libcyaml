@@ -1012,6 +1012,14 @@ static cyaml_err_t cyaml__new_sequence_entry(
 	uint8_t *value_data = state->data;
 	const cyaml_schema_type_t *schema = state->schema;
 
+	if (state->sequence.count + 1 > state->schema->sequence.max) {
+		cyaml__log(ctx->config, CYAML_LOG_ERROR,
+				"Excessive entries (%"PRIu32" max) "
+				"in sequence.\n",
+				state->schema->sequence.max);
+		return CYAML_ERR_SEQUENCE_ENTRIES_MAX;
+	}
+
 	err = cyaml__data_handle_pointer(ctx, schema, event, &value_data);
 	if (err != CYAML_OK) {
 		return err;
