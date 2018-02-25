@@ -1319,6 +1319,16 @@ static cyaml_err_t cyaml__read_sequence(
 		err = cyaml__new_sequence_entry(ctx, &event);
 		break;
 	case CYAML_EVT_SEQ_END:
+		if (state->sequence.count < state->schema->sequence.min) {
+			cyaml__log(ctx->config, CYAML_LOG_ERROR,
+					"Insufficient entries "
+					"(%"PRIu32" of %"PRIu32" min) "
+					"in sequence.\n",
+					state->sequence.count,
+					state->schema->sequence.min);
+			err = CYAML_ERR_SEQUENCE_ENTRIES_MIN;
+			goto out;
+		}
 		cyaml__log(ctx->config, CYAML_LOG_DEBUG, "Sequence count: %u\n",
 				state->sequence.count);
 		err = cyaml__stack_pop(ctx);
