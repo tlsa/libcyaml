@@ -31,6 +31,12 @@ arranged in memory.
   conform to your schema.
 * Uses standard `libyaml` library for low-level YAML read / write.
 
+Status
+------
+
+Under development.  Until a release is made, the API may change, and
+various features may not yet be implemented.  Feedback welcome.
+
 Building
 --------
 
