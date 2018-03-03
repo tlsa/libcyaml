@@ -17,6 +17,20 @@ arranged in memory.
 * Make it easy to load YAML into client's custom C data structures.
 * Good compromise between flexibility and simplicity.
 
+### Features
+
+* Load, Save and Free functions.
+* Reads and writes arbitrary client data structures.
+* Schema-driven, allowing control over permitted YAML, for example:
+    - Required / optional mapping fields.
+    - Allowed / disallowed values.
+    - Minimum / maximum sequence entry count.
+    - etc...
+* Enumerations and flag words.
+* YAML backtraces make it simple for users to fix their YAML to
+  conform to your schema.
+* Uses standard `libyaml` library for low-level YAML read / write.
+
 Building
 --------
 
