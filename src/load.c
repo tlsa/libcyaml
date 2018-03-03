@@ -570,6 +570,47 @@ static cyaml_err_t cyaml__data_handle_pointer(
 }
 
 /**
+ * Dump a backtrace to the log.
+ *
+ * \param[in]  ctx     The CYAML loading context.
+ */
+static void cyaml__backtrace(
+		cyaml_ctx_t *ctx)
+{
+	if (ctx->stack_idx > 1) {
+		cyaml__log(ctx->config, CYAML_LOG_ERROR, "Backtrace:\n");
+	}
+
+	for (uint32_t idx = ctx->stack_idx - 1; idx != 0; idx--) {
+		cyaml_state_t *state = ctx->stack + idx;
+		switch (state->state) {
+		case CYAML_STATE_IN_MAPPING:
+			if (state->mapping.schema_idx !=
+					CYAML_SCHEMA_IDX_NONE) {
+				cyaml__log(ctx->config, CYAML_LOG_ERROR,
+						"  in mapping field: %s\n",
+						state->mapping.schema[
+						state->mapping.schema_idx].key);
+			} else {
+				cyaml__log(ctx->config, CYAML_LOG_ERROR,
+						"  in mapping:\n");
+			}
+			break;
+		case CYAML_STATE_IN_SEQUENCE:
+			cyaml__log(ctx->config, CYAML_LOG_ERROR,
+					"  in sequence entry: %"PRIu32"\n",
+					state->sequence.count);
+			break;
+		default:
+			/** \todo \ref CYAML_STATE_IN_DOC handling for multi
+			 *        document streams.
+			 */
+			break;
+		}
+	}
+}
+
+/**
  * Read a value of type \ref CYAML_INT.
  *
  * \param[in]  ctx     The CYAML loading context.
@@ -1422,6 +1463,7 @@ static cyaml_err_t cyaml__load(
 out:
 	if (err != CYAML_OK) {
 		cyaml_free(config, schema, data);
+		cyaml__backtrace(&ctx);
 	}
 	while (ctx.stack_idx > 0) {
 		cyaml__stack_pop(&ctx);
