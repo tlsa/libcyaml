@@ -35,6 +35,7 @@ typedef enum cyaml_type {
 	 * sequence of strings.
 	 */
 	CYAML_FLAGS,
+	CYAML_FLOAT,    /**< Value is floating point. */
 	CYAML_STRING,   /**< Value is a string. */
 	/**
 	 * Value is a mapping.  Values of this type require mapping schema
