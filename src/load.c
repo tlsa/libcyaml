@@ -733,6 +733,117 @@ static cyaml_err_t cyaml__read_enum(
 }
 
 /**
+ * Helper to read \ref CYAML_FLOAT of size `sizeof(float)`.
+ *
+ * \param[in]  ctx     The CYAML loading context.
+ * \param[in]  schema  The schema for the value to be read.
+ * \param[in]  value   String containing scaler value.
+ * \param[in]  data    The place to write the value in the output data.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__read_float_f(
+		const cyaml_ctx_t *ctx,
+		const cyaml_schema_type_t *schema,
+		const char *value,
+		uint8_t *data)
+{
+	char *end = NULL;
+	float temp = strtof(value, &end);
+
+	CYAML_UNUSED(ctx);
+	assert(schema->data_size == sizeof(temp));
+
+	if (end == value || errno == ERANGE) {
+		return CYAML_ERR_INVALID_VALUE;
+	}
+
+	memcpy(data, &temp, sizeof(temp));
+
+	return CYAML_OK;
+}
+
+/**
+ * Helper to read \ref CYAML_FLOAT of size `sizeof(double)`.
+ *
+ * \param[in]  ctx     The CYAML loading context.
+ * \param[in]  schema  The schema for the value to be read.
+ * \param[in]  value   String containing scaler value.
+ * \param[in]  data    The place to write the value in the output data.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__read_float_d(
+		const cyaml_ctx_t *ctx,
+		const cyaml_schema_type_t *schema,
+		const char *value,
+		uint8_t *data)
+{
+	char *end = NULL;
+	double temp = strtod(value, &end);
+
+	CYAML_UNUSED(ctx);
+	assert(schema->data_size == sizeof(temp));
+
+	if (end == value || errno == ERANGE) {
+		return CYAML_ERR_INVALID_VALUE;
+	}
+
+	memcpy(data, &temp, sizeof(temp));
+
+	return CYAML_OK;
+}
+
+/**
+ * Read a value of type \ref CYAML_FLOAT.
+ *
+ * The `data_size` of the schema entry must be the size of a known
+ * floating point C type.
+ *
+ * \note The `long double` type was causing problems, so it isn't currently
+ *       supported.
+ *
+ * \param[in]  ctx     The CYAML loading context.
+ * \param[in]  schema  The schema for the value to be read.
+ * \param[in]  value   String containing scaler value.
+ * \param[in]  data    The place to write the value in the output data.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__read_float(
+		const cyaml_ctx_t *ctx,
+		const cyaml_schema_type_t *schema,
+		const char *value,
+		uint8_t *data)
+{
+	typedef cyaml_err_t (*cyaml_float_fn)(
+			const cyaml_ctx_t *ctx,
+			const cyaml_schema_type_t *schema,
+			const char *value,
+			uint8_t *data_target);
+	struct float_fns {
+		size_t size;
+		cyaml_float_fn func;
+	};
+	static const struct float_fns fns[] = {
+		{
+			.size = sizeof(float),
+			.func = cyaml__read_float_f,
+		},
+		{
+			.size = sizeof(double),
+			.func = cyaml__read_float_d,
+		},
+	};
+
+	for (unsigned i = 0; i < CYAML_ARRAY_LEN(fns); i++) {
+		if (fns[i].size == schema->data_size) {
+			assert(fns[i].func != NULL);
+			return fns[i].func(ctx, schema, value, data);
+		}
+	}
+
+	return CYAML_ERR_INVALID_DATA_SIZE;
+}
+
+/**
  * Read a value of type \ref CYAML_STRING.
  *
  * \param[in]  ctx     The CYAML loading context.
@@ -790,6 +901,7 @@ static cyaml_err_t cyaml__read_scalar_value(
 		[CYAML_UINT]   = cyaml__read_uint,
 		[CYAML_BOOL]   = cyaml__read_bool,
 		[CYAML_ENUM]   = cyaml__read_enum,
+		[CYAML_FLOAT]  = cyaml__read_float,
 		[CYAML_STRING] = cyaml__read_string,
 	};
 
@@ -995,10 +1107,11 @@ static cyaml_err_t cyaml__read_value(
 	}
 
 	switch (schema->type) {
-	case CYAML_INT:  /* Fall through. */
-	case CYAML_UINT: /* Fall through. */
-	case CYAML_BOOL: /* Fall through. */
-	case CYAML_ENUM: /* Fall through. */
+	case CYAML_INT:   /* Fall through. */
+	case CYAML_UINT:  /* Fall through. */
+	case CYAML_BOOL:  /* Fall through. */
+	case CYAML_ENUM:  /* Fall through. */
+	case CYAML_FLOAT: /* Fall through. */
 	case CYAML_STRING:
 		if (cyaml_event != CYAML_EVT_SCALAR) {
 			return CYAML_ERR_INVALID_VALUE;
