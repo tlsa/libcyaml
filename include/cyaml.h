@@ -462,6 +462,36 @@ typedef enum cyaml_err {
 }
 
 /**
+ * Value schema helper macro for values with \ref CYAML_FLOAT type.
+ *
+ * \param[in]  _flags         Any behavioural flags relevant to this value.
+ * \param[in]  _type          The C type for this value.
+ */
+#define CYAML_TYPE_FLOAT( \
+		_flags, _type) \
+	.type = CYAML_FLOAT, \
+	.flags = _flags, \
+	.data_size = sizeof(_type)
+
+/**
+ * Mapping schema helper macro for keys with \ref CYAML_FLOAT type.
+ *
+ * \param[in]  _key        String defining the YAML mapping key for this value.
+ * \param[in]  _flags      Any behavioural flags relevant to this value.
+ * \param[in]  _structure  The structure corresponding to the mapping.
+ * \param[in]  _member     The member in _structure for this mapping value.
+ */
+#define CYAML_MAPPING_FLOAT( \
+		_key, _flags, _structure, _member) \
+{ \
+	.key = _key, \
+	.value = { \
+		CYAML_TYPE_FLOAT(_flags, ((_structure *)NULL)->_member), \
+	}, \
+	.data_offset = offsetof(_structure, _member) \
+}
+
+/**
  * Value schema helper macro for values with \ref CYAML_STRING type.
  *
  * \note If the string is an array (`char str[N];`) then the \ref
