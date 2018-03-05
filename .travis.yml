@@ -1,0 +1,11 @@
+language: c
+sudo: required
+before_install:
+    - sudo apt-get update -qq
+    - sudo apt-get install -y valgrind libyaml-dev
+compiler:
+    - clang
+    - gcc
+script:
+    - make test
+    - make valgrind-quiet
