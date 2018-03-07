@@ -675,9 +675,56 @@ static bool test_load_mapping_entry_mapping_ptr(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
-	UNUSED(config);
-	ttest_ctx_t tc = ttest_start(report, __func__, NULL, NULL);
-	return ttest_todo(&tc);
+	struct value_s {
+		short a;
+		long b;
+	} value;
+	static const unsigned char yaml[] =
+		"mapping:\n"
+		"    a: 123\n"
+		"    b: 9999\n";
+	struct target_struct {
+		struct value_s *test_value_mapping;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_mapping test_mapping_schema[] = {
+		CYAML_MAPPING_INT("a", CYAML_FLAG_DEFAULT, struct value_s, a),
+		CYAML_MAPPING_INT("b", CYAML_FLAG_DEFAULT, struct value_s, b),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_mapping mapping_schema[] = {
+		CYAML_MAPPING_MAPPING_PTR("mapping", CYAML_FLAG_POINTER,
+				struct target_struct, test_value_mapping,
+				test_mapping_schema),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	memset(&value, 0, sizeof(value));
+	value.a = 123;
+	value.b = 9999;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (memcmp(data_tgt->test_value_mapping, &value, sizeof(value)) != 0) {
+		return ttest_fail(&tc, "Incorrect value");
+	}
+
+	return ttest_pass(&tc);
 }
 
 static bool test_load_mapping_entry_sequence_int(
