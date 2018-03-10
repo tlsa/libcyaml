@@ -550,6 +550,9 @@ static cyaml_err_t cyaml__data_handle_pointer(
 		}
 		memset(value_data + offset, 0, delta);
 
+		cyaml__log(ctx->config, CYAML_LOG_DEBUG,
+				"Allocation: %p\n", value_data);
+
 		if (cyaml_in_sequence(ctx)) {
 			/* Updated the in sequence state so it knows the new
 			 * allocation address. */
