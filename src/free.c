@@ -48,36 +48,18 @@ static void cyaml__free(
  *
  * \param[in]  cfg              The client's CYAML library config.
  * \param[in]  sequence_schema  The schema describing how to free `data`.
+ * \param[in]  count            The sequence's entry count.
  * \param[in]  data             The data structure to be freed.
  */
 static void cyaml__free_sequence(
 		const cyaml_config_t *cfg,
 		const cyaml_schema_type_t *sequence_schema,
+		uint64_t count,
 		uint8_t *data)
 {
 	const cyaml_schema_type_t *schema = sequence_schema->sequence.schema;
 	uint32_t data_size = schema->data_size;
-	cyaml_err_t err;
-	uint64_t count;
 
-	if (sequence_schema->type == CYAML_SEQUENCE) {
-		count = cyaml_data_read(sequence_schema->sequence.count_size,
-				data + sequence_schema->sequence.count_offset,
-				&err);
-		if (err != CYAML_OK) {
-			return;
-		}
-	} else {
-		assert(sequence_schema->type == CYAML_SEQUENCE_FIXED);
-		count = sequence_schema->sequence.max;
-	}
-
-	if (sequence_schema->flags & CYAML_FLAG_POINTER) {
-		data = (void *)cyaml_data_read(sizeof(void *), data, &err);
-		if ((data == NULL) || (err != CYAML_OK)) {
-			return;
-		}
-	}
 	if (schema->flags & CYAML_FLAG_POINTER) {
 		data_size = sizeof(data);
 	}
@@ -114,26 +96,40 @@ static void cyaml__free(
 		const cyaml_schema_type_t *schema,
 		uint8_t * const data)
 {
+	uint8_t *data_target = data;
 	if (data == NULL) {
 		return;
-	}
-	if (schema->type == CYAML_MAPPING) {
-		cyaml__free_mapping(cfg, schema, data);
-	} else if (schema->type == CYAML_SEQUENCE ||
-	           schema->type == CYAML_SEQUENCE_FIXED) {
-		cyaml__free_sequence(cfg, schema, data);
 	}
 
 	if (schema->flags & CYAML_FLAG_POINTER) {
 		cyaml_err_t err;
-		char *alloacted_data = (void *)cyaml_data_read(
+		data_target = (void *)cyaml_data_read(
 				sizeof(char *), data, &err);
-		if (err != CYAML_OK) {
+		if ((err != CYAML_OK) || (data_target == NULL)) {
 			return;
 		}
-		cyaml__log(cfg, CYAML_LOG_DEBUG,
-				"Freeing allocation: %p\n", alloacted_data);
-		free(alloacted_data);
+	}
+
+	if (schema->type == CYAML_MAPPING) {
+		cyaml__free_mapping(cfg, schema, data_target);
+	} else if (schema->type == CYAML_SEQUENCE ||
+	           schema->type == CYAML_SEQUENCE_FIXED) {
+		uint64_t count = schema->sequence.max;
+		if (schema->type == CYAML_SEQUENCE) {
+			cyaml_err_t err;
+			count = cyaml_data_read(schema->sequence.count_size,
+					data + schema->sequence.count_offset,
+					&err);
+			if (err != CYAML_OK) {
+				return;
+			}
+		}
+		cyaml__free_sequence(cfg, schema, count, data_target);
+	}
+
+	if (schema->flags & CYAML_FLAG_POINTER) {
+		cyaml__log(cfg, CYAML_LOG_DEBUG, "Freeing: %p\n", data_target);
+		free(data_target);
 	}
 }
 
@@ -149,7 +145,6 @@ cyaml_err_t cyaml_free(
 	if (schema == NULL) {
 		return CYAML_ERR_BAD_PARAM_NULL_SCHEMA;
 	}
-	cyaml__free(config, schema, data);
-	free(data);
+	cyaml__free(config, schema, (void *)&data);
 	return CYAML_OK;
 }

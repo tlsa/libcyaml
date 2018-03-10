@@ -550,6 +550,9 @@ static cyaml_err_t cyaml__data_handle_pointer(
 		}
 		memset(value_data + offset, 0, delta);
 
+		cyaml__log(ctx->config, CYAML_LOG_DEBUG,
+				"Allocation: %p\n", value_data);
+
 		if (cyaml_in_sequence(ctx)) {
 			/* Updated the in sequence state so it knows the new
 			 * allocation address. */
@@ -1308,8 +1311,8 @@ static cyaml_err_t cyaml__read_doc(
 
 	switch (cyaml__get_event_type(&event)) {
 	case CYAML_EVT_MAPPING_START:
-		err = cyaml__stack_push(ctx, CYAML_STATE_IN_MAPPING,
-				ctx->state->schema, ctx->state->data);
+		err = cyaml__read_value(ctx, ctx->state->schema,
+				ctx->state->data, &event);
 		break;
 	case CYAML_EVT_DOC_END:
 		err = cyaml__stack_pop(ctx);
@@ -1545,16 +1548,10 @@ static cyaml_err_t cyaml__load(
 	};
 	cyaml_err_t err = CYAML_OK;
 
-	data = calloc(1, schema->data_size);
-	if (data == NULL) {
-		return CYAML_ERR_OOM;
-	}
-
-	err = cyaml__stack_push(&ctx, CYAML_STATE_START, schema, data);
+	err = cyaml__stack_push(&ctx, CYAML_STATE_START, schema, &data);
 	if (err != CYAML_OK) {
 		goto out;
 	}
-	ctx.state->data = data;
 
 	do {
 		cyaml__log(ctx.config, CYAML_LOG_DEBUG, "Handle state %s\n",

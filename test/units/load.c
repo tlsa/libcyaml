@@ -49,7 +49,7 @@ static bool test_load_mapping_entry_int_pos(
 		CYAML_MAPPING_END
 	};
 	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -90,7 +90,7 @@ static bool test_load_mapping_entry_int_neg(
 		CYAML_MAPPING_END
 	};
 	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -131,7 +131,7 @@ static bool test_load_mapping_entry_uint(
 		CYAML_MAPPING_END
 	};
 	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -172,7 +172,7 @@ static bool test_load_mapping_entry_float(
 		CYAML_MAPPING_END
 	};
 	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -215,7 +215,7 @@ static bool test_load_mapping_entry_double(
 		CYAML_MAPPING_END
 	};
 	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -258,7 +258,7 @@ static bool test_load_mapping_entry_bool_true(
 		CYAML_MAPPING_END
 	};
 	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -299,7 +299,7 @@ static bool test_load_mapping_entry_bool_false(
 		CYAML_MAPPING_END
 	};
 	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -351,7 +351,7 @@ static bool test_load_mapping_entry_enum(
 		CYAML_MAPPING_END
 	};
 	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -392,7 +392,7 @@ static bool test_load_mapping_entry_string(
 		CYAML_MAPPING_END
 	};
 	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -444,7 +444,7 @@ static bool test_load_mapping_entry_string_ptr(
 		CYAML_MAPPING_END
 	};
 	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -487,7 +487,7 @@ static bool test_load_mapping_entry_ignore_deep(
 		CYAML_MAPPING_END
 	};
 	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -526,7 +526,7 @@ static bool test_load_mapping_entry_ignore_scalar(
 		CYAML_MAPPING_END
 	};
 	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -588,7 +588,7 @@ static bool test_load_mapping_entry_flags(
 		CYAML_MAPPING_END
 	};
 	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -642,7 +642,7 @@ static bool test_load_mapping_entry_mapping(
 		CYAML_MAPPING_END
 	};
 	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -698,7 +698,7 @@ static bool test_load_mapping_entry_mapping_ptr(
 		CYAML_MAPPING_END
 	};
 	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -754,7 +754,7 @@ static bool test_load_mapping_entry_sequence_int(
 		CYAML_MAPPING_END
 	};
 	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -822,7 +822,7 @@ static bool test_load_mapping_entry_sequence_enum(
 		CYAML_MAPPING_END
 	};
 	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -882,7 +882,7 @@ static bool test_load_mapping_entry_sequence_uint(
 		CYAML_MAPPING_END
 	};
 	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -944,7 +944,7 @@ static bool test_load_mapping_entry_sequence_bool(
 		CYAML_MAPPING_END
 	};
 	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -1048,7 +1048,7 @@ static bool test_load_mapping_entry_sequence_sequence_fixed_int(
 		CYAML_MAPPING_END,
 	};
 	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -1122,7 +1122,7 @@ static bool test_load_mapping_entry_sequence_sequence_fixed_ptr_int(
 		CYAML_MAPPING_END,
 	};
 	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -1209,7 +1209,7 @@ static bool test_load_mapping_entry_sequence_sequence_fixed_flat_int(
 		CYAML_MAPPING_END,
 	};
 	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -1278,7 +1278,7 @@ static bool test_load_mapping_entry_sequence_ptr_int(
 		CYAML_MAPPING_END
 	};
 	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -1346,7 +1346,7 @@ static bool test_load_mapping_entry_sequence_ptr_enum(
 		CYAML_MAPPING_END
 	};
 	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -1406,7 +1406,7 @@ static bool test_load_mapping_entry_sequence_ptr_uint(
 		CYAML_MAPPING_END
 	};
 	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -1468,7 +1468,7 @@ static bool test_load_mapping_entry_sequence_ptr_bool(
 		CYAML_MAPPING_END
 	};
 	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -1572,7 +1572,7 @@ static bool test_load_mapping_entry_sequence_ptr_sequence_fixed_int(
 		CYAML_MAPPING_END,
 	};
 	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -1646,7 +1646,7 @@ static bool test_load_mapping_entry_sequence_ptr_sequence_fixed_ptr_int(
 		CYAML_MAPPING_END,
 	};
 	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -1733,7 +1733,7 @@ static bool test_load_mapping_entry_sequence_ptr_sequence_fixed_flat_int(
 		CYAML_MAPPING_END,
 	};
 	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
