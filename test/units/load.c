@@ -26,13 +26,15 @@ typedef struct test_data {
 	const struct cyaml_schema_type *schema;
 } test_data_t;
 
-void cyaml_cleanup(void *data)
+/* Common cleanup function to free data loaded by tests. */
+static void cyaml_cleanup(void *data)
 {
 	struct test_data *td = data;
 
 	cyaml_free(td->config, td->schema, *(td->data));
 }
 
+/* Test loading a positive signed integer. */
 static bool test_load_mapping_entry_int_pos(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -74,6 +76,7 @@ static bool test_load_mapping_entry_int_pos(
 	return ttest_pass(&tc);
 }
 
+/* Test loading a negative signed integer. */
 static bool test_load_mapping_entry_int_neg(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -115,6 +118,7 @@ static bool test_load_mapping_entry_int_neg(
 	return ttest_pass(&tc);
 }
 
+/* Test loading an unsigned integer. */
 static bool test_load_mapping_entry_uint(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -156,6 +160,7 @@ static bool test_load_mapping_entry_uint(
 	return ttest_pass(&tc);
 }
 
+/* Test loading a floating point value as a float. */
 static bool test_load_mapping_entry_float(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -199,6 +204,7 @@ static bool test_load_mapping_entry_float(
 	return ttest_pass(&tc);
 }
 
+/* Test loading a floating point value as a double. */
 static bool test_load_mapping_entry_double(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -242,6 +248,7 @@ static bool test_load_mapping_entry_double(
 	return ttest_pass(&tc);
 }
 
+/* Test loading a boolean value (true). */
 static bool test_load_mapping_entry_bool_true(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -283,6 +290,7 @@ static bool test_load_mapping_entry_bool_true(
 	return ttest_pass(&tc);
 }
 
+/* Test loading a boolean value (false). */
 static bool test_load_mapping_entry_bool_false(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -324,6 +332,7 @@ static bool test_load_mapping_entry_bool_false(
 	return ttest_pass(&tc);
 }
 
+/* Test loading an enumeration. */
 static bool test_load_mapping_entry_enum(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -376,6 +385,7 @@ static bool test_load_mapping_entry_enum(
 	return ttest_pass(&tc);
 }
 
+/* Test loading a string to a character array. */
 static bool test_load_mapping_entry_string(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -427,6 +437,7 @@ static bool test_load_mapping_entry_string(
 	return ttest_pass(&tc);
 }
 
+/* Test loading a string to a allocated char pointer. */
 static bool test_load_mapping_entry_string_ptr(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -469,6 +480,7 @@ static bool test_load_mapping_entry_string_ptr(
 	return ttest_pass(&tc);
 }
 
+/* Test loading an ignored value with descendants. */
 static bool test_load_mapping_entry_ignore_deep(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -512,6 +524,7 @@ static bool test_load_mapping_entry_ignore_deep(
 	return ttest_pass(&tc);
 }
 
+/* Test loading an ignored value. */
 static bool test_load_mapping_entry_ignore_scalar(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -551,6 +564,7 @@ static bool test_load_mapping_entry_ignore_scalar(
 	return ttest_pass(&tc);
 }
 
+/* Test loading a flag word. */
 static bool test_load_mapping_entry_flags(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -615,6 +629,7 @@ static bool test_load_mapping_entry_flags(
 	return ttest_pass(&tc);
 }
 
+/* Test loading a mapping, to an internal structure. */
 static bool test_load_mapping_entry_mapping(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -671,6 +686,7 @@ static bool test_load_mapping_entry_mapping(
 	return ttest_pass(&tc);
 }
 
+/* Test loading a mapping, to an allocated structure. */
 static bool test_load_mapping_entry_mapping_ptr(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -727,6 +743,7 @@ static bool test_load_mapping_entry_mapping_ptr(
 	return ttest_pass(&tc);
 }
 
+/* Test loading a sequence of integers into an int[]. */
 static bool test_load_mapping_entry_sequence_int(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -787,6 +804,7 @@ static bool test_load_mapping_entry_sequence_int(
 	return ttest_pass(&tc);
 }
 
+/* Test loading a sequence of enums into an enum test_enum[]. */
 static bool test_load_mapping_entry_sequence_enum(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -855,6 +873,7 @@ static bool test_load_mapping_entry_sequence_enum(
 	return ttest_pass(&tc);
 }
 
+/* Test loading a sequence of unsigned integers into an unsigned[]. */
 static bool test_load_mapping_entry_sequence_uint(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -915,6 +934,7 @@ static bool test_load_mapping_entry_sequence_uint(
 	return ttest_pass(&tc);
 }
 
+/* Test loading a sequence of boolean values into an bool[]. */
 static bool test_load_mapping_entry_sequence_bool(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -977,6 +997,7 @@ static bool test_load_mapping_entry_sequence_bool(
 	return ttest_pass(&tc);
 }
 
+/* Test loading a sequence of flag sequences into an array of flag words. */
 static bool test_load_mapping_entry_sequence_flags(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -986,6 +1007,7 @@ static bool test_load_mapping_entry_sequence_flags(
 	return ttest_todo(&tc);
 }
 
+/* Test loading a sequence of strings into an array of strings. */
 static bool test_load_mapping_entry_sequence_string(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -995,6 +1017,7 @@ static bool test_load_mapping_entry_sequence_string(
 	return ttest_todo(&tc);
 }
 
+/* Test loading a sequence of mappings into an array of structures. */
 static bool test_load_mapping_entry_sequence_mapping(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1004,6 +1027,7 @@ static bool test_load_mapping_entry_sequence_mapping(
 	return ttest_todo(&tc);
 }
 
+/* Test loading a sequence of mappings into an array of pointers to structs. */
 static bool test_load_mapping_entry_sequence_mapping_ptr(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1013,6 +1037,7 @@ static bool test_load_mapping_entry_sequence_mapping_ptr(
 	return ttest_todo(&tc);
 }
 
+/* Test loading a sequence of sequences of int into int[4][3]. */
 static bool test_load_mapping_entry_sequence_sequence_fixed_int(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1087,6 +1112,7 @@ static bool test_load_mapping_entry_sequence_sequence_fixed_int(
 	return ttest_pass(&tc);
 }
 
+/* Test loading a sequence of sequences of int into int*[4]. */
 static bool test_load_mapping_entry_sequence_sequence_fixed_ptr_int(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1161,6 +1187,7 @@ static bool test_load_mapping_entry_sequence_sequence_fixed_ptr_int(
 	return ttest_pass(&tc);
 }
 
+/* Test loading a sequence of sequences of int into one-dimensional int[]. */
 static bool test_load_mapping_entry_sequence_sequence_fixed_flat_int(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1251,6 +1278,7 @@ static bool test_load_mapping_entry_sequence_sequence_fixed_flat_int(
 	return ttest_pass(&tc);
 }
 
+/* Test loading a sequence of integers to allocated int* array. */
 static bool test_load_mapping_entry_sequence_ptr_int(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1311,6 +1339,7 @@ static bool test_load_mapping_entry_sequence_ptr_int(
 	return ttest_pass(&tc);
 }
 
+/* Test loading a sequence of enums to allocated enum test_enum* array. */
 static bool test_load_mapping_entry_sequence_ptr_enum(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1379,6 +1408,7 @@ static bool test_load_mapping_entry_sequence_ptr_enum(
 	return ttest_pass(&tc);
 }
 
+/* Test loading a sequence of unsigned integers to allocated unsigned* array. */
 static bool test_load_mapping_entry_sequence_ptr_uint(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1439,6 +1469,7 @@ static bool test_load_mapping_entry_sequence_ptr_uint(
 	return ttest_pass(&tc);
 }
 
+/* Test loading a sequence of boolean values to allocated bool* array. */
 static bool test_load_mapping_entry_sequence_ptr_bool(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1501,6 +1532,7 @@ static bool test_load_mapping_entry_sequence_ptr_bool(
 	return ttest_pass(&tc);
 }
 
+/* Test loading a sequence of flag sequences to allocated flag words array. */
 static bool test_load_mapping_entry_sequence_ptr_flags(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1510,6 +1542,7 @@ static bool test_load_mapping_entry_sequence_ptr_flags(
 	return ttest_todo(&tc);
 }
 
+/* Test loading a sequence of strings to allocated array of strings. */
 static bool test_load_mapping_entry_sequence_ptr_string(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1519,6 +1552,7 @@ static bool test_load_mapping_entry_sequence_ptr_string(
 	return ttest_todo(&tc);
 }
 
+/* Test loading a sequence of mappings to allocated array mapping structs. */
 static bool test_load_mapping_entry_sequence_ptr_mapping(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1528,6 +1562,8 @@ static bool test_load_mapping_entry_sequence_ptr_mapping(
 	return ttest_todo(&tc);
 }
 
+/* Test loading a sequence of mappings to allocated array of pointers to
+ * mapping structs. */
 static bool test_load_mapping_entry_sequence_ptr_mapping_ptr(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1537,6 +1573,8 @@ static bool test_load_mapping_entry_sequence_ptr_mapping_ptr(
 	return ttest_todo(&tc);
 }
 
+/* Test loading a sequence of sequences of integers to allocated array
+ * of int[3]. */
 static bool test_load_mapping_entry_sequence_ptr_sequence_fixed_int(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1611,6 +1649,8 @@ static bool test_load_mapping_entry_sequence_ptr_sequence_fixed_int(
 	return ttest_pass(&tc);
 }
 
+/* Test loading a sequence of sequences of integers to allocated array
+ * of allocated arrays of integers. */
 static bool test_load_mapping_entry_sequence_ptr_sequence_fixed_ptr_int(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1685,6 +1725,8 @@ static bool test_load_mapping_entry_sequence_ptr_sequence_fixed_ptr_int(
 	return ttest_pass(&tc);
 }
 
+/* Test loading a sequence of sequences of integers a one-dimensional allocated
+ * array of integers. */
 static bool test_load_mapping_entry_sequence_ptr_sequence_fixed_flat_int(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1775,6 +1817,14 @@ static bool test_load_mapping_entry_sequence_ptr_sequence_fixed_flat_int(
 	return ttest_pass(&tc);
 }
 
+/**
+ * Run the YAML loading unit tests.
+ *
+ * \param[in]  rc         The ttest report context.
+ * \param[in]  log_level  CYAML log level.
+ * \param[in]  log_fn     CYAML logging function, or NULL.
+ * \return true iff all unit tests pass, otherwise false.
+ */
 bool load_tests(
 		ttest_report_ctx_t *rc,
 		cyaml_log_t log_level,
