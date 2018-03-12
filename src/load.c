@@ -753,8 +753,10 @@ static cyaml_err_t cyaml__read_float_f(
 	char *end = NULL;
 	float temp = strtof(value, &end);
 
-	CYAML_UNUSED(ctx);
 	assert(schema->data_size == sizeof(temp));
+
+	CYAML_UNUSED(ctx);
+	CYAML_UNUSED(schema);
 
 	if (end == value || errno == ERANGE) {
 		return CYAML_ERR_INVALID_VALUE;
@@ -783,8 +785,10 @@ static cyaml_err_t cyaml__read_float_d(
 	char *end = NULL;
 	double temp = strtod(value, &end);
 
-	CYAML_UNUSED(ctx);
 	assert(schema->data_size == sizeof(temp));
+
+	CYAML_UNUSED(ctx);
+	CYAML_UNUSED(schema);
 
 	if (end == value || errno == ERANGE) {
 		return CYAML_ERR_INVALID_VALUE;
