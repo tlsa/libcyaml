@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: ISC
  *
- * Copyright (C) 2017 Michael Drake <tlsa@netsurf-browser.org>
+ * Copyright (C) 2017-2018 Michael Drake <tlsa@netsurf-browser.org>
  */
 
 #include <stdbool.h>
@@ -19,6 +19,7 @@
 
 #define UNUSED(_x) ((void)(_x))
 
+/* Test cyaml_free with NULL data. */
 static bool test_free_null_data(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -46,6 +47,7 @@ static bool test_free_null_data(
 	return ttest_pass(&tc);
 }
 
+/* Test cyaml_free with NULL config. */
 static bool test_free_null_config(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -63,6 +65,7 @@ static bool test_free_null_config(
 	return ttest_pass(&tc);
 }
 
+/* Test cyaml_free with NULL schema. */
 static bool test_free_null_schema(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -78,6 +81,14 @@ static bool test_free_null_schema(
 	return ttest_pass(&tc);
 }
 
+/**
+ * Run the CYAML freeing unit tests.
+ *
+ * \param[in]  rc         The ttest report context.
+ * \param[in]  log_level  CYAML log level.
+ * \param[in]  log_fn     CYAML logging function, or NULL.
+ * \return true iff all unit tests pass, otherwise false.
+ */
 bool free_tests(
 		ttest_report_ctx_t *rc,
 		cyaml_log_t log_level,

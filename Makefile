@@ -1,13 +1,13 @@
 # SPDX-License-Identifier: ISC
 #
-# Copyright (C) 2017 Michael Drake <tlsa@netsurf-browser.org>
+# Copyright (C) 2017-2018 Michael Drake <tlsa@netsurf-browser.org>
 
 VARIANT = debug
 VALID_VARIANTS := release debug
 
 ifneq ($(filter $(VARIANT),$(VALID_VARIANTS)),)
 else
-	$(error VARIANT must be 'release' (default) or 'debug')
+$(error VARIANT must be 'debug' (default) or 'release')
 endif
 
 .IMPLICIT =
