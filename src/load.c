@@ -487,17 +487,16 @@ static cyaml_err_t cyaml__stack_pop(
 }
 
 /**
- * Helper to check if our current state is \ref CYAML_STATE_IN_SEQUENCE.
+ * Helper to check if schema is for a \ref CYAML_SEQUENCE type.
  *
- * \param[in]  ctx    The CYAML loading context.
- * \return true iff current state is \ref CYAML_STATE_IN_SEQUENCE,
+ * \param[in]  schema  The schema entry for a type.
+ * \return true iff schema is for a \ref CYAML_SEQUENCE type,
  *         false otherwise.
  */
-static inline bool cyaml_in_sequence(cyaml_ctx_t *ctx)
+static inline bool cyaml__is_sequence(const cyaml_schema_type_t *schema)
 {
-	return ((ctx != NULL) &&
-	        (ctx->state != NULL) &&
-	        (ctx->state->state == CYAML_STATE_IN_SEQUENCE));
+	return ((schema->type == CYAML_SEQUENCE) ||
+	        (schema->type == CYAML_SEQUENCE_FIXED));
 }
 
 /**
@@ -539,7 +538,7 @@ static cyaml_err_t cyaml__data_handle_pointer(
 					event->data.scalar.value) + 1;
 		}
 
-		if (cyaml_in_sequence(ctx)) {
+		if (cyaml__is_sequence(schema)) {
 			/* Sequence; could be extending allocation. */
 			offset = schema->data_size * state->sequence.count;
 			value_data = state->sequence.data;
@@ -553,7 +552,7 @@ static cyaml_err_t cyaml__data_handle_pointer(
 		cyaml__log(ctx->config, CYAML_LOG_DEBUG,
 				"Allocation: %p\n", value_data);
 
-		if (cyaml_in_sequence(ctx)) {
+		if (cyaml__is_sequence(schema)) {
 			/* Updated the in sequence state so it knows the new
 			 * allocation address. */
 			state->sequence.data = value_data;
@@ -1105,8 +1104,7 @@ static cyaml_err_t cyaml__read_value(
 	cyaml_event_t cyaml_event = cyaml__get_event_type(event);
 	cyaml_err_t err = CYAML_OK;
 
-	if ((schema->type != CYAML_SEQUENCE) &&
-	    (schema->type != CYAML_SEQUENCE_FIXED)) {
+	if (!cyaml__is_sequence(schema)) {
 		/* Since sequences extend their allocation for each entry,
 		 * the're handled in the sequence-specific code.
 		 */
