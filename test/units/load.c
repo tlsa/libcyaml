@@ -1002,9 +1002,82 @@ static bool test_load_mapping_entry_sequence_flags(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
-	UNUSED(config);
-	ttest_ctx_t tc = ttest_start(report, __func__, NULL, NULL);
-	return ttest_todo(&tc);
+	enum test_flags {
+		TEST_FLAGS_NONE   = 0,
+		TEST_FLAGS_FIRST  = (1 << 0),
+		TEST_FLAGS_SECOND = (1 << 1),
+		TEST_FLAGS_THIRD  = (1 << 2),
+		TEST_FLAGS_FOURTH = (1 << 3),
+		TEST_FLAGS_FIFTH  = (1 << 4),
+		TEST_FLAGS_SIXTH  = (1 << 5),
+	} ref[3] = {
+		TEST_FLAGS_SECOND | TEST_FLAGS_FIFTH | 1024,
+		TEST_FLAGS_FIRST,
+		TEST_FLAGS_FOURTH | TEST_FLAGS_SIXTH
+	};
+	#define TEST_FLAGS__COUNT 6
+	static const char * const strings[TEST_FLAGS__COUNT] = {
+		"first",
+		"second",
+		"third",
+		"fourth",
+		"fifth",
+		"sixth",
+	};
+	static const unsigned char yaml[] =
+		"sequence:\n"
+		"    - - second\n"
+		"      - fifth\n"
+		"      - 1024\n"
+		"    - - first\n"
+		"    - - fourth\n"
+		"      - sixth\n";
+	struct target_struct {
+		enum test_flags seq[3];
+		uint32_t seq_count;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_type entry_schema = {
+		CYAML_TYPE_FLAGS(CYAML_FLAG_DEFAULT, *(data_tgt->seq),
+				strings, TEST_FLAGS__COUNT),
+	};
+	static const struct cyaml_schema_mapping mapping_schema[] = {
+		CYAML_MAPPING_SEQUENCE("sequence", CYAML_FLAG_DEFAULT,
+				struct target_struct, seq, &entry_schema,
+				0, CYAML_ARRAY_LEN(data_tgt->seq)),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (CYAML_ARRAY_LEN(ref) != data_tgt->seq_count) {
+		return ttest_fail(&tc, "Incorrect sequence count");
+	}
+
+	for (unsigned i = 0; i < CYAML_ARRAY_LEN(ref); i++) {
+		if (data_tgt->seq[i] != ref[i]) {
+			return ttest_fail(&tc, "Incorrect value (i=%u): "
+					"got: %i, expected: %i", i,
+					data_tgt->seq[i], ref[i]);
+		}
+	}
+
+	return ttest_pass(&tc);
 }
 
 /* Test loading a sequence of strings into an array of strings. */
