@@ -1908,9 +1908,74 @@ static bool test_load_mapping_entry_sequence_ptr_mapping_ptr(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
-	UNUSED(config);
-	ttest_ctx_t tc = ttest_start(report, __func__, NULL, NULL);
-	return ttest_todo(&tc);
+	struct value_s {
+		short a;
+		long b;
+	} ref[3] = {
+		{ .a =  123, .b =  9999, },
+		{ .a = 4000, .b = 62000, },
+		{ .a =    1, .b =   765, },
+	};
+	static const unsigned char yaml[] =
+		"sequence:\n"
+		"    - a: 123\n"
+		"      b: 9999\n"
+		"    - a: 4000\n"
+		"      b: 62000\n"
+		"    - a: 1\n"
+		"      b: 765\n";
+	struct target_struct {
+		struct value_s **seq;
+		uint32_t seq_count;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_mapping test_mapping_schema[] = {
+		CYAML_MAPPING_INT("a", CYAML_FLAG_DEFAULT, struct value_s, a),
+		CYAML_MAPPING_INT("b", CYAML_FLAG_DEFAULT, struct value_s, b),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type entry_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+				struct value_s, test_mapping_schema),
+	};
+	static const struct cyaml_schema_mapping mapping_schema[] = {
+		CYAML_MAPPING_SEQUENCE("sequence", CYAML_FLAG_POINTER,
+				struct target_struct, seq, &entry_schema,
+				0, CYAML_ARRAY_LEN(ref)),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (CYAML_ARRAY_LEN(ref) != data_tgt->seq_count) {
+		return ttest_fail(&tc, "Incorrect sequence count");
+	}
+
+	for (unsigned i = 0; i < CYAML_ARRAY_LEN(ref); i++) {
+		if (ref[i].a != data_tgt->seq[i]->a) {
+			return ttest_fail(&tc, "Incorrect value");
+		}
+		if (ref[i].b != data_tgt->seq[i]->b) {
+			return ttest_fail(&tc, "Incorrect value");
+		}
+	}
+
+	return ttest_pass(&tc);
 }
 
 /* Test loading a sequence of sequences of integers to allocated array
