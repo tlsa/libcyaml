@@ -1275,6 +1275,12 @@ static cyaml_err_t cyaml__read_stream(
 
 	switch (cyaml__get_event_type(&event)) {
 	case CYAML_EVT_DOC_START:
+		if (ctx->state->stream.doc_count == 1) {
+			cyaml__log(ctx->config, CYAML_LOG_WARNING,
+					"Ignoring second document in stream\n");
+			err = cyaml__stack_pop(ctx);
+			break;
+		}
 		ctx->state->stream.doc_count++;
 		err = cyaml__stack_push(ctx, CYAML_STATE_IN_DOC,
 				ctx->state->schema, ctx->state->data);
