@@ -64,7 +64,12 @@ typedef struct cyaml_state {
 	const cyaml_schema_type_t *schema;
 	/** Anonymous union for schema type specific state. */
 	union {
-		/** Additional state for values of \ref CYAML_MAPPING type. */
+		/** Additional state for \ref CYAML_STATE_IN_STREAM state. */
+		struct {
+			/** Number of documents read in stream. */
+			uint32_t doc_count;
+		} stream;
+		/** Additional state for \ref CYAML_STATE_IN_MAPPING state. */
 		struct {
 			const cyaml_schema_mapping_t *schema;
 			/** Bit field of mapping fields found. */
@@ -74,10 +79,7 @@ typedef struct cyaml_state {
 			uint16_t schema_idx;
 			uint16_t entries_count;
 		} mapping;
-		/**
-		 * Additional state for values of \ref CYAML_SEQUENCE and
-		 * \ref CYAML_SEQUENCE_FIXED types.
-		 */
+		/**  Additional state for \ref CYAML_STATE_IN_SEQUENCE state. */
 		struct {
 			uint8_t *data;
 			uint8_t *count_data;
@@ -1273,6 +1275,13 @@ static cyaml_err_t cyaml__read_stream(
 
 	switch (cyaml__get_event_type(&event)) {
 	case CYAML_EVT_DOC_START:
+		if (ctx->state->stream.doc_count == 1) {
+			cyaml__log(ctx->config, CYAML_LOG_WARNING,
+					"Ignoring second document in stream\n");
+			err = cyaml__stack_pop(ctx);
+			break;
+		}
+		ctx->state->stream.doc_count++;
 		err = cyaml__stack_push(ctx, CYAML_STATE_IN_DOC,
 				ctx->state->schema, ctx->state->data);
 		break;
