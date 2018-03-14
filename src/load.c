@@ -64,7 +64,7 @@ typedef struct cyaml_state {
 	const cyaml_schema_type_t *schema;
 	/** Anonymous union for schema type specific state. */
 	union {
-		/** Additional state for values of \ref CYAML_MAPPING type. */
+		/** Additional state for \ref CYAML_STATE_IN_MAPPING state. */
 		struct {
 			const cyaml_schema_mapping_t *schema;
 			/** Bit field of mapping fields found. */
@@ -74,10 +74,7 @@ typedef struct cyaml_state {
 			uint16_t schema_idx;
 			uint16_t entries_count;
 		} mapping;
-		/**
-		 * Additional state for values of \ref CYAML_SEQUENCE and
-		 * \ref CYAML_SEQUENCE_FIXED types.
-		 */
+		/**  Additional state for \ref CYAML_STATE_IN_SEQUENCE state. */
 		struct {
 			uint8_t *data;
 			uint8_t *count_data;
