@@ -848,6 +848,10 @@ extern void cyaml_log(
 /**
  * Load a YAML document from a file at the given path.
  *
+ * \note In the event of the top-level mapping having only optional fields,
+ *       and the YAML not setting any of them, this function can return \ref
+ *       CYAML_OK, and `NULL` in the `data_out` parameter.
+ *
  * \param[in]  path       Path to YAML file to load.
  * \param[in]  config     Client's CYAML configuration structure.
  * \param[in]  schema     CYAML schema for the YAML to be loaded.
@@ -863,6 +867,10 @@ extern cyaml_err_t cyaml_load_file(
 
 /**
  * Load a YAML document from a data buffer.
+ *
+ * \note In the event of the top-level mapping having only optional fields,
+ *       and the YAML not setting any of them, this function can return \ref
+ *       CYAML_OK, and `NULL` in the `data_out` parameter.
  *
  * \param[in]  input      Buffer to load YAML data from.
  * \param[in]  input_len  Length of input in bytes.
