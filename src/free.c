@@ -97,9 +97,6 @@ static void cyaml__free(
 		uint8_t * const data)
 {
 	uint8_t *data_target = data;
-	if (data == NULL) {
-		return;
-	}
 
 	if (schema->flags & CYAML_FLAG_POINTER) {
 		cyaml_err_t err;
