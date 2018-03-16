@@ -1111,7 +1111,10 @@ static cyaml_err_t cyaml__read_value(
 		/* Since sequences extend their allocation for each entry,
 		 * the're handled in the sequence-specific code.
 		 */
-		cyaml__data_handle_pointer(ctx, schema, event, &data);
+		err = cyaml__data_handle_pointer(ctx, schema, event, &data);
+		if (err != CYAML_OK) {
+			return err;
+		}
 	}
 
 	switch (schema->type) {
