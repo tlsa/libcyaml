@@ -2800,6 +2800,70 @@ static bool test_load_mapping_ignored_unknown_keys(
 	return ttest_pass(&tc);
 }
 
+/* Test loading a sequence with max size 4, and only 2 entries in YAML. */
+static bool test_load_sequence_without_max_entries(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct target_struct {
+		const char *seq[4];
+		unsigned seq_count;
+	} data = {
+		.seq = { "1", "2", NULL, NULL },
+		.seq_count = 2,
+	};
+	static const unsigned char yaml[] =
+		"seq: [ 1, 2 ]\n";
+	struct target_struct *data_tgt = NULL;
+	static const struct cyaml_schema_type sequence_entry = {
+		CYAML_TYPE_STRING(CYAML_FLAG_POINTER, char *,
+				0, CYAML_UNLIMITED)
+	};
+	static const struct cyaml_schema_mapping mapping_schema[] = {
+		CYAML_MAPPING_SEQUENCE("seq", CYAML_FLAG_OPTIONAL,
+				struct target_struct, seq, &sequence_entry,
+				0, 4),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->seq_count != 2) {
+		return ttest_fail(&tc, "Incorrect sequence entry count");
+	}
+	for (unsigned i = 0; i < 4; i++) {
+		if ((data_tgt->seq[i] == NULL) != (data.seq[i] == NULL)) {
+			return ttest_fail(&tc, "Incorrect value for entry %u",
+					i);
+		}
+		if (data_tgt->seq[i] != NULL) {
+			if (strcmp(data_tgt->seq[i], data.seq[i]) != 0) {
+				return ttest_fail(&tc,
+						"Incorrect value for entry %u",
+						i);
+			}
+		}
+	}
+
+	return ttest_pass(&tc);
+}
+
 /**
  * Run the YAML loading unit tests.
  *
@@ -2877,6 +2941,7 @@ bool load_tests(
 	pass &= test_load_mapping_with_optional_fields(rc, &config);
 	pass &= test_load_mapping_only_optional_fields(rc, &config);
 	pass &= test_load_mapping_ignored_unknown_keys(rc, &config);
+	pass &= test_load_sequence_without_max_entries(rc, &config);
 
 	return pass;
 }
