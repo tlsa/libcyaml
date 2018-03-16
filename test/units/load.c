@@ -2537,6 +2537,152 @@ static bool test_load_mapping_with_multiple_fields(
 	return ttest_pass(&tc);
 }
 
+/* Test loading a mapping with optional fields. */
+static bool test_load_mapping_with_optional_fields(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	long values[] = { 4, 3, 2, 1 };
+	struct target_struct {
+		char *a;
+		char b[10];
+		int c;
+		long d[4];
+		long *e;
+		unsigned e_count;
+		char *f;
+		char *g;
+		char h[10];
+		int i;
+		long j[4];
+		long *k;
+		unsigned k_count;
+	} data = {
+		.a = "Hello",
+		.b = "World!",
+		.c = 0,
+		.d = { 0, 0, 0, 0 },
+		.e = values,
+		.f = "Required!",
+		.g = NULL,
+		.h = "\0",
+		.i = 9876,
+		.j = { 1, 2, 3, 4 },
+		.k = NULL,
+	};
+	static const unsigned char yaml[] =
+		"a: Hello\n"
+		"b: World!\n"
+		"e: [ 4, 3, 2, 1 ]\n"
+		"f: Required!\n"
+		"i: 9876\n"
+		"j: [ 1, 2, 3, 4 ]\n";
+	struct target_struct *data_tgt = NULL;
+	static const struct cyaml_schema_type sequence_entry = {
+		CYAML_TYPE_INT(CYAML_FLAG_DEFAULT, sizeof(long)),
+	};
+	static const struct cyaml_schema_mapping mapping_schema[] = {
+		CYAML_MAPPING_STRING_PTR("a",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct target_struct, a, 0, CYAML_UNLIMITED),
+		CYAML_MAPPING_STRING("b", CYAML_FLAG_OPTIONAL,
+				struct target_struct, b, 0),
+		CYAML_MAPPING_INT("c", CYAML_FLAG_OPTIONAL,
+				struct target_struct, c),
+		CYAML_MAPPING_SEQUENCE_FIXED("d", CYAML_FLAG_OPTIONAL,
+				struct target_struct, d, &sequence_entry, 4),
+		CYAML_MAPPING_SEQUENCE("e",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct target_struct, e, &sequence_entry,
+				0, CYAML_UNLIMITED),
+		CYAML_MAPPING_STRING_PTR("f",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct target_struct, f, 0, CYAML_UNLIMITED),
+		CYAML_MAPPING_STRING_PTR("g",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct target_struct, g, 0, CYAML_UNLIMITED),
+		CYAML_MAPPING_STRING("h", CYAML_FLAG_OPTIONAL,
+				struct target_struct, h, 0),
+		CYAML_MAPPING_INT("i", CYAML_FLAG_OPTIONAL,
+				struct target_struct, i),
+		CYAML_MAPPING_SEQUENCE_FIXED("j", CYAML_FLAG_OPTIONAL,
+				struct target_struct, j, &sequence_entry, 4),
+		CYAML_MAPPING_SEQUENCE("k",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct target_struct, k, &sequence_entry,
+				0, CYAML_UNLIMITED),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (strcmp(data_tgt->a, data.a) != 0) {
+		return ttest_fail(&tc, "Incorrect value for entry a: "
+				"Expected: %s, got: %s",
+				data.a, data_tgt->a);
+	}
+	if (strcmp(data_tgt->b, data.b) != 0) {
+		return ttest_fail(&tc, "Incorrect value for entry b");
+	}
+	if (data_tgt->c != data.c) {
+		return ttest_fail(&tc, "Incorrect value for entry c");
+	}
+	for (unsigned i = 0; i < 4; i++) {
+		if (data_tgt->d[i] != data.d[i]) {
+			return ttest_fail(&tc, "Incorrect value for entry d");
+		}
+	}
+	for (unsigned i = 0; i < 4; i++) {
+		if (data_tgt->e[i] != data.e[i]) {
+			return ttest_fail(&tc, "Incorrect value for entry e "
+					"Index: %u: Expected: %ld, got: %ld",
+					i, data.e[i], data_tgt->e[i]);
+		}
+	}
+	if (strcmp(data_tgt->f, data.f) != 0) {
+		return ttest_fail(&tc, "Incorrect value for entry f: "
+				"Expected: %s, got: %s",
+				data.f, data_tgt->f);
+	}
+	if (data_tgt->g != data.g) {
+		return ttest_fail(&tc, "Incorrect value for entry g: "
+				"Expected: %s, got: %s",
+				data.g, data_tgt->g);
+	}
+	if (strcmp(data_tgt->h, data.h) != 0) {
+		return ttest_fail(&tc, "Incorrect value for entry h");
+	}
+	if (data_tgt->i != data.i) {
+		return ttest_fail(&tc, "Incorrect value for entry i");
+	}
+	for (unsigned i = 0; i < 4; i++) {
+		if (data_tgt->j[i] != data.j[i]) {
+			return ttest_fail(&tc, "Incorrect value for entry j");
+		}
+	}
+	if (data_tgt->k != data.k) {
+		return ttest_fail(&tc, "Incorrect value for entry k");
+	}
+
+	return ttest_pass(&tc);
+}
+
 /**
  * Run the YAML loading unit tests.
  *
@@ -2611,6 +2757,7 @@ bool load_tests(
 	ttest_heading(rc, "Load tests: various");
 
 	pass &= test_load_mapping_with_multiple_fields(rc, &config);
+	pass &= test_load_mapping_with_optional_fields(rc, &config);
 
 	return pass;
 }
