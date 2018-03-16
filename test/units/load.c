@@ -2728,6 +2728,78 @@ static bool test_load_mapping_only_optional_fields(
 	return ttest_pass(&tc);
 }
 
+/* Test loading a mapping with unknown keys ignored by config. */
+static bool test_load_mapping_ignored_unknown_keys(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct target_struct {
+		short b;
+		int c;
+		long d;
+		long long e;
+	} data = {
+		.b = 90,
+		.c = 900,
+		.d = 9000,
+		.e = 90000,
+	};
+	static const unsigned char yaml[] =
+		"a: 9\n"
+		"b: 90\n"
+		"c: 900\n"
+		"d: 9000\n"
+		"e: 90000\n"
+		"f: 900000\n";
+	struct target_struct *data_tgt = NULL;
+	static const struct cyaml_schema_mapping mapping_schema[] = {
+		CYAML_MAPPING_INT("b", CYAML_FLAG_DEFAULT,
+				struct target_struct, b),
+		CYAML_MAPPING_INT("c", CYAML_FLAG_DEFAULT,
+				struct target_struct, c),
+		CYAML_MAPPING_INT("d", CYAML_FLAG_DEFAULT,
+				struct target_struct, d),
+		CYAML_MAPPING_INT("e", CYAML_FLAG_DEFAULT,
+				struct target_struct, e),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	cyaml_config_t cfg = *config;
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = &cfg,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	cfg.flags |= CYAML_CFG_IGNORE_UNKNOWN_KEYS;
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
+			(cyaml_data_t **) &data_tgt);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->b != data.b) {
+		return ttest_fail(&tc, "Incorrect value for entry b");
+	}
+	if (data_tgt->c != data.c) {
+		return ttest_fail(&tc, "Incorrect value for entry c");
+	}
+	if (data_tgt->d != data.d) {
+		return ttest_fail(&tc, "Incorrect value for entry d");
+	}
+	if (data_tgt->e != data.e) {
+		return ttest_fail(&tc, "Incorrect value for entry e");
+	}
+
+	return ttest_pass(&tc);
+}
+
 /**
  * Run the YAML loading unit tests.
  *
@@ -2804,6 +2876,7 @@ bool load_tests(
 	pass &= test_load_mapping_with_multiple_fields(rc, &config);
 	pass &= test_load_mapping_with_optional_fields(rc, &config);
 	pass &= test_load_mapping_only_optional_fields(rc, &config);
+	pass &= test_load_mapping_ignored_unknown_keys(rc, &config);
 
 	return pass;
 }
