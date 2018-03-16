@@ -139,7 +139,7 @@ static inline cyaml_event_t cyaml__get_event_type(const yaml_event_t *event)
  */
 static const char * cyaml__libyaml_event_type_str(const yaml_event_t *event)
 {
-	static const char *strings[] = {
+	static const char * const strings[] = {
 		"NO_EVENT",
 		"STREAM_START",
 		"STREAM_END",
