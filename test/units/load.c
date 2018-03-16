@@ -2683,6 +2683,51 @@ static bool test_load_mapping_with_optional_fields(
 	return ttest_pass(&tc);
 }
 
+/* Test loading a mapping with only optional fields. */
+static bool test_load_mapping_only_optional_fields(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct target_struct {
+		int c;
+		int i;
+	};
+	static const unsigned char yaml[] =
+		"\n";
+	struct target_struct *data_tgt = NULL;
+	static const struct cyaml_schema_mapping mapping_schema[] = {
+		CYAML_MAPPING_INT("c", CYAML_FLAG_OPTIONAL,
+				struct target_struct, c),
+		CYAML_MAPPING_INT("i", CYAML_FLAG_OPTIONAL,
+				struct target_struct, i),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Shouldn't have allocated anything");
+	}
+
+	return ttest_pass(&tc);
+}
+
 /**
  * Run the YAML loading unit tests.
  *
@@ -2758,6 +2803,7 @@ bool load_tests(
 
 	pass &= test_load_mapping_with_multiple_fields(rc, &config);
 	pass &= test_load_mapping_with_optional_fields(rc, &config);
+	pass &= test_load_mapping_only_optional_fields(rc, &config);
 
 	return pass;
 }
