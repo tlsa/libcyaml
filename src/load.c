@@ -139,7 +139,7 @@ static inline cyaml_event_t cyaml__get_event_type(const yaml_event_t *event)
  */
 static const char * cyaml__libyaml_event_type_str(const yaml_event_t *event)
 {
-	static const char *strings[] = {
+	static const char * const strings[] = {
 		"NO_EVENT",
 		"STREAM_START",
 		"STREAM_END",
@@ -309,7 +309,8 @@ static cyaml_err_t cyaml__mapping_bitfieid_create(
 	unsigned count = cyaml__get_entry_count_from_mapping_schema(
 			state->mapping.schema);
 
-	bitfield = calloc(count / CYAML_BITFIELD_BITS + 1, sizeof(bitfield));
+	bitfield = calloc((count + CYAML_BITFIELD_BITS - 1) /
+			CYAML_BITFIELD_BITS, sizeof(*bitfield));
 	if (bitfield == NULL) {
 		return CYAML_ERR_OOM;
 	}
@@ -828,7 +829,7 @@ static cyaml_err_t cyaml__read_float(
 			uint8_t *data_target);
 	struct float_fns {
 		size_t size;
-		cyaml_float_fn func;
+		const cyaml_float_fn func;
 	};
 	static const struct float_fns fns[] = {
 		{
@@ -1110,7 +1111,10 @@ static cyaml_err_t cyaml__read_value(
 		/* Since sequences extend their allocation for each entry,
 		 * the're handled in the sequence-specific code.
 		 */
-		cyaml__data_handle_pointer(ctx, schema, event, &data);
+		err = cyaml__data_handle_pointer(ctx, schema, event, &data);
+		if (err != CYAML_OK) {
+			return err;
+		}
 	}
 
 	switch (schema->type) {
@@ -1548,7 +1552,7 @@ static cyaml_err_t cyaml__load(
 		.config = config,
 		.parser = parser,
 	};
-	typedef cyaml_err_t (*cyaml_read_fn)(
+	typedef cyaml_err_t (* const cyaml_read_fn)(
 			cyaml_ctx_t *ctx);
 	static const cyaml_read_fn fn[CYAML_STATE__COUNT] = {
 		[CYAML_STATE_START]       = cyaml__read_start,
