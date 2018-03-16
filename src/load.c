@@ -309,7 +309,8 @@ static cyaml_err_t cyaml__mapping_bitfieid_create(
 	unsigned count = cyaml__get_entry_count_from_mapping_schema(
 			state->mapping.schema);
 
-	bitfield = calloc(count / CYAML_BITFIELD_BITS + 1, sizeof(bitfield));
+	bitfield = calloc((count + CYAML_BITFIELD_BITS - 1) /
+			CYAML_BITFIELD_BITS, sizeof(*bitfield));
 	if (bitfield == NULL) {
 		return CYAML_ERR_OOM;
 	}
