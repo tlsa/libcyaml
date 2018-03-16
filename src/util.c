@@ -38,7 +38,7 @@ void cyaml_log(
 const char * cyaml_strerror(
 		cyaml_err_t err)
 {
-	static const char *strings[CYAML_ERR__COUNT] = {
+	static const char * const strings[CYAML_ERR__COUNT] = {
 		[CYAML_OK]                        = "Success",
 		[CYAML_ERR_OOM]                   = "Memory allocation failed",
 		[CYAML_ERR_ALIAS]                 = "YAML alias unsupported",
