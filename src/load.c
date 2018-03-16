@@ -828,7 +828,7 @@ static cyaml_err_t cyaml__read_float(
 			uint8_t *data_target);
 	struct float_fns {
 		size_t size;
-		cyaml_float_fn func;
+		const cyaml_float_fn func;
 	};
 	static const struct float_fns fns[] = {
 		{
@@ -1548,7 +1548,7 @@ static cyaml_err_t cyaml__load(
 		.config = config,
 		.parser = parser,
 	};
-	typedef cyaml_err_t (*cyaml_read_fn)(
+	typedef cyaml_err_t (* const cyaml_read_fn)(
 			cyaml_ctx_t *ctx);
 	static const cyaml_read_fn fn[CYAML_STATE__COUNT] = {
 		[CYAML_STATE_START]       = cyaml__read_start,
