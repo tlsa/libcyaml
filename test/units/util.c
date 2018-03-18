@@ -63,6 +63,31 @@ static bool test_util_err_strings_valid(
 	return ttest_pass(&tc);
 }
 
+/* Test invalid cyaml_strerror strings. */
+static bool test_util_err_strings_invalid(
+		ttest_report_ctx_t *report)
+{
+	ttest_ctx_t tc = ttest_start(report, __func__, NULL, NULL);
+
+	if (strcmp(cyaml_strerror(CYAML_ERR__COUNT),
+			"Invalid error code") != 0) {
+		return ttest_fail(&tc, "CYAML_ERR__COUNT string not "
+				"'Invalid error code'");
+	}
+
+	if (strcmp(cyaml_strerror(CYAML_ERR__COUNT + 1),
+			"Invalid error code") != 0) {
+		return ttest_fail(&tc, "CYAML_ERR__COUNT + 1 string not "
+				"'Invalid error code'");
+	}
+
+	if (strcmp(cyaml_strerror(-1), "Invalid error code") != 0) {
+		return ttest_fail(&tc, "-1 string not 'Invalid error code'");
+	}
+
+	return ttest_pass(&tc);
+}
+
 /**
  * Run the CYAML util unit tests.
  *
@@ -85,6 +110,7 @@ bool util_tests(
 
 	pass &= test_util_err_success_zero(rc);
 	pass &= test_util_err_strings_valid(rc);
+	pass &= test_util_err_strings_invalid(rc);
 
 	return pass;
 }
