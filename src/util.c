@@ -56,6 +56,7 @@ const char * cyaml_strerror(
 		[CYAML_ERR_BAD_PARAM_NULL_DATA]   = "Bad parameter: NULL data",
 		[CYAML_ERR_SEQUENCE_ENTRIES_MIN]  = "Sequence with too few entries",
 		[CYAML_ERR_SEQUENCE_ENTRIES_MAX]  = "Sequence with too many entries",
+		[CYAML_ERR_SEQUENCE_FIXED_COUNT]  = "Sequence fixed has unequal min max",
 		[CYAML_ERR_MAPPING_FIELD_MISSING] = "Missing required mapping field",
 		[CYAML_ERR_BAD_PARAM_NULL_CONFIG] = "Bad parameter: NULL config",
 		[CYAML_ERR_BAD_PARAM_NULL_SCHEMA] = "Bad parameter: NULL schema",
