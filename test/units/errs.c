@@ -398,6 +398,56 @@ static bool test_err_schema_expect_int_read_end_2(
 	return ttest_pass(&tc);
 }
 
+/* Test loading when schema expects flags, but YAML has scalar. */
+static bool test_err_schema_expect_flags_read_scalar(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const char * const strings[] = {
+		"first",
+		"second",
+		"third",
+		"fourth",
+		"fifth",
+		"sixth",
+	};
+	static const unsigned char yaml[] =
+		"key: first\n";
+	struct target_struct {
+		int value;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_mapping mapping_schema[] = {
+		CYAML_MAPPING_FLAGS("key", CYAML_FLAG_DEFAULT,
+				struct target_struct, value,
+				strings, CYAML_ARRAY_LEN(strings)),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
 /**
  * Run the CYAML error unit tests.
  *
@@ -443,6 +493,7 @@ bool errs_tests(
 	pass &= test_err_schema_expect_int_read_seq(rc, &config);
 	pass &= test_err_schema_expect_int_read_end_1(rc, &config);
 	pass &= test_err_schema_expect_int_read_end_2(rc, &config);
+	pass &= test_err_schema_expect_flags_read_scalar(rc, &config);
 
 	return pass;
 }
