@@ -31,6 +31,38 @@ static bool test_util_err_success_zero(
 	return ttest_pass(&tc);
 }
 
+/* Test valid cyaml_strerror strings. */
+static bool test_util_err_strings_valid(
+		ttest_report_ctx_t *report)
+{
+	ttest_ctx_t tc = ttest_start(report, __func__, NULL, NULL);
+
+	if (cyaml_strerror(CYAML_OK) == NULL) {
+		return ttest_fail(&tc, "CYAML_OK string is NULL");
+	}
+
+	if (strcmp(cyaml_strerror(CYAML_OK), "Success") != 0) {
+		return ttest_fail(&tc, "CYAML_OK string not 'Success'");
+	}
+
+	for (unsigned i = 1; i <= CYAML_ERR__COUNT; i++) {
+		if (cyaml_strerror(i) == NULL) {
+			return ttest_fail(&tc, "Error code %u string is NULL",
+					i);
+		}
+
+		for (unsigned j = 0; j < i; j++) {
+			if (strcmp(cyaml_strerror(j), cyaml_strerror(i)) == 0) {
+				return ttest_fail(&tc, "Two error codes "
+						"have same string (%u and %u)",
+						i, j);
+			}
+		}
+	}
+
+	return ttest_pass(&tc);
+}
+
 /**
  * Run the CYAML util unit tests.
  *
@@ -52,6 +84,7 @@ bool util_tests(
 	ttest_heading(rc, "Error code tests");
 
 	pass &= test_util_err_success_zero(rc);
+	pass &= test_util_err_strings_valid(rc);
 
 	return pass;
 }
