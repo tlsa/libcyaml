@@ -100,6 +100,35 @@ static bool test_err_load_null_config(
 	return ttest_pass(&tc);
 }
 
+/* Test loading with NULL schema. */
+static bool test_err_load_null_schema(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] = "";
+	void *data_tgt = NULL;
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = NULL,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, NULL,
+			(cyaml_data_t **) NULL);
+	if (err != CYAML_ERR_BAD_PARAM_NULL_SCHEMA) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
 /**
  * Run the CYAML error unit tests.
  *
@@ -132,6 +161,7 @@ bool errs_tests(
 
 	pass &= test_err_load_null_data(rc, &config);
 	pass &= test_err_load_null_config(rc, &config);
+	pass &= test_err_load_null_schema(rc, &config);
 
 	return pass;
 }
