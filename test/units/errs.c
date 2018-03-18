@@ -356,6 +356,48 @@ static bool test_err_schema_expect_int_read_end_1(
 	return ttest_pass(&tc);
 }
 
+/* Test loading when schema expects int, but YAML ends. */
+static bool test_err_schema_expect_int_read_end_2(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"key: |"
+		"...";
+	struct target_struct {
+		int value;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_mapping mapping_schema[] = {
+		CYAML_MAPPING_INT("key", CYAML_FLAG_DEFAULT,
+				struct target_struct, value),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt);
+	if (err != CYAML_ERR_LIBYAML_PARSER) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
 /**
  * Run the CYAML error unit tests.
  *
@@ -400,6 +442,7 @@ bool errs_tests(
 
 	pass &= test_err_schema_expect_int_read_seq(rc, &config);
 	pass &= test_err_schema_expect_int_read_end_1(rc, &config);
+	pass &= test_err_schema_expect_int_read_end_2(rc, &config);
 
 	return pass;
 }
