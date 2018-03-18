@@ -28,6 +28,12 @@ extern bool free_tests(
 		cyaml_log_t log_level,
 		cyaml_log_fn_t log_fn);
 
+/** In util.c */
+extern bool util_tests(
+		ttest_report_ctx_t *rc,
+		cyaml_log_t log_level,
+		cyaml_log_fn_t log_fn);
+
 /** Print program usage */
 void usage(const char *prog_name)
 {
@@ -68,6 +74,7 @@ int main(int argc, char *argv[])
 
 	rc = ttest_init(quiet);
 
+	pass &= util_tests(&rc, log_level, log_fn);
 	pass &= free_tests(&rc, log_level, log_fn);
 	pass &= load_tests(&rc, log_level, log_fn);
 
