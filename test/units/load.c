@@ -2461,6 +2461,409 @@ static bool test_load_mapping_entry_sequence_ptr_sequence_fixed_flat_int(
 	return ttest_pass(&tc);
 }
 
+/* Test loading a mapping multiple fields. */
+static bool test_load_mapping_with_multiple_fields(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct target_struct {
+		signed char a;
+		short b;
+		int c;
+		long d;
+		long long e;
+	} data = {
+		.a = 9,
+		.b = 90,
+		.c = 900,
+		.d = 9000,
+		.e = 90000,
+	};
+	static const unsigned char yaml[] =
+		"a: 9\n"
+		"b: 90\n"
+		"c: 900\n"
+		"d: 9000\n"
+		"e: 90000\n";
+	struct target_struct *data_tgt = NULL;
+	static const struct cyaml_schema_mapping mapping_schema[] = {
+		CYAML_MAPPING_INT("a", CYAML_FLAG_DEFAULT,
+				struct target_struct, a),
+		CYAML_MAPPING_INT("b", CYAML_FLAG_DEFAULT,
+				struct target_struct, b),
+		CYAML_MAPPING_INT("c", CYAML_FLAG_DEFAULT,
+				struct target_struct, c),
+		CYAML_MAPPING_INT("d", CYAML_FLAG_DEFAULT,
+				struct target_struct, d),
+		CYAML_MAPPING_INT("e", CYAML_FLAG_DEFAULT,
+				struct target_struct, e),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->a != data.a) {
+		return ttest_fail(&tc, "Incorrect value for entry a");
+	}
+	if (data_tgt->b != data.b) {
+		return ttest_fail(&tc, "Incorrect value for entry b");
+	}
+	if (data_tgt->c != data.c) {
+		return ttest_fail(&tc, "Incorrect value for entry c");
+	}
+	if (data_tgt->d != data.d) {
+		return ttest_fail(&tc, "Incorrect value for entry d");
+	}
+	if (data_tgt->e != data.e) {
+		return ttest_fail(&tc, "Incorrect value for entry e");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/* Test loading a mapping with optional fields. */
+static bool test_load_mapping_with_optional_fields(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	long values[] = { 4, 3, 2, 1 };
+	struct target_struct {
+		char *a;
+		char b[10];
+		int c;
+		long d[4];
+		long *e;
+		unsigned e_count;
+		char *f;
+		char *g;
+		char h[10];
+		int i;
+		long j[4];
+		long *k;
+		unsigned k_count;
+	} data = {
+		.a = "Hello",
+		.b = "World!",
+		.c = 0,
+		.d = { 0, 0, 0, 0 },
+		.e = values,
+		.f = "Required!",
+		.g = NULL,
+		.h = "\0",
+		.i = 9876,
+		.j = { 1, 2, 3, 4 },
+		.k = NULL,
+	};
+	static const unsigned char yaml[] =
+		"a: Hello\n"
+		"b: World!\n"
+		"e: [ 4, 3, 2, 1 ]\n"
+		"f: Required!\n"
+		"i: 9876\n"
+		"j: [ 1, 2, 3, 4 ]\n";
+	struct target_struct *data_tgt = NULL;
+	static const struct cyaml_schema_type sequence_entry = {
+		CYAML_TYPE_INT(CYAML_FLAG_DEFAULT, sizeof(long)),
+	};
+	static const struct cyaml_schema_mapping mapping_schema[] = {
+		CYAML_MAPPING_STRING_PTR("a",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct target_struct, a, 0, CYAML_UNLIMITED),
+		CYAML_MAPPING_STRING("b", CYAML_FLAG_OPTIONAL,
+				struct target_struct, b, 0),
+		CYAML_MAPPING_INT("c", CYAML_FLAG_OPTIONAL,
+				struct target_struct, c),
+		CYAML_MAPPING_SEQUENCE_FIXED("d", CYAML_FLAG_OPTIONAL,
+				struct target_struct, d, &sequence_entry, 4),
+		CYAML_MAPPING_SEQUENCE("e",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct target_struct, e, &sequence_entry,
+				0, CYAML_UNLIMITED),
+		CYAML_MAPPING_STRING_PTR("f",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct target_struct, f, 0, CYAML_UNLIMITED),
+		CYAML_MAPPING_STRING_PTR("g",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct target_struct, g, 0, CYAML_UNLIMITED),
+		CYAML_MAPPING_STRING("h", CYAML_FLAG_OPTIONAL,
+				struct target_struct, h, 0),
+		CYAML_MAPPING_INT("i", CYAML_FLAG_OPTIONAL,
+				struct target_struct, i),
+		CYAML_MAPPING_SEQUENCE_FIXED("j", CYAML_FLAG_OPTIONAL,
+				struct target_struct, j, &sequence_entry, 4),
+		CYAML_MAPPING_SEQUENCE("k",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct target_struct, k, &sequence_entry,
+				0, CYAML_UNLIMITED),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (strcmp(data_tgt->a, data.a) != 0) {
+		return ttest_fail(&tc, "Incorrect value for entry a: "
+				"Expected: %s, got: %s",
+				data.a, data_tgt->a);
+	}
+	if (strcmp(data_tgt->b, data.b) != 0) {
+		return ttest_fail(&tc, "Incorrect value for entry b");
+	}
+	if (data_tgt->c != data.c) {
+		return ttest_fail(&tc, "Incorrect value for entry c");
+	}
+	for (unsigned i = 0; i < 4; i++) {
+		if (data_tgt->d[i] != data.d[i]) {
+			return ttest_fail(&tc, "Incorrect value for entry d");
+		}
+	}
+	for (unsigned i = 0; i < 4; i++) {
+		if (data_tgt->e[i] != data.e[i]) {
+			return ttest_fail(&tc, "Incorrect value for entry e "
+					"Index: %u: Expected: %ld, got: %ld",
+					i, data.e[i], data_tgt->e[i]);
+		}
+	}
+	if (strcmp(data_tgt->f, data.f) != 0) {
+		return ttest_fail(&tc, "Incorrect value for entry f: "
+				"Expected: %s, got: %s",
+				data.f, data_tgt->f);
+	}
+	if (data_tgt->g != data.g) {
+		return ttest_fail(&tc, "Incorrect value for entry g: "
+				"Expected: %s, got: %s",
+				data.g, data_tgt->g);
+	}
+	if (strcmp(data_tgt->h, data.h) != 0) {
+		return ttest_fail(&tc, "Incorrect value for entry h");
+	}
+	if (data_tgt->i != data.i) {
+		return ttest_fail(&tc, "Incorrect value for entry i");
+	}
+	for (unsigned i = 0; i < 4; i++) {
+		if (data_tgt->j[i] != data.j[i]) {
+			return ttest_fail(&tc, "Incorrect value for entry j");
+		}
+	}
+	if (data_tgt->k != data.k) {
+		return ttest_fail(&tc, "Incorrect value for entry k");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/* Test loading a mapping with only optional fields. */
+static bool test_load_mapping_only_optional_fields(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct target_struct {
+		int c;
+		int i;
+	};
+	static const unsigned char yaml[] =
+		"\n";
+	struct target_struct *data_tgt = NULL;
+	static const struct cyaml_schema_mapping mapping_schema[] = {
+		CYAML_MAPPING_INT("c", CYAML_FLAG_OPTIONAL,
+				struct target_struct, c),
+		CYAML_MAPPING_INT("i", CYAML_FLAG_OPTIONAL,
+				struct target_struct, i),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Shouldn't have allocated anything");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/* Test loading a mapping with unknown keys ignored by config. */
+static bool test_load_mapping_ignored_unknown_keys(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct target_struct {
+		short b;
+		int c;
+		long d;
+		long long e;
+	} data = {
+		.b = 90,
+		.c = 900,
+		.d = 9000,
+		.e = 90000,
+	};
+	static const unsigned char yaml[] =
+		"a: 9\n"
+		"b: 90\n"
+		"c: 900\n"
+		"d: 9000\n"
+		"e: 90000\n"
+		"f: 900000\n";
+	struct target_struct *data_tgt = NULL;
+	static const struct cyaml_schema_mapping mapping_schema[] = {
+		CYAML_MAPPING_INT("b", CYAML_FLAG_DEFAULT,
+				struct target_struct, b),
+		CYAML_MAPPING_INT("c", CYAML_FLAG_DEFAULT,
+				struct target_struct, c),
+		CYAML_MAPPING_INT("d", CYAML_FLAG_DEFAULT,
+				struct target_struct, d),
+		CYAML_MAPPING_INT("e", CYAML_FLAG_DEFAULT,
+				struct target_struct, e),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	cyaml_config_t cfg = *config;
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = &cfg,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	cfg.flags |= CYAML_CFG_IGNORE_UNKNOWN_KEYS;
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
+			(cyaml_data_t **) &data_tgt);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->b != data.b) {
+		return ttest_fail(&tc, "Incorrect value for entry b");
+	}
+	if (data_tgt->c != data.c) {
+		return ttest_fail(&tc, "Incorrect value for entry c");
+	}
+	if (data_tgt->d != data.d) {
+		return ttest_fail(&tc, "Incorrect value for entry d");
+	}
+	if (data_tgt->e != data.e) {
+		return ttest_fail(&tc, "Incorrect value for entry e");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/* Test loading a sequence with max size 4, and only 2 entries in YAML. */
+static bool test_load_sequence_without_max_entries(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct target_struct {
+		const char *seq[4];
+		unsigned seq_count;
+	} data = {
+		.seq = { "1", "2", NULL, NULL },
+		.seq_count = 2,
+	};
+	static const unsigned char yaml[] =
+		"seq: [ 1, 2 ]\n";
+	struct target_struct *data_tgt = NULL;
+	static const struct cyaml_schema_type sequence_entry = {
+		CYAML_TYPE_STRING(CYAML_FLAG_POINTER, char *,
+				0, CYAML_UNLIMITED)
+	};
+	static const struct cyaml_schema_mapping mapping_schema[] = {
+		CYAML_MAPPING_SEQUENCE("seq", CYAML_FLAG_OPTIONAL,
+				struct target_struct, seq, &sequence_entry,
+				0, 4),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->seq_count != 2) {
+		return ttest_fail(&tc, "Incorrect sequence entry count");
+	}
+	for (unsigned i = 0; i < 4; i++) {
+		if ((data_tgt->seq[i] == NULL) != (data.seq[i] == NULL)) {
+			return ttest_fail(&tc, "Incorrect value for entry %u",
+					i);
+		}
+		if (data_tgt->seq[i] != NULL) {
+			if (strcmp(data_tgt->seq[i], data.seq[i]) != 0) {
+				return ttest_fail(&tc,
+						"Incorrect value for entry %u",
+						i);
+			}
+		}
+	}
+
+	return ttest_pass(&tc);
+}
+
 /**
  * Run the YAML loading unit tests.
  *
@@ -2531,6 +2934,14 @@ bool load_tests(
 	pass &= test_load_mapping_entry_sequence_ptr_sequence_fixed_int(rc, &config);
 	pass &= test_load_mapping_entry_sequence_ptr_sequence_fixed_ptr_int(rc, &config);
 	pass &= test_load_mapping_entry_sequence_ptr_sequence_fixed_flat_int(rc, &config);
+
+	ttest_heading(rc, "Load tests: various");
+
+	pass &= test_load_mapping_with_multiple_fields(rc, &config);
+	pass &= test_load_mapping_with_optional_fields(rc, &config);
+	pass &= test_load_mapping_only_optional_fields(rc, &config);
+	pass &= test_load_mapping_ignored_unknown_keys(rc, &config);
+	pass &= test_load_sequence_without_max_entries(rc, &config);
 
 	return pass;
 }
