@@ -469,6 +469,7 @@ static bool test_err_schema_expect_mapping_read_scalar(
 		CYAML_MAPPING_MAPPING("key", CYAML_FLAG_DEFAULT,
 				struct target_struct, test_value_mapping,
 				test_mapping_schema),
+		CYAML_MAPPING_END
 	};
 	static const struct cyaml_schema_type top_schema = {
 		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
