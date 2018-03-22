@@ -752,6 +752,88 @@ static bool test_err_schema_invalid_value_unit_range_5(
 	return ttest_pass(&tc);
 }
 
+/* Test loading when schema expects string, but it's too short. */
+static bool test_err_schema_string_min_length(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"a: foo\n";
+	struct target_struct {
+		char *a;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_mapping mapping_schema[] = {
+		CYAML_MAPPING_STRING_PTR("a", CYAML_FLAG_DEFAULT,
+				struct target_struct, a, 4, 4),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt);
+	if (err != CYAML_ERR_STRING_LENGTH_MIN) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/* Test loading when schema expects string, but it's too long. */
+static bool test_err_schema_string_max_length(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"a: fifth\n";
+	struct target_struct {
+		char *a;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_mapping mapping_schema[] = {
+		CYAML_MAPPING_STRING_PTR("a", CYAML_FLAG_DEFAULT,
+				struct target_struct, a, 4, 4),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt);
+	if (err != CYAML_ERR_STRING_LENGTH_MAX) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
 /* Test loading when schema expects int, but YAML has sequence. */
 static bool test_err_schema_expect_int_read_seq(
 		ttest_report_ctx_t *report,
@@ -1075,6 +1157,11 @@ bool errs_tests(
 	pass &= test_err_schema_invalid_value_unit_range_3(rc, &config);
 	pass &= test_err_schema_invalid_value_unit_range_4(rc, &config);
 	pass &= test_err_schema_invalid_value_unit_range_5(rc, &config);
+
+	ttest_heading(rc, "YAML / schema mismatch: string lengths");
+
+	pass &= test_err_schema_string_min_length(rc, &config);
+	pass &= test_err_schema_string_max_length(rc, &config);
 
 	ttest_heading(rc, "YAML / schema mismatch: expected value type tests");
 
