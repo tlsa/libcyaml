@@ -315,6 +315,67 @@ static bool test_err_schema_bad_data_size_2(
 	return ttest_pass(&tc);
 }
 
+/* Test loading with schema with sequence fixed with unequal min and max. */
+static bool test_err_schema_sequence_min_max(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"sequence:\n"
+		"    - \n";
+	struct target_struct {
+		unsigned *seq;
+		uint32_t seq_count;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_type entry_schema = {
+		CYAML_TYPE_UINT(CYAML_FLAG_DEFAULT, *(data_tgt->seq)),
+	};
+	static const struct cyaml_schema_mapping mapping_schema[] = {
+		{
+			.key = "sequence",
+			.value = {
+				.type = CYAML_SEQUENCE_FIXED,
+				.flags = CYAML_FLAG_POINTER,
+				.data_size = sizeof(*(data_tgt->seq)),
+				.sequence = {
+					.schema = &entry_schema,
+					.min = 0,
+					.max = CYAML_UNLIMITED,
+					.count_offset = offsetof(struct target_struct, seq_count),
+					.count_size = sizeof(data_tgt->seq_count),
+
+				},
+			},
+			.data_offset = offsetof(struct target_struct, seq),
+		},
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt);
+	if (err != CYAML_ERR_SEQUENCE_FIXED_COUNT) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
 /* Test loading when schema expects int, but YAML has sequence. */
 static bool test_err_schema_expect_int_read_seq(
 		ttest_report_ctx_t *report,
@@ -625,6 +686,7 @@ bool errs_tests(
 	pass &= test_err_schema_string_min_max(rc, &config);
 	pass &= test_err_schema_bad_data_size_1(rc, &config);
 	pass &= test_err_schema_bad_data_size_2(rc, &config);
+	pass &= test_err_schema_sequence_min_max(rc, &config);
 
 	ttest_heading(rc, "YAML / schema mismatch: expected value type tests");
 
