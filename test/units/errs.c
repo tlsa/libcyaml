@@ -1016,6 +1016,297 @@ static bool test_err_schema_sequence_max_entries(
 	return ttest_pass(&tc);
 }
 
+/* Test loading when schema expects flags and finds a mapping inside. */
+static bool test_err_schema_flags_mapping(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	enum test_flags {
+		TEST_FLAGS_NONE   = 0,
+		TEST_FLAGS_FIRST  = (1 << 0),
+		TEST_FLAGS_SECOND = (1 << 1),
+		TEST_FLAGS_THIRD  = (1 << 2),
+		TEST_FLAGS_FOURTH = (1 << 3),
+		TEST_FLAGS_FIFTH  = (1 << 4),
+		TEST_FLAGS_SIXTH  = (1 << 5),
+	};
+	static const char * const strings[] = {
+		"first",
+		"second",
+		"third",
+		"fourth",
+		"fifth",
+		"sixth",
+	};
+	static const unsigned char yaml[] =
+		"key:\n"
+		"    - first\n"
+		"    - map:\n"
+		"        a:\n"
+		"        b:\n";
+	struct target_struct {
+		enum test_flags a;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_mapping mapping_schema[] = {
+		CYAML_MAPPING_FLAGS("key", CYAML_FLAG_STRICT,
+				struct target_struct, a,
+				strings, CYAML_ARRAY_LEN(strings)),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt);
+	if (err != CYAML_ERR_UNEXPECTED_EVENT) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/* Test loading when schema expects enum, but string is not allowed. */
+static bool test_err_schema_enum_bad_string(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	enum test_enum {
+		TEST_ENUM_FIRST,
+		TEST_ENUM_SECOND,
+		TEST_ENUM_THIRD,
+		TEST_ENUM__COUNT,
+	};
+	static const char * const strings[TEST_ENUM__COUNT] = {
+		[TEST_ENUM_FIRST]  = "first",
+		[TEST_ENUM_SECOND] = "second",
+		[TEST_ENUM_THIRD]  = "third",
+	};
+	static const unsigned char yaml[] =
+		"key: fourth\n";
+	struct target_struct {
+		enum test_enum a;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_mapping mapping_schema[] = {
+		CYAML_MAPPING_ENUM("key", CYAML_FLAG_DEFAULT,
+				struct target_struct, a,
+				strings, TEST_ENUM__COUNT),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/* Test loading when schema expects flags but YAML has bad flag string. */
+static bool test_err_schema_flags_bad_string(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	enum test_flags {
+		TEST_FLAGS_NONE   = 0,
+		TEST_FLAGS_FIRST  = (1 << 0),
+		TEST_FLAGS_SECOND = (1 << 1),
+		TEST_FLAGS_THIRD  = (1 << 2),
+		TEST_FLAGS_FOURTH = (1 << 3),
+		TEST_FLAGS_FIFTH  = (1 << 4),
+		TEST_FLAGS_SIXTH  = (1 << 5),
+	};
+	static const char * const strings[] = {
+		"first",
+		"second",
+		"third",
+		"fourth",
+		"fifth",
+		"sixth",
+	};
+	static const unsigned char yaml[] =
+		"key:\n"
+		"    - first\n"
+		"    - seventh\n";
+	struct target_struct {
+		enum test_flags a;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_mapping mapping_schema[] = {
+		CYAML_MAPPING_FLAGS("key", CYAML_FLAG_DEFAULT,
+				struct target_struct, a,
+				strings, CYAML_ARRAY_LEN(strings)),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/* Test loading when schema expects strict enum but YAML has bad string. */
+static bool test_err_schema_strict_enum_bad_string(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	enum test_enum {
+		TEST_ENUM_FIRST,
+		TEST_ENUM_SECOND,
+		TEST_ENUM_THIRD,
+		TEST_ENUM__COUNT,
+	};
+	static const char * const strings[TEST_ENUM__COUNT] = {
+		[TEST_ENUM_FIRST]  = "first",
+		[TEST_ENUM_SECOND] = "second",
+		[TEST_ENUM_THIRD]  = "third",
+	};
+	static const unsigned char yaml[] =
+		"key: fourth\n";
+	struct target_struct {
+		enum test_enum a;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_mapping mapping_schema[] = {
+		CYAML_MAPPING_ENUM("key", CYAML_FLAG_STRICT,
+				struct target_struct, a,
+				strings, TEST_ENUM__COUNT),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/* Test loading when schema expects strict flags but YAML has bad string. */
+static bool test_err_schema_strict_flags_bad_string(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	enum test_flags {
+		TEST_FLAGS_NONE   = 0,
+		TEST_FLAGS_FIRST  = (1 << 0),
+		TEST_FLAGS_SECOND = (1 << 1),
+		TEST_FLAGS_THIRD  = (1 << 2),
+		TEST_FLAGS_FOURTH = (1 << 3),
+		TEST_FLAGS_FIFTH  = (1 << 4),
+		TEST_FLAGS_SIXTH  = (1 << 5),
+	};
+	static const char * const strings[] = {
+		"first",
+		"second",
+		"third",
+		"fourth",
+		"fifth",
+		"sixth",
+	};
+	static const unsigned char yaml[] =
+		"key:\n"
+		"    - first\n"
+		"    - seventh\n";
+	struct target_struct {
+		enum test_flags a;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_mapping mapping_schema[] = {
+		CYAML_MAPPING_FLAGS("key", CYAML_FLAG_STRICT,
+				struct target_struct, a,
+				strings, CYAML_ARRAY_LEN(strings)),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
 /* Test loading when schema expects int, but YAML has sequence. */
 static bool test_err_schema_expect_int_read_seq(
 		ttest_report_ctx_t *report,
@@ -1354,6 +1645,14 @@ bool errs_tests(
 
 	pass &= test_err_schema_sequence_min_entries(rc, &config);
 	pass &= test_err_schema_sequence_max_entries(rc, &config);
+
+	ttest_heading(rc, "YAML / schema mismatch: bad flags/enum strings");
+
+	pass &= test_err_schema_flags_mapping(rc, &config);
+	pass &= test_err_schema_enum_bad_string(rc, &config);
+	pass &= test_err_schema_flags_bad_string(rc, &config);
+	pass &= test_err_schema_strict_enum_bad_string(rc, &config);
+	pass &= test_err_schema_strict_flags_bad_string(rc, &config);
 
 	ttest_heading(rc, "YAML / schema mismatch: expected value type tests");
 
