@@ -919,6 +919,103 @@ static bool test_err_schema_unknown_mapping_field(
 	return ttest_pass(&tc);
 }
 
+/* Test loading when schema expects sequence, it has too few entries. */
+static bool test_err_schema_sequence_min_entries(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"key:\n"
+		"  - 1\n"
+		"  - 2\n";
+	struct target_struct {
+		int *a;
+		unsigned a_count;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_type entry_schema = {
+		CYAML_TYPE_INT(CYAML_FLAG_DEFAULT, *(data_tgt->a)),
+	};
+	static const struct cyaml_schema_mapping mapping_schema[] = {
+		CYAML_MAPPING_SEQUENCE("key", CYAML_FLAG_POINTER,
+				struct target_struct, a, &entry_schema,
+				3, CYAML_UNLIMITED),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt);
+	if (err != CYAML_ERR_SEQUENCE_ENTRIES_MIN) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/* Test loading when schema expects sequence, it has too many entries. */
+static bool test_err_schema_sequence_max_entries(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"key:\n"
+		"  - 1\n"
+		"  - 2\n"
+		"  - 3\n";
+	struct target_struct {
+		int *a;
+		unsigned a_count;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_type entry_schema = {
+		CYAML_TYPE_INT(CYAML_FLAG_DEFAULT, *(data_tgt->a)),
+	};
+	static const struct cyaml_schema_mapping mapping_schema[] = {
+		CYAML_MAPPING_SEQUENCE("key", CYAML_FLAG_POINTER,
+				struct target_struct, a, &entry_schema,
+				2, 2),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt);
+	if (err != CYAML_ERR_SEQUENCE_ENTRIES_MAX) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
 /* Test loading when schema expects int, but YAML has sequence. */
 static bool test_err_schema_expect_int_read_seq(
 		ttest_report_ctx_t *report,
@@ -1252,6 +1349,11 @@ bool errs_tests(
 
 	pass &= test_err_schema_missing_mapping_field(rc, &config);
 	pass &= test_err_schema_unknown_mapping_field(rc, &config);
+
+	ttest_heading(rc, "YAML / schema mismatch: sequence counts");
+
+	pass &= test_err_schema_sequence_min_entries(rc, &config);
+	pass &= test_err_schema_sequence_max_entries(rc, &config);
 
 	ttest_heading(rc, "YAML / schema mismatch: expected value type tests");
 
