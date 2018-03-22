@@ -834,6 +834,91 @@ static bool test_err_schema_string_max_length(
 	return ttest_pass(&tc);
 }
 
+/* Test loading when schema expects mapping field which is not present. */
+static bool test_err_schema_missing_mapping_field(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"a: 2\n";
+	struct target_struct {
+		int a;
+		int b;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_mapping mapping_schema[] = {
+		CYAML_MAPPING_INT("a", CYAML_FLAG_DEFAULT,
+				struct target_struct, a),
+		CYAML_MAPPING_INT("b", CYAML_FLAG_DEFAULT,
+				struct target_struct, b),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt);
+	if (err != CYAML_ERR_MAPPING_FIELD_MISSING) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/* Test loading when schema disallows mapping field. */
+static bool test_err_schema_unknown_mapping_field(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"wrong_key: 2\n";
+	struct target_struct {
+		int a;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_mapping mapping_schema[] = {
+		CYAML_MAPPING_INT("key", CYAML_FLAG_DEFAULT,
+				struct target_struct, a),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt);
+	if (err != CYAML_ERR_INVALID_KEY) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
 /* Test loading when schema expects int, but YAML has sequence. */
 static bool test_err_schema_expect_int_read_seq(
 		ttest_report_ctx_t *report,
@@ -1162,6 +1247,11 @@ bool errs_tests(
 
 	pass &= test_err_schema_string_min_length(rc, &config);
 	pass &= test_err_schema_string_max_length(rc, &config);
+
+	ttest_heading(rc, "YAML / schema mismatch: mapping fields");
+
+	pass &= test_err_schema_missing_mapping_field(rc, &config);
+	pass &= test_err_schema_unknown_mapping_field(rc, &config);
 
 	ttest_heading(rc, "YAML / schema mismatch: expected value type tests");
 
