@@ -583,7 +583,7 @@ bool errs_tests(
 	pass &= test_err_schema_bad_data_size_1(rc, &config);
 	pass &= test_err_schema_bad_data_size_2(rc, &config);
 
-	ttest_heading(rc, "YAML / schema mismatch tests");
+	ttest_heading(rc, "YAML / schema mismatch: expected value type tests");
 
 	pass &= test_err_schema_expect_int_read_seq(rc, &config);
 	pass &= test_err_schema_expect_int_read_end_1(rc, &config);
