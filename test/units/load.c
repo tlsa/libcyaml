@@ -2461,6 +2461,52 @@ static bool test_load_mapping_entry_sequence_ptr_sequence_fixed_flat_int(
 	return ttest_pass(&tc);
 }
 
+/* Test loading a stream with more than one document. */
+static bool test_load_multiple_documents_ignored(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct target_struct {
+		signed char a;
+	} data = {
+		.a = 9,
+	};
+	static const unsigned char yaml[] =
+		"a: 9\n"
+		"---\n"
+		"b: foo\n";
+	struct target_struct *data_tgt = NULL;
+	static const struct cyaml_schema_mapping mapping_schema[] = {
+		CYAML_MAPPING_INT("a", CYAML_FLAG_DEFAULT,
+				struct target_struct, a),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->a != data.a) {
+		return ttest_fail(&tc, "Incorrect value for entry a");
+	}
+
+	return ttest_pass(&tc);
+}
+
 /* Test loading a mapping multiple fields. */
 static bool test_load_mapping_with_multiple_fields(
 		ttest_report_ctx_t *report,
@@ -2937,6 +2983,7 @@ bool load_tests(
 
 	ttest_heading(rc, "Load tests: various");
 
+	pass &= test_load_multiple_documents_ignored(rc, &config);
 	pass &= test_load_mapping_with_multiple_fields(rc, &config);
 	pass &= test_load_mapping_with_optional_fields(rc, &config);
 	pass &= test_load_mapping_only_optional_fields(rc, &config);
