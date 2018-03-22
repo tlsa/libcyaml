@@ -630,12 +630,15 @@ static cyaml_err_t cyaml__read_int(
 		const char *value,
 		uint8_t *data)
 {
+	long long temp;
 	char *end = NULL;
-	long long temp = strtoll(value, &end, 0);
 	int64_t max = ((~(uint64_t)0) >> ((8 - schema->data_size) * 8)) / 2;
 	int64_t min = (-max) - 1;
 
 	CYAML_UNUSED(ctx);
+
+	errno = 0;
+	temp = strtoll(value, &end, 0);
 
 	if (end == value || errno == ERANGE ||
 	    temp < min || temp > max) {
@@ -660,11 +663,14 @@ static cyaml_err_t cyaml__read_uint(
 		const char *value,
 		uint8_t *data)
 {
+	long long temp;
 	char *end = NULL;
-	long long temp = strtoll(value, &end, 0);
 	uint64_t max = (~(uint64_t)0) >> ((8 - schema->data_size) * 8);
 
 	CYAML_UNUSED(ctx);
+
+	errno = 0;
+	temp = strtoll(value, &end, 0);
 
 	if (end == value || errno == ERANGE ||
 	    temp < 0 || (uint64_t)temp > max) {
@@ -752,13 +758,16 @@ static cyaml_err_t cyaml__read_float_f(
 		const char *value,
 		uint8_t *data)
 {
+	float temp;
 	char *end = NULL;
-	float temp = strtof(value, &end);
 
 	assert(schema->data_size == sizeof(temp));
 
 	CYAML_UNUSED(ctx);
 	CYAML_UNUSED(schema);
+
+	errno = 0;
+	temp = strtof(value, &end);
 
 	if (end == value || errno == ERANGE) {
 		return CYAML_ERR_INVALID_VALUE;
@@ -784,13 +793,16 @@ static cyaml_err_t cyaml__read_float_d(
 		const char *value,
 		uint8_t *data)
 {
+	double temp;
 	char *end = NULL;
-	double temp = strtod(value, &end);
 
 	assert(schema->data_size == sizeof(temp));
 
 	CYAML_UNUSED(ctx);
 	CYAML_UNUSED(schema);
+
+	errno = 0;
+	temp = strtod(value, &end);
 
 	if (end == value || errno == ERANGE) {
 		return CYAML_ERR_INVALID_VALUE;
@@ -944,9 +956,12 @@ static cyaml_err_t cyaml__set_flag(
 	}
 
 	if (!(schema->flags & CYAML_FLAG_STRICT)) {
+		long long temp;
 		char *end = NULL;
-		long long temp = strtoll(value, &end, 0);
 		uint64_t max = (~(uint64_t)0) >> ((8 - schema->data_size) * 8);
+
+		errno = 0;
+		temp = strtoll(value, &end, 0);
 
 		if (!(end == value || errno == ERANGE ||
 		      temp < 0 || (uint64_t)temp > max)) {
