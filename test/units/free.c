@@ -65,6 +65,25 @@ static bool test_free_null_config(
 	return ttest_pass(&tc);
 }
 
+/* Test cyaml_free with NULL memory allocation function. */
+static bool test_free_null_mem_fn(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	cyaml_err_t err;
+	cyaml_config_t cfg = *config;
+	ttest_ctx_t tc = ttest_start(report, __func__, NULL, NULL);
+
+	cfg.mem_fn = NULL;
+
+	err = cyaml_free(&cfg, NULL, NULL);
+	if (err != CYAML_ERR_BAD_CONFIG_NULL_MEMFN) {
+		return ttest_fail(&tc, "Free failed: %s", cyaml_strerror(err));
+	}
+
+	return ttest_pass(&tc);
+}
+
 /* Test cyaml_free with NULL schema. */
 static bool test_free_null_schema(
 		ttest_report_ctx_t *report,
@@ -97,6 +116,7 @@ bool free_tests(
 	bool pass = true;
 	cyaml_config_t config = {
 		.log_fn = log_fn,
+		.mem_fn = cyaml_mem,
 		.log_level = log_level,
 		.flags = CYAML_CFG_DEFAULT,
 	};
@@ -104,6 +124,7 @@ bool free_tests(
 	ttest_heading(rc, "Free tests");
 
 	pass &= test_free_null_data(rc, &config);
+	pass &= test_free_null_mem_fn(rc, &config);
 	pass &= test_free_null_config(rc, &config);
 	pass &= test_free_null_schema(rc, &config);
 

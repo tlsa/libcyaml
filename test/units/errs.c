@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdarg.h>
+#include <stdlib.h>
 #include <stdio.h>
 
 #include <cyaml.h>
@@ -90,6 +91,38 @@ static bool test_err_load_null_config(
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), NULL, NULL,
 			(cyaml_data_t **) NULL);
 	if (err != CYAML_ERR_BAD_PARAM_NULL_CONFIG) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/* Test loading with NULL memory allocation function. */
+static bool test_err_load_null_mem_fn(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] = "";
+	cyaml_config_t cfg = *config;
+	void *data_tgt = NULL;
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = &cfg,
+		.schema = NULL,
+	};
+	cyaml_err_t err;
+
+	cfg.mem_fn = NULL;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, NULL,
+			(cyaml_data_t **) NULL);
+	if (err != CYAML_ERR_BAD_CONFIG_NULL_MEMFN) {
 		return ttest_fail(&tc, cyaml_strerror(err));
 	}
 
@@ -1577,6 +1610,272 @@ static bool test_err_schema_expect_sequence_read_scalar(
 	return ttest_pass(&tc);
 }
 
+/* Test loading, with all memory allocation failure at every possible point. */
+static bool test_err_free_null(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	ttest_ctx_t tc = ttest_start(report, __func__, NULL, NULL);
+
+	UNUSED(config);
+
+	cyaml_mem(NULL, 0);
+
+	return ttest_pass(&tc);
+}
+
+/** Context for allocation failure tests. */
+static struct test_cyaml_mem_ctx_s {
+	unsigned required;
+	unsigned fail;
+	unsigned current;
+} test_cyaml_mem_ctx;
+
+/* Allocation counter */
+static void * test_cyaml_mem_count_allocs(
+		void *ptr,
+		size_t size)
+{
+	if (size == 0) {
+		free(ptr);
+		return NULL;
+	}
+
+	test_cyaml_mem_ctx.required++;
+
+	return realloc(ptr, size);
+}
+
+/* Allocation failure tester */
+static void * test_cyaml_mem_fail(
+		void *ptr,
+		size_t size)
+{
+	if (size == 0) {
+		free(ptr);
+		return NULL;
+	}
+
+	if (test_cyaml_mem_ctx.current == test_cyaml_mem_ctx.fail) {
+		return NULL;
+	}
+
+	test_cyaml_mem_ctx.current++;
+
+	return realloc(ptr, size);
+}
+
+/* Test loading, with all memory allocation failure at every possible point. */
+static bool test_err_load_alloc_oom_1(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	cyaml_config_t cfg = *config;
+	static const unsigned char yaml[] =
+		"animals:\n"
+		"  - kind: cat\n"
+		"    sound: meow\n"
+		"    position: [ 1, 2, 1]\n"
+		"  - kind: snake\n"
+		"    sound: hiss\n"
+		"    position: [ 3, 1, 0]\n";
+	struct animal_s {
+		char *kind;
+		char *sound;
+		int **position;
+	};
+	struct target_struct {
+		struct animal_s **animal;
+		uint32_t animal_count;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_type position_entry_schema = {
+		CYAML_TYPE_INT(CYAML_FLAG_POINTER, int),
+	};
+	static const struct cyaml_schema_mapping animal_schema[] = {
+		CYAML_MAPPING_STRING_PTR("kind", CYAML_FLAG_POINTER,
+				struct animal_s, kind, 0, CYAML_UNLIMITED),
+		CYAML_MAPPING_STRING_PTR("sound", CYAML_FLAG_POINTER,
+				struct animal_s, sound, 0, CYAML_UNLIMITED),
+		CYAML_MAPPING_SEQUENCE_FIXED("position", CYAML_FLAG_POINTER,
+				struct animal_s, position,
+				&position_entry_schema, 3),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type animal_entry_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER, **(data_tgt->animal),
+				animal_schema),
+	};
+	static const struct cyaml_schema_mapping mapping_schema[] = {
+		CYAML_MAPPING_SEQUENCE("animals", CYAML_FLAG_POINTER,
+				struct target_struct, animal,
+				&animal_entry_schema, 0, CYAML_UNLIMITED),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = &cfg,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	/*
+	 * First we load the YAML with the counting allocation function,
+	 * to find the number of allocations required to load the document.
+	 * This is deterministic.
+	 */
+	cfg.mem_fn = test_cyaml_mem_count_allocs;
+	test_cyaml_mem_ctx.required = 0;
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
+			(cyaml_data_t **) &data_tgt);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (test_cyaml_mem_ctx.required == 0) {
+		return ttest_fail(&tc, "There were no allocations.");
+	}
+
+	/* Now free what was loaded. */
+	cyaml_free(config, &top_schema, data_tgt);
+	data_tgt = NULL;
+
+	/*
+	 * Now we load the document multiple times, forcing every possible
+	 * allocation to fail.
+	 */
+	cfg.mem_fn = test_cyaml_mem_fail;
+
+	for (test_cyaml_mem_ctx.fail = 0;
+			test_cyaml_mem_ctx.fail < test_cyaml_mem_ctx.required;
+			test_cyaml_mem_ctx.fail++) {
+		test_cyaml_mem_ctx.current = 0;
+		err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
+				(cyaml_data_t **) &data_tgt);
+		if (err != CYAML_ERR_OOM) {
+			return ttest_fail(&tc, cyaml_strerror(err));
+		}
+
+		/* Now free what was loaded. */
+		cyaml_free(config, &top_schema, data_tgt);
+		data_tgt = NULL;
+	}
+
+	return ttest_pass(&tc);
+}
+
+/* Test loading, with all memory allocation failure at every possible point. */
+static bool test_err_load_alloc_oom_2(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	cyaml_config_t cfg = *config;
+	static const unsigned char yaml[] =
+		"animals:\n"
+		"  - kind: cat\n"
+		"    sound: meow\n"
+		"    position: [ 1, 2, 1]\n"
+		"  - kind: snake\n"
+		"    sound: hiss\n"
+		"    position: [ 3, 1, 0]\n";
+	struct animal_s {
+		char *kind;
+		char *sound;
+		int **position;
+		unsigned position_count;
+	};
+	struct target_struct {
+		struct animal_s **animal;
+		uint32_t animal_count;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_type position_entry_schema = {
+		CYAML_TYPE_INT(CYAML_FLAG_POINTER, int),
+	};
+	static const struct cyaml_schema_mapping animal_schema[] = {
+		CYAML_MAPPING_STRING_PTR("kind", CYAML_FLAG_POINTER,
+				struct animal_s, kind, 0, CYAML_UNLIMITED),
+		CYAML_MAPPING_STRING_PTR("sound", CYAML_FLAG_POINTER,
+				struct animal_s, sound, 0, CYAML_UNLIMITED),
+		CYAML_MAPPING_SEQUENCE("position", CYAML_FLAG_POINTER,
+				struct animal_s, position,
+				&position_entry_schema, 0, CYAML_UNLIMITED),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type animal_entry_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER, **(data_tgt->animal),
+				animal_schema),
+	};
+	static const struct cyaml_schema_mapping mapping_schema[] = {
+		CYAML_MAPPING_SEQUENCE("animals", CYAML_FLAG_POINTER,
+				struct target_struct, animal,
+				&animal_entry_schema, 0, CYAML_UNLIMITED),
+		CYAML_MAPPING_END
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = &cfg,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	/*
+	 * First we load the YAML with the counting allocation function,
+	 * to find the number of allocations required to load the document.
+	 * This is deterministic.
+	 */
+	cfg.mem_fn = test_cyaml_mem_count_allocs;
+	test_cyaml_mem_ctx.required = 0;
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
+			(cyaml_data_t **) &data_tgt);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (test_cyaml_mem_ctx.required == 0) {
+		return ttest_fail(&tc, "There were no allocations.");
+	}
+
+	/* Now free what was loaded. */
+	cyaml_free(config, &top_schema, data_tgt);
+	data_tgt = NULL;
+
+	/*
+	 * Now we load the document multiple times, forcing every possible
+	 * allocation to fail.
+	 */
+	cfg.mem_fn = test_cyaml_mem_fail;
+
+	for (test_cyaml_mem_ctx.fail = 0;
+			test_cyaml_mem_ctx.fail < test_cyaml_mem_ctx.required;
+			test_cyaml_mem_ctx.fail++) {
+		test_cyaml_mem_ctx.current = 0;
+		err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
+				(cyaml_data_t **) &data_tgt);
+		if (err != CYAML_ERR_OOM) {
+			return ttest_fail(&tc, cyaml_strerror(err));
+		}
+
+		/* Now free what was loaded. */
+		cyaml_free(config, &top_schema, data_tgt);
+		data_tgt = NULL;
+	}
+
+	return ttest_pass(&tc);
+}
+
 /**
  * Run the CYAML error unit tests.
  *
@@ -1593,6 +1892,7 @@ bool errs_tests(
 	bool pass = true;
 	cyaml_config_t config = {
 		.log_fn = log_fn,
+		.mem_fn = cyaml_mem,
 		.log_level = log_level,
 		.flags = CYAML_CFG_DEFAULT,
 	};
@@ -1609,6 +1909,7 @@ bool errs_tests(
 
 	pass &= test_err_load_null_data(rc, &config);
 	pass &= test_err_load_null_config(rc, &config);
+	pass &= test_err_load_null_mem_fn(rc, &config);
 	pass &= test_err_load_null_schema(rc, &config);
 
 	ttest_heading(rc, "Bad schema tests");
@@ -1662,6 +1963,12 @@ bool errs_tests(
 	pass &= test_err_schema_expect_flags_read_scalar(rc, &config);
 	pass &= test_err_schema_expect_mapping_read_scalar(rc, &config);
 	pass &= test_err_schema_expect_sequence_read_scalar(rc, &config);
+
+	ttest_heading(rc, "Memory allocation handling tests");
+
+	pass &= test_err_free_null(rc, &config);
+	pass &= test_err_load_alloc_oom_1(rc, &config);
+	pass &= test_err_load_alloc_oom_2(rc, &config);
 
 	return pass;
 }

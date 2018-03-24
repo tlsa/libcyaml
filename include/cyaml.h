@@ -283,6 +283,7 @@ typedef enum cyaml_err {
 	CYAML_ERR_SEQUENCE_ENTRIES_MAX,  /**< Too many sequence entries. */
 	CYAML_ERR_SEQUENCE_FIXED_COUNT,  /**< Mismatch between min and max. */
 	CYAML_ERR_MAPPING_FIELD_MISSING, /**< Required mapping field missing. */
+	CYAML_ERR_BAD_CONFIG_NULL_MEMFN, /**< Client gave NULL mem function. */
 	CYAML_ERR_BAD_PARAM_NULL_CONFIG, /**< Client gave NULL config arg. */
 	CYAML_ERR_BAD_PARAM_NULL_SCHEMA, /**< Client gave NULL schema arg. */
 	CYAML_ERR_LIBYAML_PARSER_INIT,   /**< Failed to initialise libyaml. */
@@ -790,6 +791,23 @@ typedef void (*cyaml_log_fn_t)(
 		va_list args);
 
 /**
+ * CYAML memory allocation / freeing function.
+ *
+ * Clients may implement this to handle memory allocation / freeing.
+ *
+ * \param[in] ptr    Existing allocation to resize, or NULL.
+ * \param[in] size   The new size for the allocation.  \note setting 0 must
+ *                   be treated as free().
+ * \return If `size == 0`, returns NULL.  If `size > 0`, returns NULL on failure,
+ *         and any existing allocation is left untouched, or return non-NULL as
+ *         the new alloctation on success, and the original pointer becomes
+ *         invalid.
+ */
+typedef void * (*cyaml_mem_fn_t)(
+		void *ptr,
+		size_t size);
+
+/**
  * Client CYAML configuration data.
  *
  * \todo Should provide facility for client to provide its own custom
@@ -811,6 +829,17 @@ typedef struct cyaml_config {
 	 *       be rejected by your schema.
 	 */
 	cyaml_log_fn_t log_fn;
+	/**
+	 * Client function to use for memory allocation handling.
+	 *
+	 * Clients can implement their own, or pass \ref cyaml_mem to use
+	 * CYAML's default allocator.
+	 *
+	 * \note Depending on platform, when using CYAML's default allocator,
+	 *       clients may need to take care to ensure any allocated memory
+	 *       is freed using \ref cyaml_mem too.
+	 */
+	cyaml_mem_fn_t mem_fn;
 	/**
 	 * Minimum logging priority level to be issued.
 	 *
@@ -844,6 +873,26 @@ extern void cyaml_log(
 		cyaml_log_t level,
 		const char *fmt,
 		va_list args);
+
+/**
+ * CYAML default memory allocation / freeing function.
+ *
+ * This is used when clients don't supply their own.  It is exposed to
+ * enable clients to use the same allocator as libcyaml used internally
+ * to allocate/free memory when they have not provided their own allocation
+ * function.
+ *
+ * \param[in] ptr    Existing allocation to resize, or NULL.
+ * \param[in] size   The new size for the allocation.  \note When `size == 0`
+ *                   this frees `ptr`.
+ * \return If `size == 0`, returns NULL.  If `size > 0`, returns NULL on failure,
+ *         and any existing allocation is left untouched, or return non-NULL as
+ *         the new alloctation on success, and the original pointer becomes
+ *         invalid.
+ */
+extern void * cyaml_mem(
+		void *ptr,
+		size_t size);
 
 /**
  * Load a YAML document from a file at the given path.

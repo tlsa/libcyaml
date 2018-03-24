@@ -28,6 +28,7 @@
 
 #include <yaml.h>
 
+#include "mem.h"
 #include "data.h"
 #include "util.h"
 
@@ -261,7 +262,8 @@ static cyaml_err_t cyaml__stack_ensure(
 		return CYAML_OK;
 	}
 
-	temp = realloc(ctx->stack, sizeof(*ctx->stack) * max);
+	temp = cyaml__realloc(ctx->config, ctx->stack, 0,
+			sizeof(*ctx->stack) * max, false);
 	if (temp == NULL) {
 		return CYAML_ERR_OOM;
 	}
@@ -299,18 +301,21 @@ static uint16_t cyaml__get_entry_count_from_mapping_schema(
  * The bitfield is used to record whether the mapping as all the required
  * fields by mapping schema array index.
  *
+ * \param[in]  ctx    The CYAML loading context.
  * \param[in]  state  CYAML load state for a \ref CYAML_STATE_IN_MAPPING state.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
 static cyaml_err_t cyaml__mapping_bitfieid_create(
+		cyaml_ctx_t *ctx,
 		cyaml_state_t *state)
 {
 	cyaml_bitfield_t *bitfield;
 	unsigned count = cyaml__get_entry_count_from_mapping_schema(
 			state->mapping.schema);
+	size_t size = ((count + CYAML_BITFIELD_BITS - 1) / CYAML_BITFIELD_BITS)
+			* sizeof(*bitfield);
 
-	bitfield = calloc((count + CYAML_BITFIELD_BITS - 1) /
-			CYAML_BITFIELD_BITS, sizeof(*bitfield));
+	bitfield = cyaml__alloc(ctx->config, size, true);
 	if (bitfield == NULL) {
 		return CYAML_ERR_OOM;
 	}
@@ -323,12 +328,14 @@ static cyaml_err_t cyaml__mapping_bitfieid_create(
 /**
  * Destroy a \ref CYAML_STATE_IN_MAPPING state's bitfield array allocation.
  *
+ * \param[in]  ctx    The CYAML loading context.
  * \param[in]  state  CYAML load state for a \ref CYAML_STATE_IN_MAPPING state.
  */
 static void cyaml__mapping_bitfieid_destroy(
+		cyaml_ctx_t *ctx,
 		cyaml_state_t *state)
 {
-	free(state->mapping.fields);
+	cyaml__free(ctx->config, state->mapping.fields);
 }
 
 /**
@@ -417,7 +424,7 @@ static cyaml_err_t cyaml__stack_push(
 		assert(schema->type == CYAML_MAPPING);
 		s.mapping.schema = schema->mapping.schema;
 		s.mapping.state = CYAML_MAPPING_STATE_KEY;
-		err = cyaml__mapping_bitfieid_create(&s);
+		err = cyaml__mapping_bitfieid_create(ctx, &s);
 		if (err != CYAML_OK) {
 			return err;
 		}
@@ -472,7 +479,7 @@ static cyaml_err_t cyaml__stack_pop(
 
 	switch (ctx->state->state) {
 	case CYAML_STATE_IN_MAPPING:
-		cyaml__mapping_bitfieid_destroy(ctx->state);
+		cyaml__mapping_bitfieid_destroy(ctx, ctx->state);
 		break;
 	default:
 		break;
@@ -541,16 +548,25 @@ static cyaml_err_t cyaml__data_handle_pointer(
 					event->data.scalar.value) + 1;
 		}
 
-		if (cyaml__is_sequence(schema)) {
+		if (schema->type == CYAML_SEQUENCE) {
 			/* Sequence; could be extending allocation. */
 			offset = schema->data_size * state->sequence.count;
 			value_data = state->sequence.data;
+		} else if (schema->type == CYAML_SEQUENCE_FIXED) {
+			/* Allocation is only made for full fixed size
+			 * of sequence, on creation, and not extended. */
+			if (state->sequence.count > 0) {
+				*value_data_io = state->sequence.data;
+				return CYAML_OK;
+			}
+			delta = schema->data_size * schema->sequence.max;
 		}
-		value_data = realloc(value_data, offset + delta);
+
+		value_data = cyaml__realloc(ctx->config, value_data,
+				offset, offset + delta, true);
 		if (value_data == NULL) {
 			return CYAML_ERR_OOM;
 		}
-		memset(value_data + offset, 0, delta);
 
 		cyaml__log(ctx->config, CYAML_LOG_DEBUG,
 				"Allocation: %p\n", value_data);
@@ -584,6 +600,8 @@ static void cyaml__backtrace(
 {
 	if (ctx->stack_idx > 1) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR, "Backtrace:\n");
+	} else {
+		return;
 	}
 
 	for (uint32_t idx = ctx->stack_idx - 1; idx != 0; idx--) {
@@ -1545,6 +1563,37 @@ out:
 }
 
 /**
+ * Check that common load params from client are valid.
+ *
+ * \param[in] config    The client's CYAML library config.
+ * \param[in] schema    The schema describing the content of data.
+ * \param[in] data_tgt  Points to client's address to write data to.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static inline cyaml_err_t cyaml__validate_load_params(
+		const cyaml_config_t *config,
+		const cyaml_schema_type_t *schema,
+		cyaml_data_t * const *data_tgt)
+{
+	if (config == NULL) {
+		return CYAML_ERR_BAD_PARAM_NULL_CONFIG;
+	}
+	if (config->mem_fn == NULL) {
+		return CYAML_ERR_BAD_CONFIG_NULL_MEMFN;
+	}
+	if (schema == NULL) {
+		return CYAML_ERR_BAD_PARAM_NULL_SCHEMA;
+	}
+	if (schema->type != CYAML_MAPPING) {
+		return CYAML_ERR_BAD_TOP_LEVEL_TYPE;
+	}
+	if (data_tgt == NULL) {
+		return CYAML_ERR_BAD_PARAM_NULL_DATA;
+	}
+	return CYAML_OK;
+}
+
+/**
  * The main YAML loading function.
  *
  * The public interfaces are wrappers around this.
@@ -1578,6 +1627,11 @@ static cyaml_err_t cyaml__load(
 	};
 	cyaml_err_t err = CYAML_OK;
 
+	err = cyaml__validate_load_params(config, schema, data_out);
+	if (err != CYAML_OK) {
+		return err;
+	}
+
 	err = cyaml__stack_push(&ctx, CYAML_STATE_START, schema, &data);
 	if (err != CYAML_OK) {
 		goto out;
@@ -1608,36 +1662,8 @@ out:
 	while (ctx.stack_idx > 0) {
 		cyaml__stack_pop(&ctx);
 	}
-	free(ctx.stack);
+	cyaml__free(config, ctx.stack);
 	return err;
-}
-
-/**
- * Check that common load params from client are valid.
- *
- * \param[in] config    The client's CYAML library config.
- * \param[in] schema    The schema describing the content of data.
- * \param[in] data_tgt  Points to client's address to write data to.
- * \return \ref CYAML_OK on success, or appropriate error code otherwise.
- */
-static inline cyaml_err_t cyaml__validate_load_params(
-		const cyaml_config_t *config,
-		const cyaml_schema_type_t *schema,
-		cyaml_data_t * const *data_tgt)
-{
-	if (config == NULL) {
-		return CYAML_ERR_BAD_PARAM_NULL_CONFIG;
-	}
-	if (schema == NULL) {
-		return CYAML_ERR_BAD_PARAM_NULL_SCHEMA;
-	}
-	if (schema->type != CYAML_MAPPING) {
-		return CYAML_ERR_BAD_TOP_LEVEL_TYPE;
-	}
-	if (data_tgt == NULL) {
-		return CYAML_ERR_BAD_PARAM_NULL_DATA;
-	}
-	return CYAML_OK;
 }
 
 /* Exported function, documented in include/cyaml/cyaml.h */
@@ -1650,11 +1676,6 @@ cyaml_err_t cyaml_load_file(
 	FILE *file;
 	cyaml_err_t err;
 	yaml_parser_t parser;
-
-	err = cyaml__validate_load_params(config, schema, data_out);
-	if (err != CYAML_OK) {
-		return err;
-	}
 
 	file = fopen(path, "r");
 	if (file == NULL) {
@@ -1695,11 +1716,6 @@ cyaml_err_t cyaml_load_data(
 {
 	cyaml_err_t err;
 	yaml_parser_t parser;
-
-	err = cyaml__validate_load_params(config, schema, data_out);
-	if (err != CYAML_OK) {
-		return err;
-	}
 
 	/* Initialize parser */
 	if (!yaml_parser_initialize(&parser)) {

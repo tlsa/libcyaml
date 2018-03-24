@@ -2926,6 +2926,7 @@ bool load_tests(
 	bool pass = true;
 	cyaml_config_t config = {
 		.log_fn = log_fn,
+		.mem_fn = cyaml_mem,
 		.log_level = log_level,
 		.flags = CYAML_CFG_DEFAULT,
 	};

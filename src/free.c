@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: ISC
  *
- * Copyright (C) 2017 Michael Drake <tlsa@netsurf-browser.org>
+ * Copyright (C) 2017-2018 Michael Drake <tlsa@netsurf-browser.org>
  */
 
 /**
@@ -22,26 +22,31 @@
  * are unbound, e.g. for a data tree structure.
  */
 
+#include <stdbool.h>
 #include <assert.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
 
 #include "data.h"
 #include "util.h"
+#include "mem.h"
 
 /**
  * Internal function for freeing a CYAML-parsed data structure.
  *
  * \param[in]  cfg     The client's CYAML library config.
  * \param[in]  schema  The schema describing how to free `data`.
- * \param[in]  data    The data structure to be freed.
+ * \param[in]  data    The data structure to be freed's base address.
+ * \param[in]  offset  The offset of data structure to be freed from `data`.
  */
-static void cyaml__free(
+static void cyaml__free_value(
 		const cyaml_config_t *cfg,
 		const cyaml_schema_type_t *schema,
-		uint8_t * const data);
+		uint8_t * const data,
+		size_t offset);
 
 /**
  * Internal function for freeing a CYAML-parsed sequence.
@@ -65,7 +70,8 @@ static void cyaml__free_sequence(
 	}
 
 	for (uint64_t i = 0; i < count; i++) {
-		cyaml__free(cfg, schema, data + data_size * i);
+		cyaml__log(cfg, CYAML_LOG_DEBUG, "Freeing sequence entry: %u\n", i);
+		cyaml__free_value(cfg, schema, data, data_size * i);
 	}
 }
 
@@ -84,24 +90,26 @@ static void cyaml__free_mapping(
 	const cyaml_schema_mapping_t *schema = mapping_schema->mapping.schema;
 
 	while (schema->key != NULL) {
-		uint8_t *entry_data = data + schema->data_offset;
-		cyaml__free(cfg, &schema->value, entry_data);
+		cyaml__log(cfg, CYAML_LOG_DEBUG, "Freeing key: %s (at offset: %u)\n",
+				schema->key, (unsigned)schema->data_offset);
+		cyaml__free_value(cfg, &schema->value, data, schema->data_offset);
 		schema++;
 	}
 }
 
 /* This function is documented at the forward declaration above. */
-static void cyaml__free(
+static void cyaml__free_value(
 		const cyaml_config_t *cfg,
 		const cyaml_schema_type_t *schema,
-		uint8_t * const data)
+		uint8_t * const data,
+		size_t offset)
 {
-	uint8_t *data_target = data;
+	uint8_t *data_target = data + offset;
 
 	if (schema->flags & CYAML_FLAG_POINTER) {
 		cyaml_err_t err;
 		data_target = (void *)cyaml_data_read(
-				sizeof(char *), data, &err);
+				sizeof(char *), data_target, &err);
 		if ((err != CYAML_OK) || (data_target == NULL)) {
 			return;
 		}
@@ -126,7 +134,7 @@ static void cyaml__free(
 
 	if (schema->flags & CYAML_FLAG_POINTER) {
 		cyaml__log(cfg, CYAML_LOG_DEBUG, "Freeing: %p\n", data_target);
-		free(data_target);
+		cyaml__free(cfg, data_target);
 	}
 }
 
@@ -139,9 +147,12 @@ cyaml_err_t cyaml_free(
 	if (config == NULL) {
 		return CYAML_ERR_BAD_PARAM_NULL_CONFIG;
 	}
+	if (config->mem_fn == NULL) {
+		return CYAML_ERR_BAD_CONFIG_NULL_MEMFN;
+	}
 	if (schema == NULL) {
 		return CYAML_ERR_BAD_PARAM_NULL_SCHEMA;
 	}
-	cyaml__free(config, schema, (void *)&data);
+	cyaml__free_value(config, schema, (void *)&data, 0);
 	return CYAML_OK;
 }
