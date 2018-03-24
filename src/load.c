@@ -548,11 +548,20 @@ static cyaml_err_t cyaml__data_handle_pointer(
 					event->data.scalar.value) + 1;
 		}
 
-		if (cyaml__is_sequence(schema)) {
+		if (schema->type == CYAML_SEQUENCE) {
 			/* Sequence; could be extending allocation. */
 			offset = schema->data_size * state->sequence.count;
 			value_data = state->sequence.data;
+		} else if (schema->type == CYAML_SEQUENCE_FIXED) {
+			/* Allocation is only made for full fixed size
+			 * of sequence, on creation, and not extended. */
+			if (state->sequence.count > 0) {
+				*value_data_io = state->sequence.data;
+				return CYAML_OK;
+			}
+			delta = schema->data_size * schema->sequence.max;
 		}
+
 		value_data = cyaml__realloc(ctx->config, value_data,
 				offset, offset + delta, true);
 		if (value_data == NULL) {
