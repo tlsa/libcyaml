@@ -600,6 +600,8 @@ static void cyaml__backtrace(
 {
 	if (ctx->stack_idx > 1) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR, "Backtrace:\n");
+	} else {
+		return;
 	}
 
 	for (uint32_t idx = ctx->stack_idx - 1; idx != 0; idx--) {
