@@ -22,14 +22,17 @@
  * are unbound, e.g. for a data tree structure.
  */
 
+#include <stdbool.h>
 #include <assert.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
 
 #include "data.h"
 #include "util.h"
+#include "mem.h"
 
 /**
  * Internal function for freeing a CYAML-parsed data structure.
@@ -126,7 +129,7 @@ static void cyaml__free_value(
 
 	if (schema->flags & CYAML_FLAG_POINTER) {
 		cyaml__log(cfg, CYAML_LOG_DEBUG, "Freeing: %p\n", data_target);
-		free(data_target);
+		cyaml__free(cfg, data_target);
 	}
 }
 
@@ -138,6 +141,9 @@ cyaml_err_t cyaml_free(
 {
 	if (config == NULL) {
 		return CYAML_ERR_BAD_PARAM_NULL_CONFIG;
+	}
+	if (config->mem_fn == NULL) {
+		return CYAML_ERR_BAD_CONFIG_NULL_MEMFN;
 	}
 	if (schema == NULL) {
 		return CYAML_ERR_BAD_PARAM_NULL_SCHEMA;
