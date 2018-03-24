@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: ISC
  *
- * Copyright (C) 2017 Michael Drake <tlsa@netsurf-browser.org>
+ * Copyright (C) 2017-2018 Michael Drake <tlsa@netsurf-browser.org>
  */
 
 /**
@@ -38,7 +38,7 @@
  * \param[in]  schema  The schema describing how to free `data`.
  * \param[in]  data    The data structure to be freed.
  */
-static void cyaml__free(
+static void cyaml__free_value(
 		const cyaml_config_t *cfg,
 		const cyaml_schema_type_t *schema,
 		uint8_t * const data);
@@ -65,7 +65,7 @@ static void cyaml__free_sequence(
 	}
 
 	for (uint64_t i = 0; i < count; i++) {
-		cyaml__free(cfg, schema, data + data_size * i);
+		cyaml__free_value(cfg, schema, data + data_size * i);
 	}
 }
 
@@ -85,13 +85,13 @@ static void cyaml__free_mapping(
 
 	while (schema->key != NULL) {
 		uint8_t *entry_data = data + schema->data_offset;
-		cyaml__free(cfg, &schema->value, entry_data);
+		cyaml__free_value(cfg, &schema->value, entry_data);
 		schema++;
 	}
 }
 
 /* This function is documented at the forward declaration above. */
-static void cyaml__free(
+static void cyaml__free_value(
 		const cyaml_config_t *cfg,
 		const cyaml_schema_type_t *schema,
 		uint8_t * const data)
@@ -142,6 +142,6 @@ cyaml_err_t cyaml_free(
 	if (schema == NULL) {
 		return CYAML_ERR_BAD_PARAM_NULL_SCHEMA;
 	}
-	cyaml__free(config, schema, (void *)&data);
+	cyaml__free_value(config, schema, (void *)&data);
 	return CYAML_OK;
 }
