@@ -22,6 +22,12 @@ extern bool load_tests(
 		cyaml_log_t log_level,
 		cyaml_log_fn_t log_fn);
 
+/** In file.c */
+extern bool file_tests(
+		ttest_report_ctx_t *rc,
+		cyaml_log_t log_level,
+		cyaml_log_fn_t log_fn);
+
 /** In free.c */
 extern bool free_tests(
 		ttest_report_ctx_t *rc,
@@ -84,6 +90,7 @@ int main(int argc, char *argv[])
 	pass &= free_tests(&rc, log_level, log_fn);
 	pass &= load_tests(&rc, log_level, log_fn);
 	pass &= errs_tests(&rc, log_level, log_fn);
+	pass &= file_tests(&rc, log_level, log_fn);
 
 	ttest_report(&rc);
 

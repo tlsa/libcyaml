@@ -473,9 +473,7 @@ static cyaml_err_t cyaml__stack_pop(
 {
 	uint32_t idx = ctx->stack_idx;
 
-	if (idx == 0) {
-		return CYAML_ERR_INTERNAL_ERROR;
-	}
+	assert(idx != 0);
 
 	switch (ctx->state->state) {
 	case CYAML_STATE_IN_MAPPING:
@@ -1241,6 +1239,12 @@ static cyaml_err_t cyaml__new_sequence_entry(
 					"Failed writing sequence count\n",
 					state->sequence.count,
 					schema->data_size);
+			if (schema->flags & CYAML_FLAG_POINTER) {
+				cyaml__log(ctx->config, CYAML_LOG_DEBUG,
+						"Freeing %p\n",
+						state->sequence.data);
+				cyaml__free(ctx->config, state->sequence.data);
+			}
 			return err;
 		}
 	}
@@ -1283,11 +1287,8 @@ static cyaml_err_t cyaml__read_start(
 		break;
 	}
 
-	if (err != CYAML_OK) {
-		goto out;
-	}
+	/* Could be in error state here; err may not be CYAML_OK. */
 
-out:
 	yaml_event_delete(&event);
 	return err;
 }
@@ -1330,11 +1331,8 @@ static cyaml_err_t cyaml__read_stream(
 		break;
 	}
 
-	if (err != CYAML_OK) {
-		goto out;
-	}
+	/* Could be in error state here; err may not be CYAML_OK. */
 
-out:
 	yaml_event_delete(&event);
 	return err;
 }
@@ -1370,11 +1368,8 @@ static cyaml_err_t cyaml__read_doc(
 		break;
 	}
 
-	if (err != CYAML_OK) {
-		goto out;
-	}
+	/* Could be in error state here; err may not be CYAML_OK. */
 
-out:
 	yaml_event_delete(&event);
 	return err;
 }
@@ -1476,11 +1471,9 @@ static cyaml_err_t cyaml__read_mapping_value(
 	state->mapping.state = CYAML_MAPPING_STATE_KEY;
 
 	err = cyaml__read_value(ctx, &entry->value, data, &event);
-	if (err != CYAML_OK) {
-		goto out;
-	}
 
-out:
+	/* Could be in error state here; err may not be CYAML_OK. */
+
 	yaml_event_delete(&event);
 	return err;
 }
@@ -1553,9 +1546,7 @@ static cyaml_err_t cyaml__read_sequence(
 		break;
 	}
 
-	if (err != CYAML_OK) {
-		goto out;
-	}
+	/* Could be in error state here; err may not be CYAML_OK. */
 
 out:
 	yaml_event_delete(&event);
