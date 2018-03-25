@@ -1289,11 +1289,8 @@ static cyaml_err_t cyaml__read_start(
 		break;
 	}
 
-	if (err != CYAML_OK) {
-		goto out;
-	}
+	/* Could be in error state here; err may not be CYAML_OK. */
 
-out:
 	yaml_event_delete(&event);
 	return err;
 }
@@ -1336,11 +1333,8 @@ static cyaml_err_t cyaml__read_stream(
 		break;
 	}
 
-	if (err != CYAML_OK) {
-		goto out;
-	}
+	/* Could be in error state here; err may not be CYAML_OK. */
 
-out:
 	yaml_event_delete(&event);
 	return err;
 }
@@ -1376,11 +1370,8 @@ static cyaml_err_t cyaml__read_doc(
 		break;
 	}
 
-	if (err != CYAML_OK) {
-		goto out;
-	}
+	/* Could be in error state here; err may not be CYAML_OK. */
 
-out:
 	yaml_event_delete(&event);
 	return err;
 }
@@ -1482,11 +1473,9 @@ static cyaml_err_t cyaml__read_mapping_value(
 	state->mapping.state = CYAML_MAPPING_STATE_KEY;
 
 	err = cyaml__read_value(ctx, &entry->value, data, &event);
-	if (err != CYAML_OK) {
-		goto out;
-	}
 
-out:
+	/* Could be in error state here; err may not be CYAML_OK. */
+
 	yaml_event_delete(&event);
 	return err;
 }
@@ -1559,9 +1548,7 @@ static cyaml_err_t cyaml__read_sequence(
 		break;
 	}
 
-	if (err != CYAML_OK) {
-		goto out;
-	}
+	/* Could be in error state here; err may not be CYAML_OK. */
 
 out:
 	yaml_event_delete(&event);
