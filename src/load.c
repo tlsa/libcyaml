@@ -466,9 +466,8 @@ static cyaml_err_t cyaml__stack_push(
  * This frees any resources owned by the stack entry.
  *
  * \param[in]  ctx     The CYAML loading context.
- * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
-static cyaml_err_t cyaml__stack_pop(
+static void cyaml__stack_pop(
 		cyaml_ctx_t *ctx)
 {
 	uint32_t idx = ctx->stack_idx;
@@ -490,8 +489,6 @@ static cyaml_err_t cyaml__stack_pop(
 
 	ctx->state = (idx == 0) ? NULL : &ctx->stack[idx - 1];
 	ctx->stack_idx = idx;
-
-	return CYAML_OK;
 }
 
 /**
@@ -1316,7 +1313,7 @@ static cyaml_err_t cyaml__read_stream(
 		if (ctx->state->stream.doc_count == 1) {
 			cyaml__log(ctx->config, CYAML_LOG_WARNING,
 					"Ignoring second document in stream\n");
-			err = cyaml__stack_pop(ctx);
+			cyaml__stack_pop(ctx);
 			break;
 		}
 		ctx->state->stream.doc_count++;
@@ -1324,7 +1321,7 @@ static cyaml_err_t cyaml__read_stream(
 				ctx->state->schema, ctx->state->data);
 		break;
 	case CYAML_EVT_STREAM_END:
-		err = cyaml__stack_pop(ctx);
+		cyaml__stack_pop(ctx);
 		break;
 	default:
 		assert(mask & cyaml__get_event_type(&event));
@@ -1361,7 +1358,7 @@ static cyaml_err_t cyaml__read_doc(
 				ctx->state->data, &event);
 		break;
 	case CYAML_EVT_DOC_END:
-		err = cyaml__stack_pop(ctx);
+		cyaml__stack_pop(ctx);
 		break;
 	default:
 		assert(mask & cyaml__get_event_type(&event));
@@ -1424,10 +1421,7 @@ static cyaml_err_t cyaml__read_mapping_key(
 		if (err != CYAML_OK) {
 			goto out;
 		}
-		err = cyaml__stack_pop(ctx);
-		if (err != CYAML_OK) {
-			goto out;
-		}
+		cyaml__stack_pop(ctx);
 		break;
 	default:
 		assert(mask & cyaml_event);
@@ -1539,7 +1533,7 @@ static cyaml_err_t cyaml__read_sequence(
 		}
 		cyaml__log(ctx->config, CYAML_LOG_DEBUG, "Sequence count: %u\n",
 				state->sequence.count);
-		err = cyaml__stack_pop(ctx);
+		cyaml__stack_pop(ctx);
 		break;
 	default:
 		err = CYAML_ERR_INTERNAL_ERROR;
@@ -1637,10 +1631,7 @@ static cyaml_err_t cyaml__load(
 		}
 	} while (ctx.state->state > CYAML_STATE_START);
 
-	err = cyaml__stack_pop(&ctx);
-	if (err != CYAML_OK) {
-		goto out;
-	}
+	cyaml__stack_pop(&ctx);
 
 	assert(ctx.stack_idx == 0);
 
