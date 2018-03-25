@@ -1659,15 +1659,16 @@ cyaml_err_t cyaml_load_file(
 	cyaml_err_t err;
 	yaml_parser_t parser;
 
-	file = fopen(path, "r");
-	if (file == NULL) {
-		return CYAML_ERR_FILE_OPEN;
-	}
-
 	/* Initialize parser */
 	if (!yaml_parser_initialize(&parser)) {
-		fclose(file);
 		return CYAML_ERR_LIBYAML_PARSER_INIT;
+	}
+
+	/* Open input file. */
+	file = fopen(path, "r");
+	if (file == NULL) {
+		yaml_parser_delete(&parser);
+		return CYAML_ERR_FILE_OPEN;
 	}
 
 	/* Set input file */
