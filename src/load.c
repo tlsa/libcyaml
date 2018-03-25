@@ -473,9 +473,7 @@ static cyaml_err_t cyaml__stack_pop(
 {
 	uint32_t idx = ctx->stack_idx;
 
-	if (idx == 0) {
-		return CYAML_ERR_INTERNAL_ERROR;
-	}
+	assert(idx != 0);
 
 	switch (ctx->state->state) {
 	case CYAML_STATE_IN_MAPPING:
