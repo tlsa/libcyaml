@@ -1012,12 +1012,16 @@ static cyaml_err_t cyaml__read_flags_value(
 	cyaml_event_t mask = CYAML_EVT_SCALAR | CYAML_EVT_SEQ_END;
 
 	while (!exit) {
+		cyaml_event_t cyaml_event;
 		err = cyaml_get_next_event(ctx, mask, &event);
 		if (err != CYAML_OK) {
 			return err;
 		}
+		cyaml_event = cyaml__get_event_type(&event);
 
-		switch (cyaml__get_event_type(&event)) {
+		assert(cyaml_event & mask);
+
+		switch (cyaml_event & mask) {
 		case CYAML_EVT_SCALAR:
 			err = cyaml__set_flag(ctx, schema,
 					(const char *)event.data.scalar.value,
@@ -1029,9 +1033,6 @@ static cyaml_err_t cyaml__read_flags_value(
 			break;
 		case CYAML_EVT_SEQ_END:
 			exit = true;
-			break;
-		default:
-			assert(mask & cyaml__get_event_type(&event));
 			break;
 		}
 
@@ -1110,7 +1111,7 @@ static cyaml_err_t cyaml__consume_ignored_value(
 		}
 		break;
 	default:
-		err = CYAML_ERR_INVALID_VALUE;
+		err = CYAML_ERR_INTERNAL_ERROR;
 		break;
 	}
 
@@ -1267,20 +1268,21 @@ static cyaml_err_t cyaml__read_start(
 {
 	cyaml_err_t err;
 	yaml_event_t event;
+	cyaml_event_t cyaml_event;
 	cyaml_event_t mask = CYAML_EVT_STREAM_START;
 
 	err = cyaml_get_next_event(ctx, mask, &event);
 	if (err != CYAML_OK) {
 		return err;
 	}
+	cyaml_event = cyaml__get_event_type(&event);
 
-	switch (cyaml__get_event_type(&event)) {
+	assert(cyaml_event & mask);
+
+	switch (cyaml_event & mask) {
 	case CYAML_EVT_STREAM_START:
 		err = cyaml__stack_push(ctx, CYAML_STATE_IN_STREAM,
 				ctx->state->schema, ctx->state->data);
-		break;
-	default:
-		assert(mask & cyaml__get_event_type(&event));
 		break;
 	}
 
@@ -1301,14 +1303,18 @@ static cyaml_err_t cyaml__read_stream(
 {
 	cyaml_err_t err;
 	yaml_event_t event;
+	cyaml_event_t cyaml_event;
 	cyaml_event_t mask = CYAML_EVT_DOC_START | CYAML_EVT_STREAM_END;
 
 	err = cyaml_get_next_event(ctx, mask, &event);
 	if (err != CYAML_OK) {
 		return err;
 	}
+	cyaml_event = cyaml__get_event_type(&event);
 
-	switch (cyaml__get_event_type(&event)) {
+	assert(cyaml_event & mask);
+
+	switch (cyaml_event & mask) {
 	case CYAML_EVT_DOC_START:
 		if (ctx->state->stream.doc_count == 1) {
 			cyaml__log(ctx->config, CYAML_LOG_WARNING,
@@ -1322,9 +1328,6 @@ static cyaml_err_t cyaml__read_stream(
 		break;
 	case CYAML_EVT_STREAM_END:
 		cyaml__stack_pop(ctx);
-		break;
-	default:
-		assert(mask & cyaml__get_event_type(&event));
 		break;
 	}
 
@@ -1345,23 +1348,24 @@ static cyaml_err_t cyaml__read_doc(
 {
 	cyaml_err_t err;
 	yaml_event_t event;
+	cyaml_event_t cyaml_event;
 	cyaml_event_t mask = CYAML_EVT_MAPPING_START | CYAML_EVT_DOC_END;
 
 	err = cyaml_get_next_event(ctx, mask, &event);
 	if (err != CYAML_OK) {
 		return err;
 	}
+	cyaml_event = cyaml__get_event_type(&event);
 
-	switch (cyaml__get_event_type(&event)) {
+	assert(cyaml_event & mask);
+
+	switch (cyaml_event & mask) {
 	case CYAML_EVT_MAPPING_START:
 		err = cyaml__read_value(ctx, ctx->state->schema,
 				ctx->state->data, &event);
 		break;
 	case CYAML_EVT_DOC_END:
 		cyaml__stack_pop(ctx);
-		break;
-	default:
-		assert(mask & cyaml__get_event_type(&event));
 		break;
 	}
 
@@ -1393,7 +1397,9 @@ static cyaml_err_t cyaml__read_mapping_key(
 	}
 	cyaml_event = cyaml__get_event_type(&event);
 
-	switch (cyaml_event) {
+	assert(cyaml_event & mask);
+
+	switch (cyaml_event & mask) {
 	case CYAML_EVT_SCALAR:
 		key = (const char *)event.data.scalar.value;
 		ctx->state->mapping.schema_idx =
@@ -1422,9 +1428,6 @@ static cyaml_err_t cyaml__read_mapping_key(
 			goto out;
 		}
 		cyaml__stack_pop(ctx);
-		break;
-	default:
-		assert(mask & cyaml_event);
 		break;
 	}
 
@@ -1503,6 +1506,7 @@ static cyaml_err_t cyaml__read_sequence(
 {
 	cyaml_err_t err;
 	yaml_event_t event;
+	cyaml_event_t cyaml_event;
 	cyaml_state_t *state = ctx->state;
 	cyaml_event_t mask = CYAML_EVT_MAPPING_START |
 	                     CYAML_EVT_SEQ_START |
@@ -1513,8 +1517,11 @@ static cyaml_err_t cyaml__read_sequence(
 	if (err != CYAML_OK) {
 		return err;
 	}
+	cyaml_event = cyaml__get_event_type(&event);
 
-	switch (cyaml__get_event_type(&event)) {
+	assert(cyaml_event & mask);
+
+	switch (cyaml_event & mask) {
 	case CYAML_EVT_SCALAR:    /* Fall through. */
 	case CYAML_EVT_SEQ_START: /* Fall through. */
 	case CYAML_EVT_MAPPING_START:
@@ -1534,9 +1541,6 @@ static cyaml_err_t cyaml__read_sequence(
 		cyaml__log(ctx->config, CYAML_LOG_DEBUG, "Sequence count: %u\n",
 				state->sequence.count);
 		cyaml__stack_pop(ctx);
-		break;
-	default:
-		err = CYAML_ERR_INTERNAL_ERROR;
 		break;
 	}
 
