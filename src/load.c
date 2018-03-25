@@ -1241,6 +1241,12 @@ static cyaml_err_t cyaml__new_sequence_entry(
 					"Failed writing sequence count\n",
 					state->sequence.count,
 					schema->data_size);
+			if (schema->flags & CYAML_FLAG_POINTER) {
+				cyaml__log(ctx->config, CYAML_LOG_DEBUG,
+						"Freeing %p\n",
+						state->sequence.data);
+				cyaml__free(ctx->config, state->sequence.data);
+			}
 			return err;
 		}
 	}
