@@ -1682,14 +1682,14 @@ static bool test_err_load_alloc_oom_1(
 	struct animal_s {
 		char *kind;
 		char *sound;
-		int **position;
+		int *position;
 	};
 	struct target_struct {
 		struct animal_s **animal;
 		uint32_t animal_count;
 	} *data_tgt = NULL;
 	static const struct cyaml_schema_type position_entry_schema = {
-		CYAML_TYPE_INT(CYAML_FLAG_POINTER, int),
+		CYAML_TYPE_INT(CYAML_FLAG_DEFAULT, int),
 	};
 	static const struct cyaml_schema_mapping animal_schema[] = {
 		CYAML_MAPPING_STRING_PTR("kind", CYAML_FLAG_POINTER,
