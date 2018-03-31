@@ -820,6 +820,49 @@ static bool test_err_schema_bad_data_size_float(
 	return ttest_pass(&tc);
 }
 
+/* Test loading with schema with sequence in sequence. */
+static bool test_err_schema_sequence_in_sequence(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"- -\n";
+	unsigned **seq = NULL;
+	unsigned count = 0;
+	static const struct cyaml_schema_type inner_entry_schema = {
+		CYAML_TYPE_UINT(CYAML_FLAG_DEFAULT, **seq),
+	};
+	static const struct cyaml_schema_type outer_entry_schema = {
+		CYAML_TYPE_SEQUENCE(CYAML_FLAG_POINTER, unsigned,
+				&inner_entry_schema, 0, CYAML_UNLIMITED)
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_SEQUENCE(CYAML_FLAG_POINTER, unsigned *,
+				&outer_entry_schema, 0, CYAML_UNLIMITED)
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &seq,
+		.seq_count = &count,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &seq, &count);
+	if (err != CYAML_ERR_SEQUENCE_IN_SEQUENCE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (seq != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
 /* Test loading when schema expects unit, but value is invalid. */
 static bool test_err_schema_invalid_value_unit(
 		ttest_report_ctx_t *report,
@@ -2290,6 +2333,7 @@ bool errs_tests(
 	pass &= test_err_schema_bad_data_size_6(rc, &config);
 	pass &= test_err_schema_sequence_min_max(rc, &config);
 	pass &= test_err_schema_bad_data_size_float(rc, &config);
+	pass &= test_err_schema_sequence_in_sequence(rc, &config);
 
 	ttest_heading(rc, "YAML / schema mismatch: bad values");
 
