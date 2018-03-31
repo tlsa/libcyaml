@@ -100,6 +100,7 @@ typedef struct cyaml_ctx {
 	cyaml_state_t *stack;   /**< State stack */
 	uint32_t stack_idx;     /**< Next (empty) state stack slot */
 	uint32_t stack_max;     /**< Current stack allocation limit. */
+	unsigned seq_count;     /**< Top-level sequence count. */
 	yaml_parser_t *parser;  /**< Internal libyaml parser object. */
 } cyaml_ctx_t;
 
@@ -244,6 +245,27 @@ static inline uint16_t cyaml__get_entry_from_mapping_schema(
 	}
 
 	return CYAML_SCHEMA_IDX_NONE;
+}
+
+/**
+ *Helper to get the current mapping field.
+ *
+ * \note The current load state must be \ref CYAML_STATE_IN_MAPPING, and there
+ *       must be a current field index in the state.
+ *
+ * \param[in]  ctx  The CYAML loading context.
+ * \return Current mapping field's schema entry.
+ */
+static inline const cyaml_schema_mapping_t * cyaml_mapping_schema_field(
+		cyaml_ctx_t *ctx)
+{
+	cyaml_state_t *state = ctx->state;
+
+	assert(state != NULL);
+	assert(state->state == CYAML_STATE_IN_MAPPING);
+	assert(state->mapping.schema_idx != CYAML_SCHEMA_IDX_NONE);
+
+	return state->mapping.schema + state->mapping.schema_idx;
 }
 
 /**
@@ -430,19 +452,28 @@ static cyaml_err_t cyaml__stack_push(
 		}
 		break;
 	case CYAML_STATE_IN_SEQUENCE:
-		switch (schema->type) {
-		case CYAML_SEQUENCE_FIXED:
+		assert((schema->type == CYAML_SEQUENCE) ||
+		       (schema->type == CYAML_SEQUENCE_FIXED));
+		if (schema->type == CYAML_SEQUENCE_FIXED) {
 			if (schema->sequence.min != schema->sequence.max) {
 				return CYAML_ERR_SEQUENCE_FIXED_COUNT;
 			}
-			/* Fall through. */
-		case CYAML_SEQUENCE:
-			s.sequence.count_data = ctx->state->data +
-					schema->sequence.count_offset;
-			s.sequence.count_size = schema->sequence.count_size;
-			break;
-		default:
-			return CYAML_ERR_INTERNAL_ERROR;
+		} else {
+			if (ctx->state->state == CYAML_STATE_IN_SEQUENCE) {
+				return CYAML_ERR_SEQUENCE_IN_SEQUENCE;
+
+			} else if (ctx->state->state ==
+					CYAML_STATE_IN_MAPPING) {
+				const cyaml_schema_mapping_t *field =
+						cyaml_mapping_schema_field(ctx);
+				s.sequence.count_data = ctx->state->data +
+						field->count_offset;
+				s.sequence.count_size = field->count_size;
+			} else {
+				assert(ctx->state->state == CYAML_STATE_IN_DOC);
+				s.sequence.count_data = (void *)&ctx->seq_count;
+				s.sequence.count_size = sizeof(ctx->seq_count);
+			}
 		}
 		break;
 	default:
@@ -564,7 +595,8 @@ static cyaml_err_t cyaml__data_handle_pointer(
 		}
 
 		cyaml__log(ctx->config, CYAML_LOG_DEBUG,
-				"Allocation: %p\n", value_data);
+				"Allocation: %p (%zu + %zu bytes)\n",
+				value_data, offset, delta);
 
 		if (cyaml__is_sequence(schema)) {
 			/* Updated the in sequence state so it knows the new
@@ -1138,7 +1170,7 @@ static cyaml_err_t cyaml__read_value(
 
 	if (!cyaml__is_sequence(schema)) {
 		/* Since sequences extend their allocation for each entry,
-		 * the're handled in the sequence-specific code.
+		 * they're handled in the sequence-specific code.
 		 */
 		err = cyaml__data_handle_pointer(ctx, schema, event, &data);
 		if (err != CYAML_OK) {
@@ -1349,7 +1381,11 @@ static cyaml_err_t cyaml__read_doc(
 	cyaml_err_t err;
 	yaml_event_t event;
 	cyaml_event_t cyaml_event;
-	cyaml_event_t mask = CYAML_EVT_MAPPING_START | CYAML_EVT_DOC_END;
+	cyaml_event_t mask =
+			CYAML_EVT_MAPPING_START |
+			CYAML_EVT_SEQ_START |
+			CYAML_EVT_DOC_END |
+			CYAML_EVT_SCALAR;
 
 	err = cyaml_get_next_event(ctx, mask, &event);
 	if (err != CYAML_OK) {
@@ -1360,6 +1396,8 @@ static cyaml_err_t cyaml__read_doc(
 	assert(cyaml_event & mask);
 
 	switch (cyaml_event & mask) {
+	case CYAML_EVT_SCALAR:    /* Fall through. */
+	case CYAML_EVT_SEQ_START: /* Fall through. */
 	case CYAML_EVT_MAPPING_START:
 		err = cyaml__read_value(ctx, ctx->state->schema,
 				ctx->state->data, &event);
@@ -1452,8 +1490,7 @@ static cyaml_err_t cyaml__read_mapping_value(
 	cyaml_event_t mask = CYAML_EVT_SCALAR |
 	                     CYAML_EVT_SEQ_START |
 	                     CYAML_EVT_MAPPING_START;
-	const cyaml_schema_mapping_t *entry =
-			state->mapping.schema + state->mapping.schema_idx;
+	const cyaml_schema_mapping_t *entry = cyaml_mapping_schema_field(ctx);
 	cyaml_data_t *data = state->data + entry->data_offset;
 
 	err = cyaml_get_next_event(ctx, mask, &event);
@@ -1554,15 +1591,17 @@ out:
 /**
  * Check that common load params from client are valid.
  *
- * \param[in] config    The client's CYAML library config.
- * \param[in] schema    The schema describing the content of data.
- * \param[in] data_tgt  Points to client's address to write data to.
+ * \param[in] config         The client's CYAML library config.
+ * \param[in] schema         The schema describing the content of data.
+ * \param[in] data_tgt       Points to client's address to write data to.
+ * \param[in] seq_count_tgt  Points to client's address to write sequence count.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
 static inline cyaml_err_t cyaml__validate_load_params(
 		const cyaml_config_t *config,
 		const cyaml_schema_type_t *schema,
-		cyaml_data_t * const *data_tgt)
+		cyaml_data_t * const *data_tgt,
+		const unsigned *seq_count_tgt)
 {
 	if (config == NULL) {
 		return CYAML_ERR_BAD_PARAM_NULL_CONFIG;
@@ -1573,8 +1612,11 @@ static inline cyaml_err_t cyaml__validate_load_params(
 	if (schema == NULL) {
 		return CYAML_ERR_BAD_PARAM_NULL_SCHEMA;
 	}
-	if (schema->type != CYAML_MAPPING) {
-		return CYAML_ERR_BAD_TOP_LEVEL_TYPE;
+	if ((schema->type == CYAML_SEQUENCE) != (seq_count_tgt != NULL)) {
+		return CYAML_ERR_BAD_PARAM_SEQ_COUNT;
+	}
+	if (!(schema->flags & CYAML_FLAG_POINTER)) {
+		return CYAML_ERR_TOP_LEVEL_NON_PTR;
 	}
 	if (data_tgt == NULL) {
 		return CYAML_ERR_BAD_PARAM_NULL_DATA;
@@ -1587,17 +1629,23 @@ static inline cyaml_err_t cyaml__validate_load_params(
  *
  * The public interfaces are wrappers around this.
  *
- * \param[in]  config     Client's CYAML configuration structure.
- * \param[in]  schema     CYAML schema for the YAML to be loaded.
- * \param[out] data_out   Returns the caller-owned loaded data on success.
- *                        Untouched on failure.
- * \param[in]  parser     An initialised `libyaml` parser object with input set.
+ * \param[in]  config         Client's CYAML configuration structure.
+ * \param[in]  schema         CYAML schema for the YAML to be loaded.
+ * \param[out] data_out       Returns the caller-owned loaded data on success.
+ *                            Untouched on failure.
+ * \param[out] seq_count_out  On success, returns the sequence entry count.
+ *                            Untouched on failure.
+ *                            Must be non-NULL if top-level schema type is
+ *                            \ref CYAML_SEQUENCE, otherwise, must be NULL.
+ * \param[in]  parser         An initialised `libyaml` parser object
+ *                            with its input set.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
 static cyaml_err_t cyaml__load(
 		const cyaml_config_t *config,
 		const cyaml_schema_type_t *schema,
 		cyaml_data_t **data_out,
+		unsigned *seq_count_out,
 		yaml_parser_t *parser)
 {
 	cyaml_data_t *data = NULL;
@@ -1616,7 +1664,8 @@ static cyaml_err_t cyaml__load(
 	};
 	cyaml_err_t err = CYAML_OK;
 
-	err = cyaml__validate_load_params(config, schema, data_out);
+	err = cyaml__validate_load_params(config, schema,
+			data_out, seq_count_out);
 	if (err != CYAML_OK) {
 		return err;
 	}
@@ -1640,9 +1689,12 @@ static cyaml_err_t cyaml__load(
 	assert(ctx.stack_idx == 0);
 
 	*data_out = data;
+	if (seq_count_out != NULL) {
+		*seq_count_out = ctx.seq_count;
+	}
 out:
 	if (err != CYAML_OK) {
-		cyaml_free(config, schema, data);
+		cyaml_free(config, schema, data, ctx.seq_count);
 		cyaml__backtrace(&ctx);
 	}
 	while (ctx.stack_idx > 0) {
@@ -1657,7 +1709,8 @@ cyaml_err_t cyaml_load_file(
 		const char *path,
 		const cyaml_config_t *config,
 		const cyaml_schema_type_t *schema,
-		cyaml_data_t **data_out)
+		cyaml_data_t **data_out,
+		unsigned *seq_count_out)
 {
 	FILE *file;
 	cyaml_err_t err;
@@ -1679,7 +1732,7 @@ cyaml_err_t cyaml_load_file(
 	yaml_parser_set_input_file(&parser, file);
 
 	/* Parse the input */
-	err = cyaml__load(config, schema, data_out, &parser);
+	err = cyaml__load(config, schema, data_out, seq_count_out, &parser);
 	if (err != CYAML_OK) {
 		yaml_parser_delete(&parser);
 		fclose(file);
@@ -1699,7 +1752,8 @@ cyaml_err_t cyaml_load_data(
 		size_t input_len,
 		const cyaml_config_t *config,
 		const cyaml_schema_type_t *schema,
-		cyaml_data_t **data_out)
+		cyaml_data_t **data_out,
+		unsigned *seq_count_out)
 {
 	cyaml_err_t err;
 	yaml_parser_t parser;
@@ -1713,7 +1767,7 @@ cyaml_err_t cyaml_load_data(
 	yaml_parser_set_input_string(&parser, input, input_len);
 
 	/* Parse the input */
-	err = cyaml__load(config, schema, data_out, &parser);
+	err = cyaml__load(config, schema, data_out, seq_count_out, &parser);
 	if (err != CYAML_OK) {
 		yaml_parser_delete(&parser);
 		return err;

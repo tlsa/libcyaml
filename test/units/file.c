@@ -19,6 +19,7 @@
 
 typedef struct test_data {
 	cyaml_data_t **data;
+	unsigned *seq_count;
 	const struct cyaml_config *config;
 	const struct cyaml_schema_type *schema;
 } test_data_t;
@@ -27,8 +28,13 @@ typedef struct test_data {
 static void cyaml_cleanup(void *data)
 {
 	struct test_data *td = data;
+	unsigned seq_count = 0;
 
-	cyaml_free(td->config, td->schema, *(td->data));
+	if (td->seq_count != NULL) {
+		seq_count = *(td->seq_count);
+	}
+
+	cyaml_free(td->config, td->schema, *(td->data), seq_count);
 }
 
 /* Test loading a non-existent file. */
@@ -56,7 +62,7 @@ static bool test_file_load_bad_path(
 	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
 
 	err = cyaml_load_file("/cyaml/path/shouldn't/exist.yaml",
-			config, &top_schema, (cyaml_data_t **) &data_tgt);
+			config, &top_schema, (cyaml_data_t **) &data_tgt, NULL);
 	if (err != CYAML_ERR_FILE_OPEN) {
 		return ttest_fail(&tc, cyaml_strerror(err));
 	}
@@ -121,7 +127,7 @@ static bool test_file_load_basic(
 	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
 
 	err = cyaml_load_file("test/data/basic.yaml", config, &top_schema,
-			(cyaml_data_t **) &data_tgt);
+			(cyaml_data_t **) &data_tgt, NULL);
 	if (err != CYAML_OK) {
 		return ttest_fail(&tc, cyaml_strerror(err));
 	}
@@ -187,7 +193,7 @@ static bool test_file_load_basic_invalid(
 	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
 
 	err = cyaml_load_file("test/data/basic.yaml", config, &top_schema,
-			(cyaml_data_t **) &data_tgt);
+			(cyaml_data_t **) &data_tgt, NULL);
 	if (err != CYAML_ERR_INVALID_VALUE) {
 		return ttest_fail(&tc, cyaml_strerror(err));
 	}
