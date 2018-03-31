@@ -184,18 +184,6 @@ typedef struct cyaml_schema_type {
 			 *       CYAML_SEQUENCE_FIXED.
 			 */
 			uint32_t max;
-			/**
-			 * \ref CYAML_SEQUENCE only: Offset to sequence
-			 * entry count member in parent mapping's data
-			 * structure.
-			 */
-			uint32_t count_offset;
-			/**
-			 * \ref CYAML_SEQUENCE only: Size in bytes of sequence
-			 * entry count member in parent mapping's data
-			 * structure.
-			 */
-			uint8_t count_size;
 		} sequence;
 		/**
 		 * \ref CYAML_ENUM and \ref CYAML_FLAGS type-specific schema
@@ -233,6 +221,16 @@ typedef struct cyaml_schema_mapping {
 	 * be placed / read from.
 	 */
 	uint32_t data_offset;
+	/**
+	 * \ref CYAML_SEQUENCE only: Offset to sequence
+	 * entry count member in mapping's data structure.
+	 */
+	uint32_t count_offset;
+	/**
+	 * \ref CYAML_SEQUENCE only: Size in bytes of sequence
+	 * entry count member in mapping's data structure.
+	 */
+	uint8_t count_size;
 	/**
 	 * Defines the schema for the mapping entry's value.
 	 */
@@ -275,9 +273,10 @@ typedef enum cyaml_err {
 	CYAML_ERR_STRING_LENGTH_MIN,     /**< String length too short. */
 	CYAML_ERR_STRING_LENGTH_MAX,     /**< String length too long. */
 	CYAML_ERR_INVALID_DATA_SIZE,     /**< Value's data size unsupported. */
+	CYAML_ERR_TOP_LEVEL_NON_PTR,     /**< Top level type must be pointer. */
 	CYAML_ERR_BAD_TYPE_IN_SCHEMA,    /**< Schema contains invalid type. */
 	CYAML_ERR_BAD_MIN_MAX_SCHEMA,    /**< Schema minimum exceeds maximum. */
-	CYAML_ERR_BAD_TOP_LEVEL_TYPE,    /**< Top level type must be mapping. */
+	CYAML_ERR_BAD_PARAM_SEQ_COUNT,   /**< Bad seq_count param for schema. */
 	CYAML_ERR_BAD_PARAM_NULL_DATA,   /**< Client gave NULL data argument. */
 	CYAML_ERR_SEQUENCE_ENTRIES_MIN,  /**< Too few sequence entries. */
 	CYAML_ERR_SEQUENCE_ENTRIES_MAX,  /**< Too many sequence entries. */
@@ -635,23 +634,19 @@ typedef enum cyaml_err {
 /**
  * Value schema helper macro for values with \ref CYAML_SEQUENCE type.
  *
- * \param[in]  _flags         Any behavioural flags relevant to this value.
- * \param[in]  _type          The C type of sequence **entries**.
- * \param[in]  _count_struct  The structure corresponding to containing mapping.
- * \param[in]  _count_member  The member in _count_struct sequence entry count.
- * \param[in]  _schema        Pointer to schema for the **entries** in sequence.
- * \param[in]  _min           Minimum number of sequence entries required.
- * \param[in]  _max           Maximum number of sequence entries required.
+ * \param[in]  _flags      Any behavioural flags relevant to this value.
+ * \param[in]  _type       The C type of sequence **entries**.
+ * \param[in]  _schema     Pointer to schema for the **entries** in sequence.
+ * \param[in]  _min        Minimum number of sequence entries required.
+ * \param[in]  _max        Maximum number of sequence entries required.
  */
 #define CYAML_TYPE_SEQUENCE( \
-		_flags, _type, _count_struct, _count_member, _schema, _min, _max) \
+		_flags, _type, _schema, _min, _max) \
 	.type = CYAML_SEQUENCE, \
 	.flags = (_flags), \
 	.data_size = sizeof(_type), \
 	.sequence = { \
 		.schema = _schema, \
-		.count_size = sizeof(((_count_struct *)NULL)->_count_member), \
-		.count_offset = offsetof(_count_struct, _count_member), \
 		.min = _min, \
 		.max = _max, \
 	}
@@ -674,10 +669,11 @@ typedef enum cyaml_err {
 	.value = { \
 		CYAML_TYPE_SEQUENCE((_flags), \
 				(*(((_structure *)NULL)->_member)), \
-				_structure, _member ## _count, \
 				_schema, _min, _max), \
 	}, \
-	.data_offset = offsetof(_structure, _member) \
+	.data_offset = offsetof(_structure, _member), \
+	.count_size = sizeof(((_structure *)NULL)->_member ## _count), \
+	.count_offset = offsetof(_structure, _member ## _count), \
 }
 
 /**
@@ -902,18 +898,23 @@ extern void * cyaml_mem(
  *       and the YAML not setting any of them, this function can return \ref
  *       CYAML_OK, and `NULL` in the `data_out` parameter.
  *
- * \param[in]  path       Path to YAML file to load.
- * \param[in]  config     Client's CYAML configuration structure.
- * \param[in]  schema     CYAML schema for the YAML to be loaded.
- * \param[out] data_out   Returns the caller-owned loaded data on success.
- *                        Untouched on failure.
+ * \param[in]  path           Path to YAML file to load.
+ * \param[in]  config         Client's CYAML configuration structure.
+ * \param[in]  schema         CYAML schema for the YAML to be loaded.
+ * \param[out] data_out       Returns the caller-owned loaded data on success.
+ *                            Untouched on failure.
+ * \param[out] seq_count_out  On success, returns the sequence entry count.
+ *                            Untouched on failure.
+ *                            Must be non-NULL if top-level schema type is
+ *                            \ref CYAML_SEQUENCE, otherwise, must be NULL.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
 extern cyaml_err_t cyaml_load_file(
 		const char *path,
 		const cyaml_config_t *config,
 		const cyaml_schema_type_t *schema,
-		cyaml_data_t **data_out);
+		cyaml_data_t **data_out,
+		unsigned *seq_count_out);
 
 /**
  * Load a YAML document from a data buffer.
@@ -922,12 +923,16 @@ extern cyaml_err_t cyaml_load_file(
  *       and the YAML not setting any of them, this function can return \ref
  *       CYAML_OK, and `NULL` in the `data_out` parameter.
  *
- * \param[in]  input      Buffer to load YAML data from.
- * \param[in]  input_len  Length of input in bytes.
- * \param[in]  config     Client's CYAML configuration structure.
- * \param[in]  schema     CYAML schema for the YAML to be loaded.
- * \param[out] data_out   Returns the caller-owned loaded data on success.
- *                        Untouched on failure.
+ * \param[in]  input          Buffer to load YAML data from.
+ * \param[in]  input_len      Length of input in bytes.
+ * \param[in]  config         Client's CYAML configuration structure.
+ * \param[in]  schema         CYAML schema for the YAML to be loaded.
+ * \param[out] data_out       Returns the caller-owned loaded data on success.
+ *                            Untouched on failure.
+ * \param[out] seq_count_out  On success, returns the sequence entry count.
+ *                            Untouched on failure.
+ *                            Must be non-NULL if top-level schema type is
+ *                            \ref CYAML_SEQUENCE, otherwise, must be NULL.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
 extern cyaml_err_t cyaml_load_data(
@@ -935,7 +940,8 @@ extern cyaml_err_t cyaml_load_data(
 		size_t input_len,
 		const cyaml_config_t *config,
 		const cyaml_schema_type_t *schema,
-		cyaml_data_t **data_out);
+		cyaml_data_t **data_out,
+		unsigned *seq_count_out);
 
 /**
  * Free data returned by a CYAML load function.
@@ -946,17 +952,20 @@ extern cyaml_err_t cyaml_load_data(
  *
  * \note This is a recursive operation, freeing all nested data.
  *
- * \param[in] config  The client's CYAML library config.
- * \param[in] schema  The schema describing the content of data.  Must match
- *                    the schema given to the CYAML load function used to
- *                    load the data.
- * \param[in] data    The data structure to free.
+ * \param[in] config     The client's CYAML library config.
+ * \param[in] schema     The schema describing the content of data.  Must match
+ *                       the schema given to the CYAML load function used to
+ *                       load the data.
+ * \param[in] data       The data structure to free.
+ * \param[in] seq_count  If top level type is sequence, this should be the
+ *                       entry count, otherwise it is ignored.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
 extern cyaml_err_t cyaml_free(
 		const cyaml_config_t *config,
 		const cyaml_schema_type_t *schema,
-		cyaml_data_t *data);
+		cyaml_data_t *data,
+		unsigned seq_count);
 
 /**
  * Convert a cyaml error code to a human-readable string.

@@ -39,7 +39,7 @@ static bool test_free_null_data(
 	};
 	ttest_ctx_t tc = ttest_start(report, __func__, NULL, NULL);
 
-	err = cyaml_free(config, &top_schema, NULL);
+	err = cyaml_free(config, &top_schema, NULL, 0);
 	if (err != CYAML_OK) {
 		return ttest_fail(&tc, "Free failed: %s", cyaml_strerror(err));
 	}
@@ -57,7 +57,7 @@ static bool test_free_null_config(
 
 	UNUSED(config);
 
-	err = cyaml_free(NULL, NULL, NULL);
+	err = cyaml_free(NULL, NULL, NULL, 0);
 	if (err != CYAML_ERR_BAD_PARAM_NULL_CONFIG) {
 		return ttest_fail(&tc, "Free failed: %s", cyaml_strerror(err));
 	}
@@ -76,7 +76,7 @@ static bool test_free_null_mem_fn(
 
 	cfg.mem_fn = NULL;
 
-	err = cyaml_free(&cfg, NULL, NULL);
+	err = cyaml_free(&cfg, NULL, NULL, 0);
 	if (err != CYAML_ERR_BAD_CONFIG_NULL_MEMFN) {
 		return ttest_fail(&tc, "Free failed: %s", cyaml_strerror(err));
 	}
@@ -92,7 +92,7 @@ static bool test_free_null_schema(
 	cyaml_err_t err;
 	ttest_ctx_t tc = ttest_start(report, __func__, NULL, NULL);
 
-	err = cyaml_free(config, NULL, NULL);
+	err = cyaml_free(config, NULL, NULL, 0);
 	if (err != CYAML_ERR_BAD_PARAM_NULL_SCHEMA) {
 		return ttest_fail(&tc, "Free failed: %s", cyaml_strerror(err));
 	}
