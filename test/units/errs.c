@@ -168,6 +168,114 @@ static bool test_err_load_null_schema(
 	return ttest_pass(&tc);
 }
 
+/* Test loading with schema with bad top level type (non-pointer). */
+static bool test_err_schema_top_level_non_pointer(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"7\n";
+	int *value = NULL;
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_INT(CYAML_FLAG_DEFAULT, int)
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &value,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &value, NULL);
+	if (err != CYAML_ERR_TOP_LEVEL_NON_PTR) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (value != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/* Test loading with schema with bad top level sequence and no seq_count. */
+static bool test_err_schema_top_level_sequence_no_count(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"key:\n";
+	struct target_struct {
+		int *value;
+		unsigned value_count;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_type entry_schema = {
+		CYAML_TYPE_INT(CYAML_FLAG_DEFAULT, int)
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_SEQUENCE(CYAML_FLAG_POINTER, int,
+				&entry_schema, 0, CYAML_UNLIMITED),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_BAD_PARAM_SEQ_COUNT) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/* Test loading with schema with bad top level sequence and no seq_count. */
+static bool test_err_schema_top_level_not_sequence_count(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"7\n";
+	int *value = NULL;
+	unsigned count = 0;
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_INT(CYAML_FLAG_DEFAULT, int)
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &value,
+		.seq_count = &count,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &value, &count);
+	if (err != CYAML_ERR_BAD_PARAM_SEQ_COUNT) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (value != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
 /* Test loading with schema with bad type. */
 static bool test_err_schema_bad_type(
 		ttest_report_ctx_t *report,
@@ -2166,6 +2274,9 @@ bool errs_tests(
 	pass &= test_err_load_null_config(rc, &config);
 	pass &= test_err_load_null_mem_fn(rc, &config);
 	pass &= test_err_load_null_schema(rc, &config);
+	pass &= test_err_schema_top_level_non_pointer(rc, &config);
+	pass &= test_err_schema_top_level_sequence_no_count(rc, &config);
+	pass &= test_err_schema_top_level_not_sequence_count(rc, &config);
 
 	ttest_heading(rc, "Bad schema tests");
 
