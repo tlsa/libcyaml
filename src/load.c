@@ -585,7 +585,8 @@ static cyaml_err_t cyaml__data_handle_pointer(
 		}
 
 		cyaml__log(ctx->config, CYAML_LOG_DEBUG,
-				"Allocation: %p\n", value_data);
+				"Allocation: %p (%zu + %zu bytes)\n",
+				value_data, offset, delta);
 
 		if (cyaml__is_sequence(schema)) {
 			/* Updated the in sequence state so it knows the new
