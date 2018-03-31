@@ -247,6 +247,27 @@ static inline uint16_t cyaml__get_entry_from_mapping_schema(
 }
 
 /**
+ *Helper to get the current mapping field.
+ *
+ * \note The current load state must be \ref CYAML_STATE_IN_MAPPING, and there
+ *       must be a current field index in the state.
+ *
+ * \param[in]  ctx  The CYAML loading context.
+ * \return Current mapping field's schema entry.
+ */
+static inline const cyaml_schema_mapping_t * cyaml_mapping_schema_field(
+		cyaml_ctx_t *ctx)
+{
+	cyaml_state_t *state = ctx->state;
+
+	assert(state != NULL);
+	assert(state->state == CYAML_STATE_IN_MAPPING);
+	assert(state->mapping.schema_idx != CYAML_SCHEMA_IDX_NONE);
+
+	return state->mapping.schema + state->mapping.schema_idx;
+}
+
+/**
  * Ensure that the CYAML load context has space for a new stack entry.
  *
  * \param[in]  ctx     The CYAML loading context.
@@ -1452,8 +1473,7 @@ static cyaml_err_t cyaml__read_mapping_value(
 	cyaml_event_t mask = CYAML_EVT_SCALAR |
 	                     CYAML_EVT_SEQ_START |
 	                     CYAML_EVT_MAPPING_START;
-	const cyaml_schema_mapping_t *entry =
-			state->mapping.schema + state->mapping.schema_idx;
+	const cyaml_schema_mapping_t *entry = cyaml_mapping_schema_field(ctx);
 	cyaml_data_t *data = state->data + entry->data_offset;
 
 	err = cyaml_get_next_event(ctx, mask, &event);
