@@ -2467,6 +2467,135 @@ static bool test_load_mapping_entry_sequence_ptr_sequence_fixed_flat_int(
 	return ttest_pass(&tc);
 }
 
+/* Test loading with schema with scalar top level type. */
+static bool test_load_schema_top_level_scalar(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"7\n";
+	int *value = NULL;
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_INT(CYAML_FLAG_POINTER, int)
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &value,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &value, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (value == NULL) {
+		return ttest_fail(&tc, "Data NULL on success.");
+	}
+
+	if (*value != 7) {
+		return ttest_fail(&tc, "Bad value.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/* Test loading with schema with sequence_fixed top level type. */
+static bool test_load_schema_top_level_sequence(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"- 7\n"
+		"- 6\n"
+		"- 5\n";
+	int *value = NULL;
+	unsigned count = 0;
+	static const struct cyaml_schema_type entry_schema = {
+		CYAML_TYPE_INT(CYAML_FLAG_DEFAULT, int)
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_SEQUENCE(CYAML_FLAG_POINTER, int,
+				&entry_schema, 0, CYAML_UNLIMITED)
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &value,
+		.seq_count = &count,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &value, &count);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (count != 3) {
+		return ttest_fail(&tc, "Unexpected sequence count.");
+	}
+
+	if (value == NULL) {
+		return ttest_fail(&tc, "Data NULL on success.");
+	}
+
+	if ((value[0] != 7) && (value[1] != 6) && (value[2] != 5)) {
+		return ttest_fail(&tc, "Bad value.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/* Test loading with schema with sequence_fixed top level type. */
+static bool test_load_schema_top_level_sequence_fixed(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"- 7\n"
+		"- 6\n"
+		"- 5\n";
+	int *value = NULL;
+	static const struct cyaml_schema_type entry_schema = {
+		CYAML_TYPE_INT(CYAML_FLAG_DEFAULT, int)
+	};
+	static const struct cyaml_schema_type top_schema = {
+		CYAML_TYPE_SEQUENCE_FIXED(CYAML_FLAG_POINTER, int,
+				&entry_schema, 3)
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &value,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &value, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (value == NULL) {
+		return ttest_fail(&tc, "Data NULL on success.");
+	}
+
+	if ((value[0] != 7) && (value[1] != 6) && (value[2] != 5)) {
+		return ttest_fail(&tc, "Bad value.");
+	}
+
+	return ttest_pass(&tc);
+}
+
 /* Test loading a stream with more than one document. */
 static bool test_load_multiple_documents_ignored(
 		ttest_report_ctx_t *report,
@@ -2990,12 +3119,15 @@ bool load_tests(
 
 	ttest_heading(rc, "Load tests: various");
 
+	pass &= test_load_schema_top_level_scalar(rc, &config);
+	pass &= test_load_schema_top_level_sequence(rc, &config);
 	pass &= test_load_multiple_documents_ignored(rc, &config);
 	pass &= test_load_mapping_with_multiple_fields(rc, &config);
 	pass &= test_load_mapping_with_optional_fields(rc, &config);
 	pass &= test_load_mapping_only_optional_fields(rc, &config);
 	pass &= test_load_mapping_ignored_unknown_keys(rc, &config);
 	pass &= test_load_sequence_without_max_entries(rc, &config);
+	pass &= test_load_schema_top_level_sequence_fixed(rc, &config);
 
 	return pass;
 }
