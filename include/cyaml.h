@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: ISC
  *
- * Copyright (c) 2017 Michael Drake <tlsa@netsurf-browser.org>
+ * Copyright (c) 2017-2018 Michael Drake <tlsa@netsurf-browser.org>
  */
 
 /**
@@ -282,6 +282,7 @@ typedef enum cyaml_err {
 	CYAML_ERR_SEQUENCE_ENTRIES_MIN,  /**< Too few sequence entries. */
 	CYAML_ERR_SEQUENCE_ENTRIES_MAX,  /**< Too many sequence entries. */
 	CYAML_ERR_SEQUENCE_FIXED_COUNT,  /**< Mismatch between min and max. */
+	CYAML_ERR_SEQUENCE_IN_SEQUENCE,  /**< Non-fixed sequence in sequence. */
 	CYAML_ERR_MAPPING_FIELD_MISSING, /**< Required mapping field missing. */
 	CYAML_ERR_BAD_CONFIG_NULL_MEMFN, /**< Client gave NULL mem function. */
 	CYAML_ERR_BAD_PARAM_NULL_CONFIG, /**< Client gave NULL config arg. */

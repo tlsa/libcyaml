@@ -430,19 +430,19 @@ static cyaml_err_t cyaml__stack_push(
 		}
 		break;
 	case CYAML_STATE_IN_SEQUENCE:
-		switch (schema->type) {
-		case CYAML_SEQUENCE_FIXED:
+		assert((schema->type == CYAML_SEQUENCE) ||
+		       (schema->type == CYAML_SEQUENCE_FIXED));
+		if (schema->type == CYAML_SEQUENCE_FIXED) {
 			if (schema->sequence.min != schema->sequence.max) {
 				return CYAML_ERR_SEQUENCE_FIXED_COUNT;
 			}
-			/* Fall through. */
-		case CYAML_SEQUENCE:
+		} else {
+			if (ctx->state->state == CYAML_STATE_IN_SEQUENCE) {
+				return CYAML_ERR_SEQUENCE_IN_SEQUENCE;
+			}
 			s.sequence.count_data = ctx->state->data +
 					schema->sequence.count_offset;
 			s.sequence.count_size = schema->sequence.count_size;
-			break;
-		default:
-			return CYAML_ERR_INTERNAL_ERROR;
 		}
 		break;
 	default:
