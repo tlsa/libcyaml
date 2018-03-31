@@ -1160,7 +1160,7 @@ static cyaml_err_t cyaml__read_value(
 
 	if (!cyaml__is_sequence(schema)) {
 		/* Since sequences extend their allocation for each entry,
-		 * the're handled in the sequence-specific code.
+		 * they're handled in the sequence-specific code.
 		 */
 		err = cyaml__data_handle_pointer(ctx, schema, event, &data);
 		if (err != CYAML_OK) {
