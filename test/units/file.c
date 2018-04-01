@@ -21,7 +21,7 @@ typedef struct test_data {
 	cyaml_data_t **data;
 	unsigned *seq_count;
 	const struct cyaml_config *config;
-	const struct cyaml_schema_type *schema;
+	const struct cyaml_schema_value *schema;
 } test_data_t;
 
 /* Common cleanup function to free data loaded by tests. */
@@ -45,11 +45,11 @@ static bool test_file_load_bad_path(
 	struct target_struct {
 		char *cakes;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_mapping mapping_schema[] = {
-		CYAML_MAPPING_END
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -86,35 +86,35 @@ static bool test_file_load_basic(
 		char **cakes;
 		unsigned cakes_count;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_type sounds_entry_schema = {
-		CYAML_TYPE_STRING(CYAML_FLAG_POINTER, char, 0, CYAML_UNLIMITED),
+	static const struct cyaml_schema_value sounds_entry_schema = {
+		CYAML_VALUE_STRING(CYAML_FLAG_POINTER, char, 0, CYAML_UNLIMITED),
 	};
-	static const struct cyaml_schema_mapping animal_mapping_schema[] = {
-		CYAML_MAPPING_STRING_PTR("kind", CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_field animal_mapping_schema[] = {
+		CYAML_FIELD_STRING_PTR("kind", CYAML_FLAG_POINTER,
 				struct animal, kind, 0, CYAML_UNLIMITED),
-		CYAML_MAPPING_SEQUENCE("sounds", CYAML_FLAG_POINTER,
+		CYAML_FIELD_SEQUENCE("sounds", CYAML_FLAG_POINTER,
 				struct animal, sounds,
 				&sounds_entry_schema, 0, CYAML_UNLIMITED),
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type animals_entry_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+	static const struct cyaml_schema_value animals_entry_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT,
 				struct animal, animal_mapping_schema),
 	};
-	static const struct cyaml_schema_type cakes_entry_schema = {
-		CYAML_TYPE_STRING(CYAML_FLAG_POINTER, char, 0, CYAML_UNLIMITED),
+	static const struct cyaml_schema_value cakes_entry_schema = {
+		CYAML_VALUE_STRING(CYAML_FLAG_POINTER, char, 0, CYAML_UNLIMITED),
 	};
-	static const struct cyaml_schema_mapping mapping_schema[] = {
-		CYAML_MAPPING_SEQUENCE("animals", CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_SEQUENCE("animals", CYAML_FLAG_POINTER,
 				struct target_struct, animals,
 				&animals_entry_schema, 0, CYAML_UNLIMITED),
-		CYAML_MAPPING_SEQUENCE("cakes", CYAML_FLAG_POINTER,
+		CYAML_FIELD_SEQUENCE("cakes", CYAML_FLAG_POINTER,
 				struct target_struct, cakes,
 				&cakes_entry_schema, 0, CYAML_UNLIMITED),
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -151,36 +151,36 @@ static bool test_file_load_basic_invalid(
 		char **cakes;
 		unsigned cakes_count;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_type sounds_entry_schema = {
+	static const struct cyaml_schema_value sounds_entry_schema = {
 		/* The data has a string, but we're expecting int here. */
-		CYAML_TYPE_INT(CYAML_FLAG_DEFAULT, int),
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, int),
 	};
-	static const struct cyaml_schema_mapping animal_mapping_schema[] = {
-		CYAML_MAPPING_STRING_PTR("kind", CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_field animal_mapping_schema[] = {
+		CYAML_FIELD_STRING_PTR("kind", CYAML_FLAG_POINTER,
 				struct animal, kind, 0, CYAML_UNLIMITED),
-		CYAML_MAPPING_SEQUENCE("sounds", CYAML_FLAG_POINTER,
+		CYAML_FIELD_SEQUENCE("sounds", CYAML_FLAG_POINTER,
 				struct animal, sounds,
 				&sounds_entry_schema, 0, CYAML_UNLIMITED),
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type animals_entry_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_DEFAULT,
+	static const struct cyaml_schema_value animals_entry_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT,
 				struct animal, animal_mapping_schema),
 	};
-	static const struct cyaml_schema_type cakes_entry_schema = {
-		CYAML_TYPE_STRING(CYAML_FLAG_POINTER, char, 0, CYAML_UNLIMITED),
+	static const struct cyaml_schema_value cakes_entry_schema = {
+		CYAML_VALUE_STRING(CYAML_FLAG_POINTER, char, 0, CYAML_UNLIMITED),
 	};
-	static const struct cyaml_schema_mapping mapping_schema[] = {
-		CYAML_MAPPING_SEQUENCE("animals", CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_SEQUENCE("animals", CYAML_FLAG_POINTER,
 				struct target_struct, animals,
 				&animals_entry_schema, 0, CYAML_UNLIMITED),
-		CYAML_MAPPING_SEQUENCE("cakes", CYAML_FLAG_POINTER,
+		CYAML_FIELD_SEQUENCE("cakes", CYAML_FLAG_POINTER,
 				struct target_struct, cakes,
 				&cakes_entry_schema, 0, CYAML_UNLIMITED),
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {

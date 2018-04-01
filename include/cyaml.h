@@ -86,7 +86,7 @@ typedef enum cyaml_type {
  */
 typedef enum cyaml_flag {
 	CYAML_FLAG_DEFAULT  = 0,        /**< Default value flags (none set). */
-	CYAML_FLAG_OPTIONAL = (1 << 0), /**< Mapping entry is optional. */
+	CYAML_FLAG_OPTIONAL = (1 << 0), /**< Mapping field is optional. */
 	CYAML_FLAG_POINTER  = (1 << 1), /**< Value is a pointer to its type. */
 	/**
 	 * Make value handling strict.
@@ -109,7 +109,7 @@ typedef enum cyaml_flag {
  * There are convenience macros for each of the types to assist in
  * building a CYAML schema data structure for your YAML documents.
  */
-typedef struct cyaml_schema_type {
+typedef struct cyaml_schema_value {
 	/**
 	 * The type of the value defined by this schema entry.
 	 */
@@ -146,13 +146,13 @@ typedef struct cyaml_schema_type {
 		/** \ref CYAML_MAPPING type-specific schema data. */
 		struct {
 			/**
-			 * Array of cyaml mapping entry schema definitions.
+			 * Array of cyaml mapping field schema definitions.
 			 *
 			 * The array must be terminated by an entry with a
-			 * NULL key.  See \ref cyaml_schema_mapping_t
-			 * and \ref CYAML_MAPPING_END for more info.
+			 * NULL key.  See \ref cyaml_schema_field_t
+			 * and \ref CYAML_FIELD_END for more info.
 			 */
-			const struct cyaml_schema_mapping *schema;
+			const struct cyaml_schema_field *schema;
 		} mapping;
 		/**
 		 * \ref CYAML_SEQUENCE and \ref CYAML_SEQUENCE_FIXED
@@ -169,7 +169,7 @@ typedef struct cyaml_schema_type {
 			 * CYAML_SEQUENCE_FIXED is allowed).  That is, you
 			 * can't have a sequence of variable-length sequences.
 			 */
-			const struct cyaml_schema_type *schema;
+			const struct cyaml_schema_value *schema;
 			/**
 			 * Minimum number of sequence entries.
 			 *
@@ -196,10 +196,10 @@ typedef struct cyaml_schema_type {
 			uint32_t count;
 		} enumeration;
 	};
-} cyaml_schema_type_t;
+} cyaml_schema_value_t;
 
 /**
- * Schema definition entry for mappings.
+ * Schema definition entry for mapping fields.
  *
  * YAML mappings are key:value pairs.  CYAML only supports scalar mapping keys,
  * that is, keys that are a string.
@@ -209,10 +209,10 @@ typedef struct cyaml_schema_type {
  * the value.  It also specifies the offset into the data at which value
  * data should be placed.  The array is terminated by an entry with a NULL key.
  */
-typedef struct cyaml_schema_mapping {
+typedef struct cyaml_schema_field {
 	/**
 	 * String for YAML mapping key that his schema entry describes,
-	 * or NULL to indicated the end of an array of cyaml_schema_mapping_t
+	 * or NULL to indicated the end of an array of cyaml_schema_field_t
 	 * entries.
 	 */
 	const char *key;
@@ -232,10 +232,10 @@ typedef struct cyaml_schema_mapping {
 	 */
 	uint8_t count_size;
 	/**
-	 * Defines the schema for the mapping entry's value.
+	 * Defines the schema for the mapping field's value.
 	 */
-	struct cyaml_schema_type value;
-} cyaml_schema_mapping_t;
+	struct cyaml_schema_value value;
+} cyaml_schema_field_t;
 
 /**
  * CYAML behavioural configuration flags for clients
@@ -300,7 +300,7 @@ typedef enum cyaml_err {
  * \param[in]  _flags         Any behavioural flags relevant to this value.
  * \param[in]  _type          The C type for this value.
  */
-#define CYAML_TYPE_INT( \
+#define CYAML_VALUE_INT( \
 		_flags, _type) \
 	.type = CYAML_INT, \
 	.flags = (_flags), \
@@ -314,12 +314,12 @@ typedef enum cyaml_err {
  * \param[in]  _structure  The structure corresponding to the mapping.
  * \param[in]  _member     The member in _structure for this mapping value.
  */
-#define CYAML_MAPPING_INT( \
+#define CYAML_FIELD_INT( \
 		_key, _flags, _structure, _member) \
 { \
 	.key = _key, \
 	.value = { \
-		CYAML_TYPE_INT((_flags), ((_structure *)NULL)->_member), \
+		CYAML_VALUE_INT((_flags), ((_structure *)NULL)->_member), \
 	}, \
 	.data_offset = offsetof(_structure, _member) \
 }
@@ -330,7 +330,7 @@ typedef enum cyaml_err {
  * \param[in]  _flags         Any behavioural flags relevant to this value.
  * \param[in]  _type          The C type for this value.
  */
-#define CYAML_TYPE_UINT( \
+#define CYAML_VALUE_UINT( \
 		_flags, _type) \
 	.type = CYAML_UINT, \
 	.flags = (_flags), \
@@ -344,12 +344,12 @@ typedef enum cyaml_err {
  * \param[in]  _structure  The structure corresponding to the mapping.
  * \param[in]  _member     The member in _structure for this mapping value.
  */
-#define CYAML_MAPPING_UINT( \
+#define CYAML_FIELD_UINT( \
 		_key, _flags, _structure, _member) \
 { \
 	.key = _key, \
 	.value = { \
-		CYAML_TYPE_UINT((_flags), ((_structure *)NULL)->_member), \
+		CYAML_VALUE_UINT((_flags), ((_structure *)NULL)->_member), \
 	}, \
 	.data_offset = offsetof(_structure, _member) \
 }
@@ -360,7 +360,7 @@ typedef enum cyaml_err {
  * \param[in]  _flags         Any behavioural flags relevant to this value.
  * \param[in]  _type          The C type for this value.
  */
-#define CYAML_TYPE_BOOL( \
+#define CYAML_VALUE_BOOL( \
 		_flags, _type) \
 	.type = CYAML_BOOL, \
 	.flags = (_flags), \
@@ -374,12 +374,12 @@ typedef enum cyaml_err {
  * \param[in]  _structure  The structure corresponding to the mapping.
  * \param[in]  _member     The member in _structure for this mapping value.
  */
-#define CYAML_MAPPING_BOOL( \
+#define CYAML_FIELD_BOOL( \
 		_key, _flags, _structure, _member) \
 { \
 	.key = _key, \
 	.value = { \
-		CYAML_TYPE_BOOL((_flags), ((_structure *)NULL)->_member), \
+		CYAML_VALUE_BOOL((_flags), ((_structure *)NULL)->_member), \
 	}, \
 	.data_offset = offsetof(_structure, _member) \
 }
@@ -392,7 +392,7 @@ typedef enum cyaml_err {
  * \param[in]  _strings       Array of string data for enumeration values.
  * \param[in]  _strings_count Number of entries in _strings.
  */
-#define CYAML_TYPE_ENUM( \
+#define CYAML_VALUE_ENUM( \
 		_flags, _type, _strings, _strings_count) \
 	.type = CYAML_ENUM, \
 	.flags = (_flags), \
@@ -412,12 +412,12 @@ typedef enum cyaml_err {
  * \param[in]  _strings       Array of string data for enumeration values.
  * \param[in]  _strings_count Number of entries in _strings.
  */
-#define CYAML_MAPPING_ENUM( \
+#define CYAML_FIELD_ENUM( \
 		_key, _flags, _structure, _member, _strings, _strings_count) \
 { \
 	.key = _key, \
 	.value = { \
-		CYAML_TYPE_ENUM((_flags), ((_structure *)NULL)->_member, \
+		CYAML_VALUE_ENUM((_flags), ((_structure *)NULL)->_member, \
 				_strings, _strings_count), \
 	}, \
 	.data_offset = offsetof(_structure, _member) \
@@ -431,7 +431,7 @@ typedef enum cyaml_err {
  * \param[in]  _strings       Array of string data for flag values.
  * \param[in]  _strings_count Number of entries in _strings.
  */
-#define CYAML_TYPE_FLAGS( \
+#define CYAML_VALUE_FLAGS( \
 		_flags, _type, _strings, _strings_count) \
 	.type = CYAML_FLAGS, \
 	.flags = (_flags), \
@@ -451,12 +451,12 @@ typedef enum cyaml_err {
  * \param[in]  _strings       Array of string data for flag values.
  * \param[in]  _strings_count Number of entries in _strings.
  */
-#define CYAML_MAPPING_FLAGS( \
+#define CYAML_FIELD_FLAGS( \
 		_key, _flags, _structure, _member, _strings, _strings_count) \
 { \
 	.key = _key, \
 	.value = { \
-		CYAML_TYPE_FLAGS((_flags), ((_structure *)NULL)->_member, \
+		CYAML_VALUE_FLAGS((_flags), ((_structure *)NULL)->_member, \
 				_strings, _strings_count), \
 	}, \
 	.data_offset = offsetof(_structure, _member) \
@@ -468,7 +468,7 @@ typedef enum cyaml_err {
  * \param[in]  _flags         Any behavioural flags relevant to this value.
  * \param[in]  _type          The C type for this value.
  */
-#define CYAML_TYPE_FLOAT( \
+#define CYAML_VALUE_FLOAT( \
 		_flags, _type) \
 	.type = CYAML_FLOAT, \
 	.flags = (_flags), \
@@ -482,12 +482,12 @@ typedef enum cyaml_err {
  * \param[in]  _structure  The structure corresponding to the mapping.
  * \param[in]  _member     The member in _structure for this mapping value.
  */
-#define CYAML_MAPPING_FLOAT( \
+#define CYAML_FIELD_FLOAT( \
 		_key, _flags, _structure, _member) \
 { \
 	.key = _key, \
 	.value = { \
-		CYAML_TYPE_FLOAT((_flags), ((_structure *)NULL)->_member), \
+		CYAML_VALUE_FLOAT((_flags), ((_structure *)NULL)->_member), \
 	}, \
 	.data_offset = offsetof(_structure, _member) \
 }
@@ -509,7 +509,7 @@ typedef enum cyaml_err {
  * \param[in]  _max           The C type for this value.
  *                            Excludes trailing '\0'.
  */
-#define CYAML_TYPE_STRING( \
+#define CYAML_VALUE_STRING( \
 		_flags, _type, _min, _max) \
 	.type = CYAML_STRING, \
 	.flags = (_flags), \
@@ -531,12 +531,12 @@ typedef enum cyaml_err {
  * \param[in]  _member     The member in _structure for this mapping value.
  * \param[in]  _min        Minimum string length in bytes.  Excludes '\0'.
  */
-#define CYAML_MAPPING_STRING( \
+#define CYAML_FIELD_STRING( \
 		_key, _flags, _structure, _member, _min) \
 { \
 	.key = _key, \
 	.value = { \
-		CYAML_TYPE_STRING(((_flags) & (~CYAML_FLAG_POINTER)), \
+		CYAML_VALUE_STRING(((_flags) & (~CYAML_FLAG_POINTER)), \
 				(((_structure *)NULL)->_member), _min, \
 				sizeof(((_structure *)NULL)->_member) - 1), \
 	}, \
@@ -559,12 +559,12 @@ typedef enum cyaml_err {
  * \param[in]  _min        Minimum string length in bytes.  Excludes '\0'.
  * \param[in]  _max        Maximum string length in bytes.  Excludes '\0'.
  */
-#define CYAML_MAPPING_STRING_PTR( \
+#define CYAML_FIELD_STRING_PTR( \
 		_key, _flags, _structure, _member, _min, _max) \
 { \
 	.key = _key, \
 	.value = { \
-		CYAML_TYPE_STRING(((_flags) | CYAML_FLAG_POINTER), \
+		CYAML_VALUE_STRING(((_flags) | CYAML_FLAG_POINTER), \
 				(((_structure *)NULL)->_member), \
 				_min, _max), \
 	}, \
@@ -578,7 +578,7 @@ typedef enum cyaml_err {
  * \param[in]  _type          The C type of structure corresponding to mapping.
  * \param[in]  _schema        Pointer to mapping schema array.
  */
-#define CYAML_TYPE_MAPPING( \
+#define CYAML_VALUE_MAPPING( \
 		_flags, _type, _schema) \
 	.type = CYAML_MAPPING, \
 	.flags = (_flags), \
@@ -598,12 +598,12 @@ typedef enum cyaml_err {
  * \param[in]  _member     The member in _structure for this mapping value.
  * \param[in]  _schema     Pointer to mapping schema array.
  */
-#define CYAML_MAPPING_MAPPING( \
+#define CYAML_FIELD_MAPPING( \
 		_key, _flags, _structure, _member, _schema) \
 { \
 	.key = _key, \
 	.value = { \
-		CYAML_TYPE_MAPPING(((_flags) & (~CYAML_FLAG_POINTER)), \
+		CYAML_VALUE_MAPPING(((_flags) & (~CYAML_FLAG_POINTER)), \
 				(((_structure *)NULL)->_member), _schema), \
 	}, \
 	.data_offset = offsetof(_structure, _member) \
@@ -620,12 +620,12 @@ typedef enum cyaml_err {
  * \param[in]  _member     The member in _structure for this mapping value.
  * \param[in]  _schema     Pointer to mapping schema array.
  */
-#define CYAML_MAPPING_MAPPING_PTR( \
+#define CYAML_FIELD_MAPPING_PTR( \
 		_key, _flags, _structure, _member, _schema) \
 { \
 	.key = _key, \
 	.value = { \
-		CYAML_TYPE_MAPPING(((_flags) | CYAML_FLAG_POINTER), \
+		CYAML_VALUE_MAPPING(((_flags) | CYAML_FLAG_POINTER), \
 				(*(((_structure *)NULL)->_member)), _schema), \
 	}, \
 	.data_offset = offsetof(_structure, _member) \
@@ -640,7 +640,7 @@ typedef enum cyaml_err {
  * \param[in]  _min        Minimum number of sequence entries required.
  * \param[in]  _max        Maximum number of sequence entries required.
  */
-#define CYAML_TYPE_SEQUENCE( \
+#define CYAML_VALUE_SEQUENCE( \
 		_flags, _type, _schema, _min, _max) \
 	.type = CYAML_SEQUENCE, \
 	.flags = (_flags), \
@@ -662,12 +662,12 @@ typedef enum cyaml_err {
  * \param[in]  _min        Minimum number of sequence entries required.
  * \param[in]  _max        Maximum number of sequence entries required.
  */
-#define CYAML_MAPPING_SEQUENCE( \
+#define CYAML_FIELD_SEQUENCE( \
 		_key, _flags, _structure, _member, _schema, _min, _max) \
 { \
 	.key = _key, \
 	.value = { \
-		CYAML_TYPE_SEQUENCE((_flags), \
+		CYAML_VALUE_SEQUENCE((_flags), \
 				(*(((_structure *)NULL)->_member)), \
 				_schema, _min, _max), \
 	}, \
@@ -684,7 +684,7 @@ typedef enum cyaml_err {
  * \param[in]  _schema     Pointer to schema for the **entries** in sequence.
  * \param[in]  _count      Number of sequence entries required.
  */
-#define CYAML_TYPE_SEQUENCE_FIXED( \
+#define CYAML_VALUE_SEQUENCE_FIXED( \
 		_flags, _type, _schema, _count) \
 	.type = CYAML_SEQUENCE_FIXED, \
 	.flags = (_flags), \
@@ -705,12 +705,12 @@ typedef enum cyaml_err {
  * \param[in]  _schema     Pointer to schema for the **entries** in sequence.
  * \param[in]  _count      Number of sequence entries required.
  */
-#define CYAML_MAPPING_SEQUENCE_FIXED( \
+#define CYAML_FIELD_SEQUENCE_FIXED( \
 		_key, _flags, _structure, _member, _schema, _count) \
 { \
 	.key = _key, \
 	.value = { \
-		CYAML_TYPE_SEQUENCE_FIXED((_flags), \
+		CYAML_VALUE_SEQUENCE_FIXED((_flags), \
 				(*(((_structure *)NULL)->_member)), \
 				_schema, _count), \
 	}, \
@@ -723,7 +723,7 @@ typedef enum cyaml_err {
  * \param[in]  _key    String defining the YAML mapping key to ignore.
  * \param[in]  _flags  Any behavioural flags relevant to this key.
  */
-#define CYAML_MAPPING_IGNORE( \
+#define CYAML_FIELD_IGNORE( \
 		_key, _flags) \
 { \
 	.key = _key, \
@@ -734,12 +734,12 @@ typedef enum cyaml_err {
 }
 
 /**
- * Mapping schema helper macro for terminating an array of schema entries.
+ * Mapping schema helper macro for terminating an array of mapping fields.
  *
- * CYAML mapping schemas are formed from an array of \ref cyaml_schema_mapping
+ * CYAML mapping schemas are formed from an array of \ref cyaml_schema_field
  * entries, and an entry with a NULL key indicates the end of the array.
  */
-#define CYAML_MAPPING_END { .key = NULL }
+#define CYAML_FIELD_END { .key = NULL }
 
 /**
  * Identifies that a \ref CYAML_SEQUENCE has unconstrained maximum entry
@@ -797,7 +797,7 @@ typedef void (*cyaml_log_fn_t)(
  *                   be treated as free().
  * \return If `size == 0`, returns NULL.  If `size > 0`, returns NULL on failure,
  *         and any existing allocation is left untouched, or return non-NULL as
- *         the new alloctation on success, and the original pointer becomes
+ *         the new allocation on success, and the original pointer becomes
  *         invalid.
  */
 typedef void * (*cyaml_mem_fn_t)(
@@ -814,7 +814,7 @@ typedef struct cyaml_config {
 	/**
 	 * Client function to use for logging.
 	 *
-	 * Clients can implement thier own logging function and set it here.
+	 * Clients can implement their own logging function and set it here.
 	 * Otherwise, set `log_fn` to \ref cyaml_log if CYAML's default
 	 * logging to `stderr` is suitable (see its documentation for more
 	 * details), or set to `NULL` to suppress all logging.
@@ -912,7 +912,7 @@ extern void * cyaml_mem(
 extern cyaml_err_t cyaml_load_file(
 		const char *path,
 		const cyaml_config_t *config,
-		const cyaml_schema_type_t *schema,
+		const cyaml_schema_value_t *schema,
 		cyaml_data_t **data_out,
 		unsigned *seq_count_out);
 
@@ -939,7 +939,7 @@ extern cyaml_err_t cyaml_load_data(
 		const uint8_t *input,
 		size_t input_len,
 		const cyaml_config_t *config,
-		const cyaml_schema_type_t *schema,
+		const cyaml_schema_value_t *schema,
 		cyaml_data_t **data_out,
 		unsigned *seq_count_out);
 
@@ -963,7 +963,7 @@ extern cyaml_err_t cyaml_load_data(
  */
 extern cyaml_err_t cyaml_free(
 		const cyaml_config_t *config,
-		const cyaml_schema_type_t *schema,
+		const cyaml_schema_value_t *schema,
 		cyaml_data_t *data,
 		unsigned seq_count);
 

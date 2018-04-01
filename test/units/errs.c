@@ -24,7 +24,7 @@ typedef struct test_data {
 	cyaml_data_t **data;
 	unsigned *seq_count;
 	const struct cyaml_config *config;
-	const struct cyaml_schema_type *schema;
+	const struct cyaml_schema_value *schema;
 } test_data_t;
 
 /* Common cleanup function to free data loaded by tests. */
@@ -49,11 +49,11 @@ static bool test_err_load_null_data(
 	struct target_struct {
 		int value;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_mapping mapping_schema[] = {
-		CYAML_MAPPING_END
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -176,8 +176,8 @@ static bool test_err_schema_top_level_non_pointer(
 	static const unsigned char yaml[] =
 		"7\n";
 	int *value = NULL;
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_INT(CYAML_FLAG_DEFAULT, int)
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, int)
 	};
 	test_data_t td = {
 		.data = (cyaml_data_t **) &value,
@@ -212,11 +212,11 @@ static bool test_err_schema_top_level_sequence_no_count(
 		int *value;
 		unsigned value_count;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_type entry_schema = {
-		CYAML_TYPE_INT(CYAML_FLAG_DEFAULT, int)
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, int)
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_SEQUENCE(CYAML_FLAG_POINTER, int,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_SEQUENCE(CYAML_FLAG_POINTER, int,
 				&entry_schema, 0, CYAML_UNLIMITED),
 	};
 	test_data_t td = {
@@ -250,8 +250,8 @@ static bool test_err_schema_top_level_not_sequence_count(
 		"7\n";
 	int *value = NULL;
 	unsigned count = 0;
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_INT(CYAML_FLAG_DEFAULT, int)
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, int)
 	};
 	test_data_t td = {
 		.data = (cyaml_data_t **) &value,
@@ -286,7 +286,7 @@ static bool test_err_schema_bad_type(
 	struct target_struct {
 		int value;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_mapping mapping_schema[] = {
+	static const struct cyaml_schema_field mapping_schema[] = {
 		{
 			.key = "key",
 			.value = {
@@ -296,10 +296,10 @@ static bool test_err_schema_bad_type(
 			},
 			.data_offset = offsetof(struct target_struct, value),
 		},
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -334,14 +334,14 @@ static bool test_err_schema_string_min_max(
 	struct target_struct {
 		const char *value;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_mapping mapping_schema[] = {
-		CYAML_MAPPING_STRING_PTR("value", CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_STRING_PTR("value", CYAML_FLAG_POINTER,
 				struct target_struct, value,
 				10, 9),
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -376,7 +376,7 @@ static bool test_err_schema_bad_data_size_1(
 	struct target_struct {
 		int value;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_mapping mapping_schema[] = {
+	static const struct cyaml_schema_field mapping_schema[] = {
 		{
 			.key = "key",
 			.value = {
@@ -386,10 +386,10 @@ static bool test_err_schema_bad_data_size_1(
 			},
 			.data_offset = offsetof(struct target_struct, value),
 		},
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -424,7 +424,7 @@ static bool test_err_schema_bad_data_size_2(
 	struct target_struct {
 		int value;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_mapping mapping_schema[] = {
+	static const struct cyaml_schema_field mapping_schema[] = {
 		{
 			.key = "key",
 			.value = {
@@ -434,10 +434,10 @@ static bool test_err_schema_bad_data_size_2(
 			},
 			.data_offset = offsetof(struct target_struct, value),
 		},
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -480,7 +480,7 @@ static bool test_err_schema_bad_data_size_3(
 	struct target_struct {
 		int value;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_mapping mapping_schema[] = {
+	static const struct cyaml_schema_field mapping_schema[] = {
 		{
 			.key = "key",
 			.value = {
@@ -494,10 +494,10 @@ static bool test_err_schema_bad_data_size_3(
 			},
 			.data_offset = offsetof(struct target_struct, value),
 		},
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -535,10 +535,10 @@ static bool test_err_schema_bad_data_size_4(
 		int *value;
 		unsigned value_count;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_type entry_schema = {
-		CYAML_TYPE_INT(CYAML_FLAG_DEFAULT, int),
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, int),
 	};
-	static const struct cyaml_schema_mapping mapping_schema[] = {
+	static const struct cyaml_schema_field mapping_schema[] = {
 		{
 			.key = "key",
 			.value = {
@@ -557,10 +557,10 @@ static bool test_err_schema_bad_data_size_4(
 					struct target_struct,
 					value_count),
 		},
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -598,10 +598,10 @@ static bool test_err_schema_bad_data_size_5(
 		int *value;
 		unsigned value_count;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_type entry_schema = {
-		CYAML_TYPE_INT(CYAML_FLAG_DEFAULT, int),
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, int),
 	};
-	static const struct cyaml_schema_mapping mapping_schema[] = {
+	static const struct cyaml_schema_field mapping_schema[] = {
 		{
 			.key = "key",
 			.value = {
@@ -620,10 +620,10 @@ static bool test_err_schema_bad_data_size_5(
 					struct target_struct,
 					value_count),
 		},
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -661,10 +661,10 @@ static bool test_err_schema_bad_data_size_6(
 		int value[4];
 		unsigned value_count;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_type entry_schema = {
-		CYAML_TYPE_INT(CYAML_FLAG_DEFAULT, int),
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, int),
 	};
-	static const struct cyaml_schema_mapping mapping_schema[] = {
+	static const struct cyaml_schema_field mapping_schema[] = {
 		{
 			.key = "key",
 			.value = {
@@ -683,10 +683,10 @@ static bool test_err_schema_bad_data_size_6(
 					struct target_struct,
 					value_count),
 		},
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -723,10 +723,10 @@ static bool test_err_schema_sequence_min_max(
 		unsigned *seq;
 		uint32_t seq_count;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_type entry_schema = {
-		CYAML_TYPE_UINT(CYAML_FLAG_DEFAULT, *(data_tgt->seq)),
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_UINT(CYAML_FLAG_DEFAULT, *(data_tgt->seq)),
 	};
-	static const struct cyaml_schema_mapping mapping_schema[] = {
+	static const struct cyaml_schema_field mapping_schema[] = {
 		{
 			.key = "sequence",
 			.value = {
@@ -744,10 +744,10 @@ static bool test_err_schema_sequence_min_max(
 			.count_offset = offsetof(struct target_struct, seq_count),
 			.count_size = sizeof(data_tgt->seq_count),
 		},
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -782,7 +782,7 @@ static bool test_err_schema_bad_data_size_float(
 	struct target_struct {
 		int value;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_mapping mapping_schema[] = {
+	static const struct cyaml_schema_field mapping_schema[] = {
 		{
 			.key = "key",
 			.value = {
@@ -792,10 +792,10 @@ static bool test_err_schema_bad_data_size_float(
 			},
 			.data_offset = offsetof(struct target_struct, value),
 		},
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -829,15 +829,15 @@ static bool test_err_schema_sequence_in_sequence(
 		"- -\n";
 	unsigned **seq = NULL;
 	unsigned count = 0;
-	static const struct cyaml_schema_type inner_entry_schema = {
-		CYAML_TYPE_UINT(CYAML_FLAG_DEFAULT, **seq),
+	static const struct cyaml_schema_value inner_entry_schema = {
+		CYAML_VALUE_UINT(CYAML_FLAG_DEFAULT, **seq),
 	};
-	static const struct cyaml_schema_type outer_entry_schema = {
-		CYAML_TYPE_SEQUENCE(CYAML_FLAG_POINTER, unsigned,
+	static const struct cyaml_schema_value outer_entry_schema = {
+		CYAML_VALUE_SEQUENCE(CYAML_FLAG_POINTER, unsigned,
 				&inner_entry_schema, 0, CYAML_UNLIMITED)
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_SEQUENCE(CYAML_FLAG_POINTER, unsigned *,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_SEQUENCE(CYAML_FLAG_POINTER, unsigned *,
 				&outer_entry_schema, 0, CYAML_UNLIMITED)
 	};
 	test_data_t td = {
@@ -873,13 +873,13 @@ static bool test_err_schema_invalid_value_unit(
 	struct target_struct {
 		unsigned a;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_mapping mapping_schema[] = {
-		CYAML_MAPPING_UINT("a", CYAML_FLAG_DEFAULT,
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("a", CYAML_FLAG_DEFAULT,
 				struct target_struct, a),
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -914,13 +914,13 @@ static bool test_err_schema_invalid_value_float_range(
 	struct target_struct {
 		float a;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_mapping mapping_schema[] = {
-		CYAML_MAPPING_FLOAT("a", CYAML_FLAG_DEFAULT,
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_FLOAT("a", CYAML_FLAG_DEFAULT,
 				struct target_struct, a),
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -955,13 +955,13 @@ static bool test_err_schema_invalid_value_double_range(
 	struct target_struct {
 		double a;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_mapping mapping_schema[] = {
-		CYAML_MAPPING_FLOAT("a", CYAML_FLAG_DEFAULT,
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_FLOAT("a", CYAML_FLAG_DEFAULT,
 				struct target_struct, a),
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -996,13 +996,13 @@ static bool test_err_schema_invalid_value_unit_range_1(
 	struct target_struct {
 		unsigned char a;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_mapping mapping_schema[] = {
-		CYAML_MAPPING_UINT("a", CYAML_FLAG_DEFAULT,
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("a", CYAML_FLAG_DEFAULT,
 				struct target_struct, a),
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -1037,13 +1037,13 @@ static bool test_err_schema_invalid_value_unit_range_2(
 	struct target_struct {
 		unsigned char a;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_mapping mapping_schema[] = {
-		CYAML_MAPPING_UINT("a", CYAML_FLAG_DEFAULT,
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("a", CYAML_FLAG_DEFAULT,
 				struct target_struct, a),
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -1078,13 +1078,13 @@ static bool test_err_schema_invalid_value_unit_range_3(
 	struct target_struct {
 		uint16_t a;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_mapping mapping_schema[] = {
-		CYAML_MAPPING_UINT("a", CYAML_FLAG_DEFAULT,
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("a", CYAML_FLAG_DEFAULT,
 				struct target_struct, a),
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -1119,13 +1119,13 @@ static bool test_err_schema_invalid_value_unit_range_4(
 	struct target_struct {
 		uint32_t a;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_mapping mapping_schema[] = {
-		CYAML_MAPPING_UINT("a", CYAML_FLAG_DEFAULT,
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("a", CYAML_FLAG_DEFAULT,
 				struct target_struct, a),
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -1160,13 +1160,13 @@ static bool test_err_schema_invalid_value_unit_range_5(
 	struct target_struct {
 		uint32_t a;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_mapping mapping_schema[] = {
-		CYAML_MAPPING_UINT("a", CYAML_FLAG_DEFAULT,
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("a", CYAML_FLAG_DEFAULT,
 				struct target_struct, a),
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -1201,13 +1201,13 @@ static bool test_err_schema_string_min_length(
 	struct target_struct {
 		char *a;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_mapping mapping_schema[] = {
-		CYAML_MAPPING_STRING_PTR("a", CYAML_FLAG_DEFAULT,
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_STRING_PTR("a", CYAML_FLAG_DEFAULT,
 				struct target_struct, a, 4, 4),
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -1242,13 +1242,13 @@ static bool test_err_schema_string_max_length(
 	struct target_struct {
 		char *a;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_mapping mapping_schema[] = {
-		CYAML_MAPPING_STRING_PTR("a", CYAML_FLAG_DEFAULT,
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_STRING_PTR("a", CYAML_FLAG_DEFAULT,
 				struct target_struct, a, 4, 4),
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -1284,15 +1284,15 @@ static bool test_err_schema_missing_mapping_field(
 		int a;
 		int b;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_mapping mapping_schema[] = {
-		CYAML_MAPPING_INT("a", CYAML_FLAG_DEFAULT,
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_INT("a", CYAML_FLAG_DEFAULT,
 				struct target_struct, a),
-		CYAML_MAPPING_INT("b", CYAML_FLAG_DEFAULT,
+		CYAML_FIELD_INT("b", CYAML_FLAG_DEFAULT,
 				struct target_struct, b),
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -1327,13 +1327,13 @@ static bool test_err_schema_unknown_mapping_field(
 	struct target_struct {
 		int a;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_mapping mapping_schema[] = {
-		CYAML_MAPPING_INT("key", CYAML_FLAG_DEFAULT,
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_INT("key", CYAML_FLAG_DEFAULT,
 				struct target_struct, a),
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -1371,17 +1371,17 @@ static bool test_err_schema_sequence_min_entries(
 		int *a;
 		unsigned a_count;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_type entry_schema = {
-		CYAML_TYPE_INT(CYAML_FLAG_DEFAULT, *(data_tgt->a)),
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, *(data_tgt->a)),
 	};
-	static const struct cyaml_schema_mapping mapping_schema[] = {
-		CYAML_MAPPING_SEQUENCE("key", CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_SEQUENCE("key", CYAML_FLAG_POINTER,
 				struct target_struct, a, &entry_schema,
 				3, CYAML_UNLIMITED),
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -1420,17 +1420,17 @@ static bool test_err_schema_sequence_max_entries(
 		int *a;
 		unsigned a_count;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_type entry_schema = {
-		CYAML_TYPE_INT(CYAML_FLAG_DEFAULT, *(data_tgt->a)),
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, *(data_tgt->a)),
 	};
-	static const struct cyaml_schema_mapping mapping_schema[] = {
-		CYAML_MAPPING_SEQUENCE("key", CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_SEQUENCE("key", CYAML_FLAG_POINTER,
 				struct target_struct, a, &entry_schema,
 				2, 2),
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -1486,14 +1486,14 @@ static bool test_err_schema_flags_mapping(
 	struct target_struct {
 		enum test_flags a;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_mapping mapping_schema[] = {
-		CYAML_MAPPING_FLAGS("key", CYAML_FLAG_STRICT,
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_FLAGS("key", CYAML_FLAG_STRICT,
 				struct target_struct, a,
 				strings, CYAML_ARRAY_LEN(strings)),
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -1539,14 +1539,14 @@ static bool test_err_schema_enum_bad_string(
 	struct target_struct {
 		enum test_enum a;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_mapping mapping_schema[] = {
-		CYAML_MAPPING_ENUM("key", CYAML_FLAG_DEFAULT,
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_ENUM("key", CYAML_FLAG_DEFAULT,
 				struct target_struct, a,
 				strings, TEST_ENUM__COUNT),
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -1600,14 +1600,14 @@ static bool test_err_schema_flags_bad_string(
 	struct target_struct {
 		enum test_flags a;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_mapping mapping_schema[] = {
-		CYAML_MAPPING_FLAGS("key", CYAML_FLAG_DEFAULT,
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_FLAGS("key", CYAML_FLAG_DEFAULT,
 				struct target_struct, a,
 				strings, CYAML_ARRAY_LEN(strings)),
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -1653,14 +1653,14 @@ static bool test_err_schema_strict_enum_bad_string(
 	struct target_struct {
 		enum test_enum a;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_mapping mapping_schema[] = {
-		CYAML_MAPPING_ENUM("key", CYAML_FLAG_STRICT,
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_ENUM("key", CYAML_FLAG_STRICT,
 				struct target_struct, a,
 				strings, TEST_ENUM__COUNT),
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -1714,14 +1714,14 @@ static bool test_err_schema_strict_flags_bad_string(
 	struct target_struct {
 		enum test_flags a;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_mapping mapping_schema[] = {
-		CYAML_MAPPING_FLAGS("key", CYAML_FLAG_STRICT,
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_FLAGS("key", CYAML_FLAG_STRICT,
 				struct target_struct, a,
 				strings, CYAML_ARRAY_LEN(strings)),
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -1757,13 +1757,13 @@ static bool test_err_schema_expect_int_read_seq(
 	struct target_struct {
 		int value;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_mapping mapping_schema[] = {
-		CYAML_MAPPING_INT("key", CYAML_FLAG_DEFAULT,
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_INT("key", CYAML_FLAG_DEFAULT,
 				struct target_struct, value),
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -1798,13 +1798,13 @@ static bool test_err_schema_expect_int_read_end_1(
 	struct target_struct {
 		int value;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_mapping mapping_schema[] = {
-		CYAML_MAPPING_INT("key", CYAML_FLAG_DEFAULT,
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_INT("key", CYAML_FLAG_DEFAULT,
 				struct target_struct, value),
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -1840,13 +1840,13 @@ static bool test_err_schema_expect_int_read_end_2(
 	struct target_struct {
 		int value;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_mapping mapping_schema[] = {
-		CYAML_MAPPING_INT("key", CYAML_FLAG_DEFAULT,
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_INT("key", CYAML_FLAG_DEFAULT,
 				struct target_struct, value),
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -1889,14 +1889,14 @@ static bool test_err_schema_expect_flags_read_scalar(
 	struct target_struct {
 		int value;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_mapping mapping_schema[] = {
-		CYAML_MAPPING_FLAGS("key", CYAML_FLAG_DEFAULT,
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_FLAGS("key", CYAML_FLAG_DEFAULT,
 				struct target_struct, value,
 				strings, CYAML_ARRAY_LEN(strings)),
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -1934,18 +1934,18 @@ static bool test_err_schema_expect_mapping_read_scalar(
 	struct target_struct {
 		struct value_s test_value_mapping;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_mapping test_mapping_schema[] = {
-		CYAML_MAPPING_INT("a", CYAML_FLAG_DEFAULT, struct value_s, a),
-		CYAML_MAPPING_END
+	static const struct cyaml_schema_field test_mapping_schema[] = {
+		CYAML_FIELD_INT("a", CYAML_FLAG_DEFAULT, struct value_s, a),
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_mapping mapping_schema[] = {
-		CYAML_MAPPING_MAPPING("key", CYAML_FLAG_DEFAULT,
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_MAPPING("key", CYAML_FLAG_DEFAULT,
 				struct target_struct, test_value_mapping,
 				test_mapping_schema),
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -1981,17 +1981,17 @@ static bool test_err_schema_expect_sequence_read_scalar(
 		int *a;
 		unsigned a_count;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_type entry_schema = {
-		CYAML_TYPE_INT(CYAML_FLAG_DEFAULT, *(data_tgt->a)),
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, *(data_tgt->a)),
 	};
-	static const struct cyaml_schema_mapping mapping_schema[] = {
-		CYAML_MAPPING_SEQUENCE("key", CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_SEQUENCE("key", CYAML_FLAG_POINTER,
 				struct target_struct, a, &entry_schema,
 				0, CYAML_UNLIMITED),
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -2094,31 +2094,31 @@ static bool test_err_load_alloc_oom_1(
 		struct animal_s **animal;
 		uint32_t animal_count;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_type position_entry_schema = {
-		CYAML_TYPE_INT(CYAML_FLAG_DEFAULT, int),
+	static const struct cyaml_schema_value position_entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, int),
 	};
-	static const struct cyaml_schema_mapping animal_schema[] = {
-		CYAML_MAPPING_STRING_PTR("kind", CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_field animal_schema[] = {
+		CYAML_FIELD_STRING_PTR("kind", CYAML_FLAG_POINTER,
 				struct animal_s, kind, 0, CYAML_UNLIMITED),
-		CYAML_MAPPING_STRING_PTR("sound", CYAML_FLAG_POINTER,
+		CYAML_FIELD_STRING_PTR("sound", CYAML_FLAG_POINTER,
 				struct animal_s, sound, 0, CYAML_UNLIMITED),
-		CYAML_MAPPING_SEQUENCE_FIXED("position", CYAML_FLAG_POINTER,
+		CYAML_FIELD_SEQUENCE_FIXED("position", CYAML_FLAG_POINTER,
 				struct animal_s, position,
 				&position_entry_schema, 3),
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type animal_entry_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER, **(data_tgt->animal),
+	static const struct cyaml_schema_value animal_entry_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER, **(data_tgt->animal),
 				animal_schema),
 	};
-	static const struct cyaml_schema_mapping mapping_schema[] = {
-		CYAML_MAPPING_SEQUENCE("animals", CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_SEQUENCE("animals", CYAML_FLAG_POINTER,
 				struct target_struct, animal,
 				&animal_entry_schema, 0, CYAML_UNLIMITED),
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {
@@ -2200,31 +2200,31 @@ static bool test_err_load_alloc_oom_2(
 		struct animal_s **animal;
 		uint32_t animal_count;
 	} *data_tgt = NULL;
-	static const struct cyaml_schema_type position_entry_schema = {
-		CYAML_TYPE_INT(CYAML_FLAG_POINTER, int),
+	static const struct cyaml_schema_value position_entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_POINTER, int),
 	};
-	static const struct cyaml_schema_mapping animal_schema[] = {
-		CYAML_MAPPING_STRING_PTR("kind", CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_field animal_schema[] = {
+		CYAML_FIELD_STRING_PTR("kind", CYAML_FLAG_POINTER,
 				struct animal_s, kind, 0, CYAML_UNLIMITED),
-		CYAML_MAPPING_STRING_PTR("sound", CYAML_FLAG_POINTER,
+		CYAML_FIELD_STRING_PTR("sound", CYAML_FLAG_POINTER,
 				struct animal_s, sound, 0, CYAML_UNLIMITED),
-		CYAML_MAPPING_SEQUENCE("position", CYAML_FLAG_POINTER,
+		CYAML_FIELD_SEQUENCE("position", CYAML_FLAG_POINTER,
 				struct animal_s, position,
 				&position_entry_schema, 0, CYAML_UNLIMITED),
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type animal_entry_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER, **(data_tgt->animal),
+	static const struct cyaml_schema_value animal_entry_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER, **(data_tgt->animal),
 				animal_schema),
 	};
-	static const struct cyaml_schema_mapping mapping_schema[] = {
-		CYAML_MAPPING_SEQUENCE("animals", CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_SEQUENCE("animals", CYAML_FLAG_POINTER,
 				struct target_struct, animal,
 				&animal_entry_schema, 0, CYAML_UNLIMITED),
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	test_data_t td = {

@@ -49,10 +49,10 @@ enum cyaml_state_e {
 /** Mapping load state machine sub-states. */
 enum cyaml_mapping_state_e {
 	/** In state \ref CYAML_STATE_IN_MAPPING expecting **key**. */
-	CYAML_MAPPING_STATE_KEY,
+	CYAML_FIELD_STATE_KEY,
 
 	/** In state \ref CYAML_STATE_IN_MAPPING expecting **value**. */
-	CYAML_MAPPING_STATE_VALUE,
+	CYAML_FIELD_STATE_VALUE,
 };
 
 /**
@@ -62,7 +62,7 @@ typedef struct cyaml_state {
 	/** Current load state machine state. */
 	enum cyaml_state_e state;
 	/** Schema for the expected value in this state. */
-	const cyaml_schema_type_t *schema;
+	const cyaml_schema_value_t *schema;
 	/** Anonymous union for schema type specific state. */
 	union {
 		/** Additional state for \ref CYAML_STATE_IN_STREAM state. */
@@ -72,7 +72,7 @@ typedef struct cyaml_state {
 		} stream;
 		/** Additional state for \ref CYAML_STATE_IN_MAPPING state. */
 		struct {
-			const cyaml_schema_mapping_t *schema;
+			const cyaml_schema_field_t *schema;
 			/** Bit field of mapping fields found. */
 			cyaml_bitfield_t *fields;
 			/** Mapping load state machine sub-state. */
@@ -231,7 +231,7 @@ static inline const char * cyaml__state_to_str(enum cyaml_state_e state)
  *         if key is not present in `mapping_schema`.
  */
 static inline uint16_t cyaml__get_entry_from_mapping_schema(
-		const cyaml_schema_mapping_t * mapping_schema,
+		const cyaml_schema_field_t * mapping_schema,
 		const char *key)
 {
 	uint16_t index = 0;
@@ -256,7 +256,7 @@ static inline uint16_t cyaml__get_entry_from_mapping_schema(
  * \param[in]  ctx  The CYAML loading context.
  * \return Current mapping field's schema entry.
  */
-static inline const cyaml_schema_mapping_t * cyaml_mapping_schema_field(
+static inline const cyaml_schema_field_t * cyaml_mapping_schema_field(
 		cyaml_ctx_t *ctx)
 {
 	cyaml_state_t *state = ctx->state;
@@ -306,9 +306,9 @@ static cyaml_err_t cyaml__stack_ensure(
  * \return Number of entries in mapping_schema array.
  */
 static uint16_t cyaml__get_entry_count_from_mapping_schema(
-		const cyaml_schema_mapping_t *mapping_schema)
+		const cyaml_schema_field_t *mapping_schema)
 {
-	const cyaml_schema_mapping_t *entry = mapping_schema;
+	const cyaml_schema_field_t *entry = mapping_schema;
 
 	while (entry->key != NULL) {
 		entry++;
@@ -426,7 +426,7 @@ static cyaml_err_t cyaml__mapping_bitfieid_validate(
 static cyaml_err_t cyaml__stack_push(
 		cyaml_ctx_t *ctx,
 		enum cyaml_state_e state,
-		const cyaml_schema_type_t *schema,
+		const cyaml_schema_value_t *schema,
 		cyaml_data_t *data)
 {
 	cyaml_err_t err;
@@ -445,7 +445,7 @@ static cyaml_err_t cyaml__stack_push(
 	case CYAML_STATE_IN_MAPPING:
 		assert(schema->type == CYAML_MAPPING);
 		s.mapping.schema = schema->mapping.schema;
-		s.mapping.state = CYAML_MAPPING_STATE_KEY;
+		s.mapping.state = CYAML_FIELD_STATE_KEY;
 		err = cyaml__mapping_bitfieid_create(ctx, &s);
 		if (err != CYAML_OK) {
 			return err;
@@ -464,7 +464,7 @@ static cyaml_err_t cyaml__stack_push(
 
 			} else if (ctx->state->state ==
 					CYAML_STATE_IN_MAPPING) {
-				const cyaml_schema_mapping_t *field =
+				const cyaml_schema_field_t *field =
 						cyaml_mapping_schema_field(ctx);
 				s.sequence.count_data = ctx->state->data +
 						field->count_offset;
@@ -529,7 +529,7 @@ static void cyaml__stack_pop(
  * \return true iff schema is for a \ref CYAML_SEQUENCE type,
  *         false otherwise.
  */
-static inline bool cyaml__is_sequence(const cyaml_schema_type_t *schema)
+static inline bool cyaml__is_sequence(const cyaml_schema_value_t *schema)
 {
 	return ((schema->type == CYAML_SEQUENCE) ||
 	        (schema->type == CYAML_SEQUENCE_FIXED));
@@ -554,7 +554,7 @@ static inline bool cyaml__is_sequence(const cyaml_schema_type_t *schema)
  */
 static cyaml_err_t cyaml__data_handle_pointer(
 		cyaml_ctx_t *ctx,
-		const cyaml_schema_type_t *schema,
+		const cyaml_schema_value_t *schema,
 		const yaml_event_t *event,
 		uint8_t **value_data_io)
 {
@@ -671,7 +671,7 @@ static void cyaml__backtrace(
  */
 static cyaml_err_t cyaml__read_int(
 		const cyaml_ctx_t *ctx,
-		const cyaml_schema_type_t *schema,
+		const cyaml_schema_value_t *schema,
 		const char *value,
 		uint8_t *data)
 {
@@ -704,7 +704,7 @@ static cyaml_err_t cyaml__read_int(
  */
 static cyaml_err_t cyaml__read_uint(
 		const cyaml_ctx_t *ctx,
-		const cyaml_schema_type_t *schema,
+		const cyaml_schema_value_t *schema,
 		const char *value,
 		uint8_t *data)
 {
@@ -736,7 +736,7 @@ static cyaml_err_t cyaml__read_uint(
  */
 static cyaml_err_t cyaml__read_bool(
 		const cyaml_ctx_t *ctx,
-		const cyaml_schema_type_t *schema,
+		const cyaml_schema_value_t *schema,
 		const char *value,
 		uint8_t *data)
 {
@@ -768,7 +768,7 @@ static cyaml_err_t cyaml__read_bool(
  */
 static cyaml_err_t cyaml__read_enum(
 		const cyaml_ctx_t *ctx,
-		const cyaml_schema_type_t *schema,
+		const cyaml_schema_value_t *schema,
 		const char *value,
 		uint8_t *data)
 {
@@ -799,7 +799,7 @@ static cyaml_err_t cyaml__read_enum(
  */
 static cyaml_err_t cyaml__read_float_f(
 		const cyaml_ctx_t *ctx,
-		const cyaml_schema_type_t *schema,
+		const cyaml_schema_value_t *schema,
 		const char *value,
 		uint8_t *data)
 {
@@ -834,7 +834,7 @@ static cyaml_err_t cyaml__read_float_f(
  */
 static cyaml_err_t cyaml__read_float_d(
 		const cyaml_ctx_t *ctx,
-		const cyaml_schema_type_t *schema,
+		const cyaml_schema_value_t *schema,
 		const char *value,
 		uint8_t *data)
 {
@@ -875,13 +875,13 @@ static cyaml_err_t cyaml__read_float_d(
  */
 static cyaml_err_t cyaml__read_float(
 		const cyaml_ctx_t *ctx,
-		const cyaml_schema_type_t *schema,
+		const cyaml_schema_value_t *schema,
 		const char *value,
 		uint8_t *data)
 {
 	typedef cyaml_err_t (*cyaml_float_fn)(
 			const cyaml_ctx_t *ctx,
-			const cyaml_schema_type_t *schema,
+			const cyaml_schema_value_t *schema,
 			const char *value,
 			uint8_t *data_target);
 	struct float_fns {
@@ -920,7 +920,7 @@ static cyaml_err_t cyaml__read_float(
  */
 static cyaml_err_t cyaml__read_string(
 		const cyaml_ctx_t *ctx,
-		const cyaml_schema_type_t *schema,
+		const cyaml_schema_value_t *schema,
 		const char *value,
 		uint8_t *data)
 {
@@ -952,14 +952,14 @@ static cyaml_err_t cyaml__read_string(
  */
 static cyaml_err_t cyaml__read_scalar_value(
 		const cyaml_ctx_t *ctx,
-		const cyaml_schema_type_t *schema,
+		const cyaml_schema_value_t *schema,
 		cyaml_data_t *data,
 		yaml_event_t *event)
 {
 	const char *value = (const char *)event->data.scalar.value;
 	typedef cyaml_err_t (*cyaml_read_scalar_fn)(
 			const cyaml_ctx_t *ctx,
-			const cyaml_schema_type_t *schema,
+			const cyaml_schema_value_t *schema,
 			const char *value,
 			uint8_t *data_target);
 	static const cyaml_read_scalar_fn fn[CYAML__TYPE_COUNT] = {
@@ -989,7 +989,7 @@ static cyaml_err_t cyaml__read_scalar_value(
  */
 static cyaml_err_t cyaml__set_flag(
 		const cyaml_ctx_t *ctx,
-		const cyaml_schema_type_t *schema,
+		const cyaml_schema_value_t *schema,
 		const char *value,
 		uint64_t *flags_out)
 {
@@ -1033,7 +1033,7 @@ static cyaml_err_t cyaml__set_flag(
  */
 static cyaml_err_t cyaml__read_flags_value(
 		cyaml_ctx_t *ctx,
-		const cyaml_schema_type_t *schema,
+		const cyaml_schema_value_t *schema,
 		cyaml_data_t *data)
 {
 	bool exit = false;
@@ -1161,7 +1161,7 @@ static cyaml_err_t cyaml__consume_ignored_value(
  */
 static cyaml_err_t cyaml__read_value(
 		cyaml_ctx_t *ctx,
-		const cyaml_schema_type_t *schema,
+		const cyaml_schema_value_t *schema,
 		uint8_t *data,
 		yaml_event_t *event)
 {
@@ -1239,7 +1239,7 @@ static cyaml_err_t cyaml__new_sequence_entry(
 	cyaml_err_t err;
 	cyaml_state_t *state = ctx->state;
 	uint8_t *value_data = state->data;
-	const cyaml_schema_type_t *schema = state->schema;
+	const cyaml_schema_value_t *schema = state->schema;
 
 	if (state->sequence.count + 1 > state->schema->sequence.max) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
@@ -1414,7 +1414,7 @@ static cyaml_err_t cyaml__read_doc(
 }
 
 /**
- * YAML loading handler for the \ref CYAML_MAPPING_STATE_KEY sub-state of
+ * YAML loading handler for the \ref CYAML_FIELD_STATE_KEY sub-state of
  * the \ref CYAML_STATE_IN_MAPPING state.
  *
  * \param[in]  ctx  The CYAML loading context.
@@ -1458,7 +1458,7 @@ static cyaml_err_t cyaml__read_mapping_key(
 		}
 		cyaml__mapping_bitfieid_set(ctx);
 		/* Toggle mapping sub-state to value */
-		ctx->state->mapping.state = CYAML_MAPPING_STATE_VALUE;
+		ctx->state->mapping.state = CYAML_FIELD_STATE_VALUE;
 		break;
 	case CYAML_EVT_MAPPING_END:
 		err = cyaml__mapping_bitfieid_validate(ctx);
@@ -1475,7 +1475,7 @@ out:
 }
 
 /**
- * YAML loading handler for the \ref CYAML_MAPPING_STATE_VALUE sub-state of
+ * YAML loading handler for the \ref CYAML_FIELD_STATE_VALUE sub-state of
  * the \ref CYAML_STATE_IN_MAPPING state.
  *
  * \param[in]  ctx  The CYAML loading context.
@@ -1490,7 +1490,7 @@ static cyaml_err_t cyaml__read_mapping_value(
 	cyaml_event_t mask = CYAML_EVT_SCALAR |
 	                     CYAML_EVT_SEQ_START |
 	                     CYAML_EVT_MAPPING_START;
-	const cyaml_schema_mapping_t *entry = cyaml_mapping_schema_field(ctx);
+	const cyaml_schema_field_t *entry = cyaml_mapping_schema_field(ctx);
 	cyaml_data_t *data = state->data + entry->data_offset;
 
 	err = cyaml_get_next_event(ctx, mask, &event);
@@ -1502,7 +1502,7 @@ static cyaml_err_t cyaml__read_mapping_value(
 	 * reading value, because reading value might increase the
 	 * CYAML context stack allocation, causing the state entry
 	 * to move. */
-	state->mapping.state = CYAML_MAPPING_STATE_KEY;
+	state->mapping.state = CYAML_FIELD_STATE_KEY;
 
 	err = cyaml__read_value(ctx, &entry->value, data, &event);
 
@@ -1523,9 +1523,9 @@ static cyaml_err_t cyaml__read_mapping(
 {
 	/* Mapping has two sub-states; key and value */
 	switch (ctx->state->mapping.state) {
-	case CYAML_MAPPING_STATE_KEY:
+	case CYAML_FIELD_STATE_KEY:
 		return cyaml__read_mapping_key(ctx);
-	case CYAML_MAPPING_STATE_VALUE:
+	case CYAML_FIELD_STATE_VALUE:
 		return cyaml__read_mapping_value(ctx);
 	}
 
@@ -1599,7 +1599,7 @@ out:
  */
 static inline cyaml_err_t cyaml__validate_load_params(
 		const cyaml_config_t *config,
-		const cyaml_schema_type_t *schema,
+		const cyaml_schema_value_t *schema,
 		cyaml_data_t * const *data_tgt,
 		const unsigned *seq_count_tgt)
 {
@@ -1643,7 +1643,7 @@ static inline cyaml_err_t cyaml__validate_load_params(
  */
 static cyaml_err_t cyaml__load(
 		const cyaml_config_t *config,
-		const cyaml_schema_type_t *schema,
+		const cyaml_schema_value_t *schema,
 		cyaml_data_t **data_out,
 		unsigned *seq_count_out,
 		yaml_parser_t *parser)
@@ -1708,7 +1708,7 @@ out:
 cyaml_err_t cyaml_load_file(
 		const char *path,
 		const cyaml_config_t *config,
-		const cyaml_schema_type_t *schema,
+		const cyaml_schema_value_t *schema,
 		cyaml_data_t **data_out,
 		unsigned *seq_count_out)
 {
@@ -1751,7 +1751,7 @@ cyaml_err_t cyaml_load_data(
 		const uint8_t *input,
 		size_t input_len,
 		const cyaml_config_t *config,
-		const cyaml_schema_type_t *schema,
+		const cyaml_schema_value_t *schema,
 		cyaml_data_t **data_out,
 		unsigned *seq_count_out)
 {

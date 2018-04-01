@@ -45,7 +45,7 @@
  */
 static void cyaml__free_value(
 		const cyaml_config_t *cfg,
-		const cyaml_schema_type_t *schema,
+		const cyaml_schema_value_t *schema,
 		uint8_t * data,
 		unsigned count);
 
@@ -59,11 +59,11 @@ static void cyaml__free_value(
  */
 static void cyaml__free_sequence(
 		const cyaml_config_t *cfg,
-		const cyaml_schema_type_t *sequence_schema,
+		const cyaml_schema_value_t *sequence_schema,
 		uint8_t * const data,
 		unsigned count)
 {
-	const cyaml_schema_type_t *schema = sequence_schema->sequence.schema;
+	const cyaml_schema_value_t *schema = sequence_schema->sequence.schema;
 	uint32_t data_size = schema->data_size;
 
 	if (schema->flags & CYAML_FLAG_POINTER) {
@@ -85,10 +85,10 @@ static void cyaml__free_sequence(
  */
 static void cyaml__free_mapping(
 		const cyaml_config_t *cfg,
-		const cyaml_schema_type_t *mapping_schema,
+		const cyaml_schema_value_t *mapping_schema,
 		uint8_t * const data)
 {
-	const cyaml_schema_mapping_t *schema = mapping_schema->mapping.schema;
+	const cyaml_schema_field_t *schema = mapping_schema->mapping.schema;
 
 	while (schema->key != NULL) {
 		unsigned count = 0;
@@ -111,7 +111,7 @@ static void cyaml__free_mapping(
 /* This function is documented at the forward declaration above. */
 static void cyaml__free_value(
 		const cyaml_config_t *cfg,
-		const cyaml_schema_type_t *schema,
+		const cyaml_schema_value_t *schema,
 		uint8_t * data,
 		unsigned count)
 {
@@ -142,7 +142,7 @@ static void cyaml__free_value(
 /* Exported function, documented in include/cyaml/cyaml.h */
 cyaml_err_t cyaml_free(
 		const cyaml_config_t *config,
-		const cyaml_schema_type_t *schema,
+		const cyaml_schema_value_t *schema,
 		cyaml_data_t *data,
 		unsigned seq_count)
 {
