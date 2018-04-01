@@ -49,10 +49,10 @@ enum cyaml_state_e {
 /** Mapping load state machine sub-states. */
 enum cyaml_mapping_state_e {
 	/** In state \ref CYAML_STATE_IN_MAPPING expecting **key**. */
-	CYAML_MAPPING_STATE_KEY,
+	CYAML_FIELD_STATE_KEY,
 
 	/** In state \ref CYAML_STATE_IN_MAPPING expecting **value**. */
-	CYAML_MAPPING_STATE_VALUE,
+	CYAML_FIELD_STATE_VALUE,
 };
 
 /**
@@ -72,7 +72,7 @@ typedef struct cyaml_state {
 		} stream;
 		/** Additional state for \ref CYAML_STATE_IN_MAPPING state. */
 		struct {
-			const cyaml_schema_mapping_t *schema;
+			const cyaml_schema_field_t *schema;
 			/** Bit field of mapping fields found. */
 			cyaml_bitfield_t *fields;
 			/** Mapping load state machine sub-state. */
@@ -231,7 +231,7 @@ static inline const char * cyaml__state_to_str(enum cyaml_state_e state)
  *         if key is not present in `mapping_schema`.
  */
 static inline uint16_t cyaml__get_entry_from_mapping_schema(
-		const cyaml_schema_mapping_t * mapping_schema,
+		const cyaml_schema_field_t * mapping_schema,
 		const char *key)
 {
 	uint16_t index = 0;
@@ -256,7 +256,7 @@ static inline uint16_t cyaml__get_entry_from_mapping_schema(
  * \param[in]  ctx  The CYAML loading context.
  * \return Current mapping field's schema entry.
  */
-static inline const cyaml_schema_mapping_t * cyaml_mapping_schema_field(
+static inline const cyaml_schema_field_t * cyaml_mapping_schema_field(
 		cyaml_ctx_t *ctx)
 {
 	cyaml_state_t *state = ctx->state;
@@ -306,9 +306,9 @@ static cyaml_err_t cyaml__stack_ensure(
  * \return Number of entries in mapping_schema array.
  */
 static uint16_t cyaml__get_entry_count_from_mapping_schema(
-		const cyaml_schema_mapping_t *mapping_schema)
+		const cyaml_schema_field_t *mapping_schema)
 {
-	const cyaml_schema_mapping_t *entry = mapping_schema;
+	const cyaml_schema_field_t *entry = mapping_schema;
 
 	while (entry->key != NULL) {
 		entry++;
@@ -445,7 +445,7 @@ static cyaml_err_t cyaml__stack_push(
 	case CYAML_STATE_IN_MAPPING:
 		assert(schema->type == CYAML_MAPPING);
 		s.mapping.schema = schema->mapping.schema;
-		s.mapping.state = CYAML_MAPPING_STATE_KEY;
+		s.mapping.state = CYAML_FIELD_STATE_KEY;
 		err = cyaml__mapping_bitfieid_create(ctx, &s);
 		if (err != CYAML_OK) {
 			return err;
@@ -464,7 +464,7 @@ static cyaml_err_t cyaml__stack_push(
 
 			} else if (ctx->state->state ==
 					CYAML_STATE_IN_MAPPING) {
-				const cyaml_schema_mapping_t *field =
+				const cyaml_schema_field_t *field =
 						cyaml_mapping_schema_field(ctx);
 				s.sequence.count_data = ctx->state->data +
 						field->count_offset;
@@ -1414,7 +1414,7 @@ static cyaml_err_t cyaml__read_doc(
 }
 
 /**
- * YAML loading handler for the \ref CYAML_MAPPING_STATE_KEY sub-state of
+ * YAML loading handler for the \ref CYAML_FIELD_STATE_KEY sub-state of
  * the \ref CYAML_STATE_IN_MAPPING state.
  *
  * \param[in]  ctx  The CYAML loading context.
@@ -1458,7 +1458,7 @@ static cyaml_err_t cyaml__read_mapping_key(
 		}
 		cyaml__mapping_bitfieid_set(ctx);
 		/* Toggle mapping sub-state to value */
-		ctx->state->mapping.state = CYAML_MAPPING_STATE_VALUE;
+		ctx->state->mapping.state = CYAML_FIELD_STATE_VALUE;
 		break;
 	case CYAML_EVT_MAPPING_END:
 		err = cyaml__mapping_bitfieid_validate(ctx);
@@ -1475,7 +1475,7 @@ out:
 }
 
 /**
- * YAML loading handler for the \ref CYAML_MAPPING_STATE_VALUE sub-state of
+ * YAML loading handler for the \ref CYAML_FIELD_STATE_VALUE sub-state of
  * the \ref CYAML_STATE_IN_MAPPING state.
  *
  * \param[in]  ctx  The CYAML loading context.
@@ -1490,7 +1490,7 @@ static cyaml_err_t cyaml__read_mapping_value(
 	cyaml_event_t mask = CYAML_EVT_SCALAR |
 	                     CYAML_EVT_SEQ_START |
 	                     CYAML_EVT_MAPPING_START;
-	const cyaml_schema_mapping_t *entry = cyaml_mapping_schema_field(ctx);
+	const cyaml_schema_field_t *entry = cyaml_mapping_schema_field(ctx);
 	cyaml_data_t *data = state->data + entry->data_offset;
 
 	err = cyaml_get_next_event(ctx, mask, &event);
@@ -1502,7 +1502,7 @@ static cyaml_err_t cyaml__read_mapping_value(
 	 * reading value, because reading value might increase the
 	 * CYAML context stack allocation, causing the state entry
 	 * to move. */
-	state->mapping.state = CYAML_MAPPING_STATE_KEY;
+	state->mapping.state = CYAML_FIELD_STATE_KEY;
 
 	err = cyaml__read_value(ctx, &entry->value, data, &event);
 
@@ -1523,9 +1523,9 @@ static cyaml_err_t cyaml__read_mapping(
 {
 	/* Mapping has two sub-states; key and value */
 	switch (ctx->state->mapping.state) {
-	case CYAML_MAPPING_STATE_KEY:
+	case CYAML_FIELD_STATE_KEY:
 		return cyaml__read_mapping_key(ctx);
-	case CYAML_MAPPING_STATE_VALUE:
+	case CYAML_FIELD_STATE_VALUE:
 		return cyaml__read_mapping_value(ctx);
 	}
 

@@ -88,7 +88,7 @@ static void cyaml__free_mapping(
 		const cyaml_schema_value_t *mapping_schema,
 		uint8_t * const data)
 {
-	const cyaml_schema_mapping_t *schema = mapping_schema->mapping.schema;
+	const cyaml_schema_field_t *schema = mapping_schema->mapping.schema;
 
 	while (schema->key != NULL) {
 		unsigned count = 0;

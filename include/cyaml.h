@@ -149,10 +149,10 @@ typedef struct cyaml_schema_value {
 			 * Array of cyaml mapping field schema definitions.
 			 *
 			 * The array must be terminated by an entry with a
-			 * NULL key.  See \ref cyaml_schema_mapping_t
-			 * and \ref CYAML_MAPPING_END for more info.
+			 * NULL key.  See \ref cyaml_schema_field_t
+			 * and \ref CYAML_FIELD_END for more info.
 			 */
-			const struct cyaml_schema_mapping *schema;
+			const struct cyaml_schema_field *schema;
 		} mapping;
 		/**
 		 * \ref CYAML_SEQUENCE and \ref CYAML_SEQUENCE_FIXED
@@ -209,10 +209,10 @@ typedef struct cyaml_schema_value {
  * the value.  It also specifies the offset into the data at which value
  * data should be placed.  The array is terminated by an entry with a NULL key.
  */
-typedef struct cyaml_schema_mapping {
+typedef struct cyaml_schema_field {
 	/**
 	 * String for YAML mapping key that his schema entry describes,
-	 * or NULL to indicated the end of an array of cyaml_schema_mapping_t
+	 * or NULL to indicated the end of an array of cyaml_schema_field_t
 	 * entries.
 	 */
 	const char *key;
@@ -235,7 +235,7 @@ typedef struct cyaml_schema_mapping {
 	 * Defines the schema for the mapping field's value.
 	 */
 	struct cyaml_schema_value value;
-} cyaml_schema_mapping_t;
+} cyaml_schema_field_t;
 
 /**
  * CYAML behavioural configuration flags for clients
@@ -314,7 +314,7 @@ typedef enum cyaml_err {
  * \param[in]  _structure  The structure corresponding to the mapping.
  * \param[in]  _member     The member in _structure for this mapping value.
  */
-#define CYAML_MAPPING_INT( \
+#define CYAML_FIELD_INT( \
 		_key, _flags, _structure, _member) \
 { \
 	.key = _key, \
@@ -344,7 +344,7 @@ typedef enum cyaml_err {
  * \param[in]  _structure  The structure corresponding to the mapping.
  * \param[in]  _member     The member in _structure for this mapping value.
  */
-#define CYAML_MAPPING_UINT( \
+#define CYAML_FIELD_UINT( \
 		_key, _flags, _structure, _member) \
 { \
 	.key = _key, \
@@ -374,7 +374,7 @@ typedef enum cyaml_err {
  * \param[in]  _structure  The structure corresponding to the mapping.
  * \param[in]  _member     The member in _structure for this mapping value.
  */
-#define CYAML_MAPPING_BOOL( \
+#define CYAML_FIELD_BOOL( \
 		_key, _flags, _structure, _member) \
 { \
 	.key = _key, \
@@ -412,7 +412,7 @@ typedef enum cyaml_err {
  * \param[in]  _strings       Array of string data for enumeration values.
  * \param[in]  _strings_count Number of entries in _strings.
  */
-#define CYAML_MAPPING_ENUM( \
+#define CYAML_FIELD_ENUM( \
 		_key, _flags, _structure, _member, _strings, _strings_count) \
 { \
 	.key = _key, \
@@ -451,7 +451,7 @@ typedef enum cyaml_err {
  * \param[in]  _strings       Array of string data for flag values.
  * \param[in]  _strings_count Number of entries in _strings.
  */
-#define CYAML_MAPPING_FLAGS( \
+#define CYAML_FIELD_FLAGS( \
 		_key, _flags, _structure, _member, _strings, _strings_count) \
 { \
 	.key = _key, \
@@ -482,7 +482,7 @@ typedef enum cyaml_err {
  * \param[in]  _structure  The structure corresponding to the mapping.
  * \param[in]  _member     The member in _structure for this mapping value.
  */
-#define CYAML_MAPPING_FLOAT( \
+#define CYAML_FIELD_FLOAT( \
 		_key, _flags, _structure, _member) \
 { \
 	.key = _key, \
@@ -531,7 +531,7 @@ typedef enum cyaml_err {
  * \param[in]  _member     The member in _structure for this mapping value.
  * \param[in]  _min        Minimum string length in bytes.  Excludes '\0'.
  */
-#define CYAML_MAPPING_STRING( \
+#define CYAML_FIELD_STRING( \
 		_key, _flags, _structure, _member, _min) \
 { \
 	.key = _key, \
@@ -559,7 +559,7 @@ typedef enum cyaml_err {
  * \param[in]  _min        Minimum string length in bytes.  Excludes '\0'.
  * \param[in]  _max        Maximum string length in bytes.  Excludes '\0'.
  */
-#define CYAML_MAPPING_STRING_PTR( \
+#define CYAML_FIELD_STRING_PTR( \
 		_key, _flags, _structure, _member, _min, _max) \
 { \
 	.key = _key, \
@@ -598,7 +598,7 @@ typedef enum cyaml_err {
  * \param[in]  _member     The member in _structure for this mapping value.
  * \param[in]  _schema     Pointer to mapping schema array.
  */
-#define CYAML_MAPPING_MAPPING( \
+#define CYAML_FIELD_MAPPING( \
 		_key, _flags, _structure, _member, _schema) \
 { \
 	.key = _key, \
@@ -620,7 +620,7 @@ typedef enum cyaml_err {
  * \param[in]  _member     The member in _structure for this mapping value.
  * \param[in]  _schema     Pointer to mapping schema array.
  */
-#define CYAML_MAPPING_MAPPING_PTR( \
+#define CYAML_FIELD_MAPPING_PTR( \
 		_key, _flags, _structure, _member, _schema) \
 { \
 	.key = _key, \
@@ -662,7 +662,7 @@ typedef enum cyaml_err {
  * \param[in]  _min        Minimum number of sequence entries required.
  * \param[in]  _max        Maximum number of sequence entries required.
  */
-#define CYAML_MAPPING_SEQUENCE( \
+#define CYAML_FIELD_SEQUENCE( \
 		_key, _flags, _structure, _member, _schema, _min, _max) \
 { \
 	.key = _key, \
@@ -705,7 +705,7 @@ typedef enum cyaml_err {
  * \param[in]  _schema     Pointer to schema for the **entries** in sequence.
  * \param[in]  _count      Number of sequence entries required.
  */
-#define CYAML_MAPPING_SEQUENCE_FIXED( \
+#define CYAML_FIELD_SEQUENCE_FIXED( \
 		_key, _flags, _structure, _member, _schema, _count) \
 { \
 	.key = _key, \
@@ -723,7 +723,7 @@ typedef enum cyaml_err {
  * \param[in]  _key    String defining the YAML mapping key to ignore.
  * \param[in]  _flags  Any behavioural flags relevant to this key.
  */
-#define CYAML_MAPPING_IGNORE( \
+#define CYAML_FIELD_IGNORE( \
 		_key, _flags) \
 { \
 	.key = _key, \
@@ -736,10 +736,10 @@ typedef enum cyaml_err {
 /**
  * Mapping schema helper macro for terminating an array of mapping fields.
  *
- * CYAML mapping schemas are formed from an array of \ref cyaml_schema_mapping
+ * CYAML mapping schemas are formed from an array of \ref cyaml_schema_field
  * entries, and an entry with a NULL key indicates the end of the array.
  */
-#define CYAML_MAPPING_END { .key = NULL }
+#define CYAML_FIELD_END { .key = NULL }
 
 /**
  * Identifies that a \ref CYAML_SEQUENCE has unconstrained maximum entry

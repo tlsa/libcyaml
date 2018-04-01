@@ -28,10 +28,10 @@ static bool test_free_null_data(
 	struct target_struct {
 		int test_value_int;
 	};
-	static const struct cyaml_schema_mapping mapping_schema[] = {
-		CYAML_MAPPING_INT("test_int", CYAML_FLAG_DEFAULT,
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_INT("test_int", CYAML_FLAG_DEFAULT,
 				struct target_struct, test_value_int),
-		CYAML_MAPPING_END
+		CYAML_FIELD_END
 	};
 	static const struct cyaml_schema_value top_schema = {
 		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
