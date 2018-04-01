@@ -86,7 +86,7 @@ typedef enum cyaml_type {
  */
 typedef enum cyaml_flag {
 	CYAML_FLAG_DEFAULT  = 0,        /**< Default value flags (none set). */
-	CYAML_FLAG_OPTIONAL = (1 << 0), /**< Mapping entry is optional. */
+	CYAML_FLAG_OPTIONAL = (1 << 0), /**< Mapping field is optional. */
 	CYAML_FLAG_POINTER  = (1 << 1), /**< Value is a pointer to its type. */
 	/**
 	 * Make value handling strict.
@@ -146,7 +146,7 @@ typedef struct cyaml_schema_type {
 		/** \ref CYAML_MAPPING type-specific schema data. */
 		struct {
 			/**
-			 * Array of cyaml mapping entry schema definitions.
+			 * Array of cyaml mapping field schema definitions.
 			 *
 			 * The array must be terminated by an entry with a
 			 * NULL key.  See \ref cyaml_schema_mapping_t
@@ -199,7 +199,7 @@ typedef struct cyaml_schema_type {
 } cyaml_schema_type_t;
 
 /**
- * Schema definition entry for mappings.
+ * Schema definition entry for mapping fields.
  *
  * YAML mappings are key:value pairs.  CYAML only supports scalar mapping keys,
  * that is, keys that are a string.
@@ -232,7 +232,7 @@ typedef struct cyaml_schema_mapping {
 	 */
 	uint8_t count_size;
 	/**
-	 * Defines the schema for the mapping entry's value.
+	 * Defines the schema for the mapping field's value.
 	 */
 	struct cyaml_schema_type value;
 } cyaml_schema_mapping_t;
@@ -734,7 +734,7 @@ typedef enum cyaml_err {
 }
 
 /**
- * Mapping schema helper macro for terminating an array of schema entries.
+ * Mapping schema helper macro for terminating an array of mapping fields.
  *
  * CYAML mapping schemas are formed from an array of \ref cyaml_schema_mapping
  * entries, and an entry with a NULL key indicates the end of the array.
@@ -797,7 +797,7 @@ typedef void (*cyaml_log_fn_t)(
  *                   be treated as free().
  * \return If `size == 0`, returns NULL.  If `size > 0`, returns NULL on failure,
  *         and any existing allocation is left untouched, or return non-NULL as
- *         the new alloctation on success, and the original pointer becomes
+ *         the new allocation on success, and the original pointer becomes
  *         invalid.
  */
 typedef void * (*cyaml_mem_fn_t)(
@@ -814,7 +814,7 @@ typedef struct cyaml_config {
 	/**
 	 * Client function to use for logging.
 	 *
-	 * Clients can implement thier own logging function and set it here.
+	 * Clients can implement their own logging function and set it here.
 	 * Otherwise, set `log_fn` to \ref cyaml_log if CYAML's default
 	 * logging to `stderr` is suitable (see its documentation for more
 	 * details), or set to `NULL` to suppress all logging.
