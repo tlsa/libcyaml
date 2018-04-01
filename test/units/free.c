@@ -33,8 +33,8 @@ static bool test_free_null_data(
 				struct target_struct, test_value_int),
 		CYAML_MAPPING_END
 	};
-	static const struct cyaml_schema_type top_schema = {
-		CYAML_TYPE_MAPPING(CYAML_FLAG_POINTER,
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
 	ttest_ctx_t tc = ttest_start(report, __func__, NULL, NULL);
