@@ -17,6 +17,26 @@
 #define CYAML_H
 
 /**
+ * CYAML library version string.
+ */
+extern const char *cyaml_version_str;
+
+/**
+ * CYAML library version number suitable for comparisons.
+ *
+ * Version number binary composition is `0bRUUUUUUUJJJJJJJJNNNNNNNNPPPPPPPP`.
+ *
+ * | Character | Meaning                                |
+ * | --------- | -------------------------------------- |
+ * | `R`       | Release flag.  If set, it's a release. |
+ * | `U`       | Unused / reserved.                     |
+ * | `J`       | Major component of version.            |
+ * | `N`       | Minor component of version.            |
+ * | `P`       | Patch component of version.            |
+ */
+extern const uint32_t cyaml_version;
+
+/**
  * CYAML value types.
  */
 typedef enum cyaml_type {
