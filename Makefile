@@ -10,6 +10,14 @@ else
 $(error VARIANT must be 'debug' (default) or 'release')
 endif
 
+# CYAML's versioning is <MAJOR>.<MINOR>.<PATCH>[-DEVEL]
+# Master branch will always be DEVEL.  The release process will be to make
+# the release branch, set VESION_DEVEL to 0, and tag the release.
+VERSION_MAJOR = 0
+VERSION_MINOR = 0
+VERSION_PATCH = 0
+VERSION_DEVEL = 1 # Zero or one only.
+
 .IMPLICIT =
 
 CC = gcc
@@ -18,8 +26,13 @@ LD = $(CC)
 MKDIR =	mkdir -p
 VALGRIND = valgrind --leak-check=full --track-origins=yes
 
+VERSION_FLAGS = -DVERSION_MAJOR=$(VERSION_MAJOR) \
+                -DVERSION_MINOR=$(VERSION_MINOR) \
+                -DVERSION_PATCH=$(VERSION_PATCH) \
+                -DVERSION_DEVEL=$(VERSION_DEVEL)
+
 INCLUDE = -I include -I src
-CCFLAGS += $(INCLUDE)
+CCFLAGS += $(INCLUDE) $(VERSION_FLAGS)
 CCFLAGS += -std=c11 -Wall -Wextra -pedantic
 LDFLAGS = -lyaml
 ARFLAGS = -shared
