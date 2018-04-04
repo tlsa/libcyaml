@@ -17,6 +17,16 @@
 #define CYAML_H
 
 /**
+ * CYAML library version string.
+ */
+extern const char *cyaml_version_str;
+
+/**
+ * CYAML library version number suitable for comparisons.
+ */
+extern const uint32_t cyaml_version;
+
+/**
  * CYAML value types.
  */
 typedef enum cyaml_type {
