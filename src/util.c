@@ -17,6 +17,46 @@
 
 #include "util.h"
 
+/** Flag that indicates a release in \ref cyaml_version. */
+#define CYAML_RELEASE_FLAG (1u << 31)
+
+/** Stringification helper macro. */
+#define CYAML_STR_HELPER(_x) #_x
+
+/** Stringification macro. */
+#define CYAML_STR(_x) CYAML_STR_HELPER(_x)
+
+/* Version depends on whether we're a development build. */
+#if VERSION_DEVEL
+	/** Version string is composed from components in Makefile. */
+	#define CYAML_VERSION_STR \
+			CYAML_STR(VERSION_MAJOR) "." \
+			CYAML_STR(VERSION_MINOR) "." \
+			CYAML_STR(VERSION_PATCH) "-DEVEL"
+
+	/* Exported constant, documented in include/cyaml/cyaml.h */
+	const uint32_t cyaml_version =
+			((VERSION_MAJOR << 16) |
+			 (VERSION_MINOR <<  8) |
+			 (VERSION_PATCH <<  0));
+#else
+	/** Version string is composed from components in Makefile. */
+	#define CYAML_VERSION_STR \
+			CYAML_STR(VERSION_MAJOR) "." \
+			CYAML_STR(VERSION_MINOR) "." \
+			CYAML_STR(VERSION_PATCH)
+
+	/* Exported constant, documented in include/cyaml/cyaml.h */
+	const uint32_t cyaml_version =
+			((VERSION_MAJOR << 16) |
+			 (VERSION_MINOR <<  8) |
+			 (VERSION_PATCH <<  0) |
+			 CYAML_RELEASE_FLAG);
+#endif
+
+/* Exported constant, documented in include/cyaml/cyaml.h */
+const char *cyaml_version_str = CYAML_VERSION_STR;
+
 /* Exported function, documented in include/cyaml/cyaml.h */
 void cyaml_log(
 		cyaml_log_t level,
