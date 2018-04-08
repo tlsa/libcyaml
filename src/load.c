@@ -415,6 +415,19 @@ static cyaml_err_t cyaml__mapping_bitfieid_validate(
 }
 
 /**
+ * Helper to check if schema is for a \ref CYAML_SEQUENCE type.
+ *
+ * \param[in]  schema  The schema entry for a type.
+ * \return true iff schema is for a \ref CYAML_SEQUENCE type,
+ *         false otherwise.
+ */
+static inline bool cyaml__is_sequence(const cyaml_schema_value_t *schema)
+{
+	return ((schema->type == CYAML_SEQUENCE) ||
+	        (schema->type == CYAML_SEQUENCE_FIXED));
+}
+
+/**
  * Push a new entry onto the CYAML load context's stack.
  *
  * \param[in]  ctx     The CYAML loading context.
@@ -452,8 +465,7 @@ static cyaml_err_t cyaml__stack_push(
 		}
 		break;
 	case CYAML_STATE_IN_SEQUENCE:
-		assert((schema->type == CYAML_SEQUENCE) ||
-		       (schema->type == CYAML_SEQUENCE_FIXED));
+		assert(cyaml__is_sequence(schema));
 		if (schema->type == CYAML_SEQUENCE_FIXED) {
 			if (schema->sequence.min != schema->sequence.max) {
 				return CYAML_ERR_SEQUENCE_FIXED_COUNT;
@@ -520,19 +532,6 @@ static void cyaml__stack_pop(
 
 	ctx->state = (idx == 0) ? NULL : &ctx->stack[idx - 1];
 	ctx->stack_idx = idx;
-}
-
-/**
- * Helper to check if schema is for a \ref CYAML_SEQUENCE type.
- *
- * \param[in]  schema  The schema entry for a type.
- * \return true iff schema is for a \ref CYAML_SEQUENCE type,
- *         false otherwise.
- */
-static inline bool cyaml__is_sequence(const cyaml_schema_value_t *schema)
-{
-	return ((schema->type == CYAML_SEQUENCE) ||
-	        (schema->type == CYAML_SEQUENCE_FIXED));
 }
 
 /**
