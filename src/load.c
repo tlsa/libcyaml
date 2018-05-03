@@ -1174,7 +1174,7 @@ static cyaml_err_t cyaml__read_value(
 	case CYAML_SEQUENCE_FIXED:
 		if (cyaml_event != CYAML_EVT_SEQ_START) {
 			cyaml__log(ctx->config, CYAML_LOG_ERROR,
-					"Unexpected event: %s\n",
+					"Expecting sequence, got: %s\n",
 					cyaml__libyaml_event_type_str(event));
 			return CYAML_ERR_INVALID_VALUE;
 		}
