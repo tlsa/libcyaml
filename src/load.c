@@ -1445,6 +1445,7 @@ static cyaml_err_t cyaml__read_mapping_key(
 		cyaml__log(ctx->config, CYAML_LOG_INFO, "[%s]\n", key);
 
 		if (ctx->state->mapping.schema_idx == CYAML_SCHEMA_IDX_NONE) {
+			yaml_event_t ignore_event;
 			if (!(ctx->config->flags &
 					CYAML_CFG_IGNORE_UNKNOWN_KEYS)) {
 				cyaml__log(ctx->config, CYAML_LOG_DEBUG,
@@ -1452,7 +1453,18 @@ static cyaml_err_t cyaml__read_mapping_key(
 				err = CYAML_ERR_INVALID_KEY;
 				goto out;
 			}
+			cyaml__log(ctx->config, CYAML_LOG_DEBUG,
+					"Ignoring key: %s\n", key);
+			mask = CYAML_EVT_SCALAR |
+					CYAML_EVT_MAPPING_START |
+					CYAML_EVT_SEQ_START;
+			err = cyaml_get_next_event(ctx, mask, &ignore_event);
+			if (err != CYAML_OK) {
+				return err;
+			}
+			cyaml_event = cyaml__get_event_type(&ignore_event);
 			err = cyaml__consume_ignored_value(ctx, cyaml_event);
+			yaml_event_delete(&ignore_event);
 			goto out;
 		}
 		cyaml__mapping_bitfieid_set(ctx);
