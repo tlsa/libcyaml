@@ -35,17 +35,6 @@
 /** Identifies that no mapping schema entry was found for key. */
 #define CYAML_SCHEMA_IDX_NONE 0xffff
 
-/** CYAML load state machine states. */
-enum cyaml_state_e {
-	CYAML_STATE_START,       /**< Initial state. */
-	CYAML_STATE_IN_STREAM,   /**< In a stream. */
-	CYAML_STATE_IN_DOC,      /**< In a document. */
-	CYAML_STATE_IN_MAPPING,  /**< In a mapping. */
-	CYAML_STATE_IN_SEQUENCE, /**< In a sequence. */
-	CYAML_STATE__COUNT,      /**< Count of states, **not a valid
-	                              state itself**. */
-};
-
 /** Mapping load state machine sub-states. */
 enum cyaml_mapping_state_e {
 	/** In state \ref CYAML_STATE_IN_MAPPING expecting **key**. */
@@ -199,27 +188,6 @@ static cyaml_err_t cyaml_get_next_event(
 			cyaml__libyaml_event_type_str(event));
 
 	return CYAML_OK;
-}
-
-/**
- * Convert a CYAML load state into a human readable string.
- *
- * \param[in]  state  The state to convert.
- * \return String representing state.
- */
-static inline const char * cyaml__state_to_str(enum cyaml_state_e state)
-{
-	static const char * const strings[CYAML_STATE__COUNT] = {
-		[CYAML_STATE_START]       = "start",
-		[CYAML_STATE_IN_STREAM]   = "in stream",
-		[CYAML_STATE_IN_DOC]      = "in doc",
-		[CYAML_STATE_IN_MAPPING]  = "in mapping",
-		[CYAML_STATE_IN_SEQUENCE] = "in sequence",
-	};
-	if ((unsigned)state >= CYAML_STATE__COUNT) {
-		return "<invalid>";
-	}
-	return strings[state];
 }
 
 /**
@@ -1206,7 +1174,7 @@ static cyaml_err_t cyaml__read_value(
 	case CYAML_SEQUENCE_FIXED:
 		if (cyaml_event != CYAML_EVT_SEQ_START) {
 			cyaml__log(ctx->config, CYAML_LOG_ERROR,
-					"Unexpected event: %s\n",
+					"Expecting sequence, got: %s\n",
 					cyaml__libyaml_event_type_str(event));
 			return CYAML_ERR_INVALID_VALUE;
 		}
