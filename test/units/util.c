@@ -14,9 +14,28 @@
 
 #include <cyaml.h>
 
+#include "../../src/util.h"
+
 #include "ttest.h"
 
-#define UNUSED(_x) ((void)(_x))
+/* Test invalid state machine state. */
+static bool test_util_state_invalid(
+		ttest_report_ctx_t *report)
+{
+	ttest_ctx_t tc = ttest_start(report, __func__, NULL, NULL);
+
+	if (strcmp(cyaml__state_to_str(CYAML_STATE__COUNT),
+			"<invalid>") != 0) {
+		return ttest_fail(&tc, "Wrong string for invalid state.");
+	}
+
+	if (strcmp(cyaml__state_to_str(CYAML_STATE__COUNT + 1),
+			"<invalid>") != 0) {
+		return ttest_fail(&tc, "Wrong string for invalid state.");
+	}
+
+	return ttest_pass(&tc);
+}
 
 /* Test CYAML_OK error code. */
 static bool test_util_err_success_zero(
@@ -103,11 +122,12 @@ bool util_tests(
 {
 	bool pass = true;
 
-	UNUSED(log_level);
-	UNUSED(log_fn);
+	CYAML_UNUSED(log_level);
+	CYAML_UNUSED(log_fn);
 
 	ttest_heading(rc, "Error code tests");
 
+	pass &= test_util_state_invalid(rc);
 	pass &= test_util_err_success_zero(rc);
 	pass &= test_util_err_strings_valid(rc);
 	pass &= test_util_err_strings_invalid(rc);
