@@ -10,7 +10,7 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - gcovr
+            - python-pip
       env:
         - BUILD_TYPE=Coverage
 before_install:
@@ -21,8 +21,8 @@ script:
   - make valgrind-quiet
   - |
     if [[ "${BUILD_TYPE}" == "Coverage" ]]; then
+      sudo pip install gcovr;
       make coverage;
-      rm build/coverage.xml
-      bash <(curl -s https://codecov.io/bash) -g "*test*";
+      find build/coverage -name "*.gc*" -type f -delete;
+      bash <(curl -s https://codecov.io/bash) -X search -f build/coverage.xml;
     fi
-
