@@ -45,7 +45,7 @@ endif
 
 ifneq ($(filter coverage,$(MAKECMDGOALS)),)
 	BUILDDIR = build/coverage/$(VARIANT)
-	CCFLAGS_COV = --coverage
+	CCFLAGS_COV = --coverage -DNDEBUG
 	LDFLAGS_COV = --coverage
 else
 	BUILDDIR = build/$(VARIANT)
