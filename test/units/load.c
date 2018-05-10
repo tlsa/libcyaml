@@ -15,6 +15,7 @@
 
 #include <cyaml.h>
 
+#include "../../src/data.h"
 #include "ttest.h"
 
 #define UNUSED(_x) ((void)(_x))
@@ -2467,6 +2468,502 @@ static bool test_load_mapping_entry_sequence_ptr_sequence_fixed_flat_int(
 	return ttest_pass(&tc);
 }
 
+/* Test loading a sequence of integers with 1 byte sequence count. */
+static bool test_load_mapping_entry_sequence_count_1(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	int ref[] = { 1, 1, 2, 3, 5, 8 };
+	static const unsigned char yaml[] =
+		"sequence:\n"
+		"    - 1\n"
+		"    - 1\n"
+		"    - 2\n"
+		"    - 3\n"
+		"    - 5\n"
+		"    - 8\n";
+	struct target_struct {
+		int seq[CYAML_ARRAY_LEN(ref)];
+		uint8_t seq_count[1];
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, *(data_tgt->seq)),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_SEQUENCE("sequence", CYAML_FLAG_DEFAULT,
+				struct target_struct, seq, &entry_schema,
+				0, CYAML_ARRAY_LEN(ref)),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (CYAML_ARRAY_LEN(ref) != cyaml_data_read(sizeof(data_tgt->seq_count),
+			data_tgt->seq_count, &err)) {
+		return ttest_fail(&tc, "Incorrect sequence count");
+	}
+
+	for (unsigned i = 0; i < CYAML_ARRAY_LEN(ref); i++) {
+		if (data_tgt->seq[i] != ref[i]) {
+			return ttest_fail(&tc, "Incorrect value (i=%u): "
+					"got: %i, expected: %i", i,
+					data_tgt->seq[i], ref[i]);
+		}
+	}
+
+	return ttest_pass(&tc);
+}
+
+/* Test loading a sequence of integers with 2 byte sequence count. */
+static bool test_load_mapping_entry_sequence_count_2(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	int ref[] = { 1, 1, 2, 3, 5, 8 };
+	static const unsigned char yaml[] =
+		"sequence:\n"
+		"    - 1\n"
+		"    - 1\n"
+		"    - 2\n"
+		"    - 3\n"
+		"    - 5\n"
+		"    - 8\n";
+	struct target_struct {
+		int seq[CYAML_ARRAY_LEN(ref)];
+		uint8_t seq_count[2];
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, *(data_tgt->seq)),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_SEQUENCE("sequence", CYAML_FLAG_DEFAULT,
+				struct target_struct, seq, &entry_schema,
+				0, CYAML_ARRAY_LEN(ref)),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (CYAML_ARRAY_LEN(ref) != cyaml_data_read(sizeof(data_tgt->seq_count),
+			data_tgt->seq_count, &err)) {
+		return ttest_fail(&tc, "Incorrect sequence count");
+	}
+
+	for (unsigned i = 0; i < CYAML_ARRAY_LEN(ref); i++) {
+		if (data_tgt->seq[i] != ref[i]) {
+			return ttest_fail(&tc, "Incorrect value (i=%u): "
+					"got: %i, expected: %i", i,
+					data_tgt->seq[i], ref[i]);
+		}
+	}
+
+	return ttest_pass(&tc);
+}
+
+/* Test loading a sequence of integers with 3 byte sequence count. */
+static bool test_load_mapping_entry_sequence_count_3(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	int ref[] = { 1, 1, 2, 3, 5, 8 };
+	static const unsigned char yaml[] =
+		"sequence:\n"
+		"    - 1\n"
+		"    - 1\n"
+		"    - 2\n"
+		"    - 3\n"
+		"    - 5\n"
+		"    - 8\n";
+	struct target_struct {
+		int seq[CYAML_ARRAY_LEN(ref)];
+		uint8_t seq_count[3];
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, *(data_tgt->seq)),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_SEQUENCE("sequence", CYAML_FLAG_DEFAULT,
+				struct target_struct, seq, &entry_schema,
+				0, CYAML_ARRAY_LEN(ref)),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (CYAML_ARRAY_LEN(ref) != cyaml_data_read(sizeof(data_tgt->seq_count),
+			data_tgt->seq_count, &err)) {
+		return ttest_fail(&tc, "Incorrect sequence count");
+	}
+
+	for (unsigned i = 0; i < CYAML_ARRAY_LEN(ref); i++) {
+		if (data_tgt->seq[i] != ref[i]) {
+			return ttest_fail(&tc, "Incorrect value (i=%u): "
+					"got: %i, expected: %i", i,
+					data_tgt->seq[i], ref[i]);
+		}
+	}
+
+	return ttest_pass(&tc);
+}
+
+/* Test loading a sequence of integers with 4 byte sequence count. */
+static bool test_load_mapping_entry_sequence_count_4(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	int ref[] = { 1, 1, 2, 3, 5, 8 };
+	static const unsigned char yaml[] =
+		"sequence:\n"
+		"    - 1\n"
+		"    - 1\n"
+		"    - 2\n"
+		"    - 3\n"
+		"    - 5\n"
+		"    - 8\n";
+	struct target_struct {
+		int seq[CYAML_ARRAY_LEN(ref)];
+		uint8_t seq_count[4];
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, *(data_tgt->seq)),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_SEQUENCE("sequence", CYAML_FLAG_DEFAULT,
+				struct target_struct, seq, &entry_schema,
+				0, CYAML_ARRAY_LEN(ref)),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (CYAML_ARRAY_LEN(ref) != cyaml_data_read(sizeof(data_tgt->seq_count),
+			data_tgt->seq_count, &err)) {
+		return ttest_fail(&tc, "Incorrect sequence count");
+	}
+
+	for (unsigned i = 0; i < CYAML_ARRAY_LEN(ref); i++) {
+		if (data_tgt->seq[i] != ref[i]) {
+			return ttest_fail(&tc, "Incorrect value (i=%u): "
+					"got: %i, expected: %i", i,
+					data_tgt->seq[i], ref[i]);
+		}
+	}
+
+	return ttest_pass(&tc);
+}
+
+/* Test loading a sequence of integers with 5 byte sequence count. */
+static bool test_load_mapping_entry_sequence_count_5(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	int ref[] = { 1, 1, 2, 3, 5, 8 };
+	static const unsigned char yaml[] =
+		"sequence:\n"
+		"    - 1\n"
+		"    - 1\n"
+		"    - 2\n"
+		"    - 3\n"
+		"    - 5\n"
+		"    - 8\n";
+	struct target_struct {
+		int seq[CYAML_ARRAY_LEN(ref)];
+		uint8_t seq_count[5];
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, *(data_tgt->seq)),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_SEQUENCE("sequence", CYAML_FLAG_DEFAULT,
+				struct target_struct, seq, &entry_schema,
+				0, CYAML_ARRAY_LEN(ref)),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (CYAML_ARRAY_LEN(ref) != cyaml_data_read(sizeof(data_tgt->seq_count),
+			data_tgt->seq_count, &err)) {
+		return ttest_fail(&tc, "Incorrect sequence count");
+	}
+
+	for (unsigned i = 0; i < CYAML_ARRAY_LEN(ref); i++) {
+		if (data_tgt->seq[i] != ref[i]) {
+			return ttest_fail(&tc, "Incorrect value (i=%u): "
+					"got: %i, expected: %i", i,
+					data_tgt->seq[i], ref[i]);
+		}
+	}
+
+	return ttest_pass(&tc);
+}
+
+/* Test loading a sequence of integers with 6 byte sequence count. */
+static bool test_load_mapping_entry_sequence_count_6(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	int ref[] = { 1, 1, 2, 3, 5, 8 };
+	static const unsigned char yaml[] =
+		"sequence:\n"
+		"    - 1\n"
+		"    - 1\n"
+		"    - 2\n"
+		"    - 3\n"
+		"    - 5\n"
+		"    - 8\n";
+	struct target_struct {
+		int seq[CYAML_ARRAY_LEN(ref)];
+		uint8_t seq_count[6];
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, *(data_tgt->seq)),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_SEQUENCE("sequence", CYAML_FLAG_DEFAULT,
+				struct target_struct, seq, &entry_schema,
+				0, CYAML_ARRAY_LEN(ref)),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (CYAML_ARRAY_LEN(ref) != cyaml_data_read(sizeof(data_tgt->seq_count),
+			data_tgt->seq_count, &err)) {
+		return ttest_fail(&tc, "Incorrect sequence count");
+	}
+
+	for (unsigned i = 0; i < CYAML_ARRAY_LEN(ref); i++) {
+		if (data_tgt->seq[i] != ref[i]) {
+			return ttest_fail(&tc, "Incorrect value (i=%u): "
+					"got: %i, expected: %i", i,
+					data_tgt->seq[i], ref[i]);
+		}
+	}
+
+	return ttest_pass(&tc);
+}
+
+/* Test loading a sequence of integers with 7 byte sequence count. */
+static bool test_load_mapping_entry_sequence_count_7(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	int ref[] = { 1, 1, 2, 3, 5, 8 };
+	static const unsigned char yaml[] =
+		"sequence:\n"
+		"    - 1\n"
+		"    - 1\n"
+		"    - 2\n"
+		"    - 3\n"
+		"    - 5\n"
+		"    - 8\n";
+	struct target_struct {
+		int seq[CYAML_ARRAY_LEN(ref)];
+		uint8_t seq_count[7];
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, *(data_tgt->seq)),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_SEQUENCE("sequence", CYAML_FLAG_DEFAULT,
+				struct target_struct, seq, &entry_schema,
+				0, CYAML_ARRAY_LEN(ref)),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (CYAML_ARRAY_LEN(ref) != cyaml_data_read(sizeof(data_tgt->seq_count),
+			data_tgt->seq_count, &err)) {
+		return ttest_fail(&tc, "Incorrect sequence count");
+	}
+
+	for (unsigned i = 0; i < CYAML_ARRAY_LEN(ref); i++) {
+		if (data_tgt->seq[i] != ref[i]) {
+			return ttest_fail(&tc, "Incorrect value (i=%u): "
+					"got: %i, expected: %i", i,
+					data_tgt->seq[i], ref[i]);
+		}
+	}
+
+	return ttest_pass(&tc);
+}
+
+/* Test loading a sequence of integers with 8 byte sequence count. */
+static bool test_load_mapping_entry_sequence_count_8(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	int ref[] = { 1, 1, 2, 3, 5, 8 };
+	static const unsigned char yaml[] =
+		"sequence:\n"
+		"    - 1\n"
+		"    - 1\n"
+		"    - 2\n"
+		"    - 3\n"
+		"    - 5\n"
+		"    - 8\n";
+	struct target_struct {
+		int seq[CYAML_ARRAY_LEN(ref)];
+		uint8_t seq_count[8];
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, *(data_tgt->seq)),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_SEQUENCE("sequence", CYAML_FLAG_DEFAULT,
+				struct target_struct, seq, &entry_schema,
+				0, CYAML_ARRAY_LEN(ref)),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (CYAML_ARRAY_LEN(ref) != cyaml_data_read(sizeof(data_tgt->seq_count),
+			data_tgt->seq_count, &err)) {
+		return ttest_fail(&tc, "Incorrect sequence count");
+	}
+
+	for (unsigned i = 0; i < CYAML_ARRAY_LEN(ref); i++) {
+		if (data_tgt->seq[i] != ref[i]) {
+			return ttest_fail(&tc, "Incorrect value (i=%u): "
+					"got: %i, expected: %i", i,
+					data_tgt->seq[i], ref[i]);
+		}
+	}
+
+	return ttest_pass(&tc);
+}
+
 /* Test loading with schema with scalar top level type. */
 static bool test_load_schema_top_level_scalar(
 		ttest_report_ctx_t *report,
@@ -3045,6 +3542,72 @@ static bool test_load_sequence_without_max_entries(
 	return ttest_pass(&tc);
 }
 
+/* Test loading without a logging function. */
+static bool test_load_no_log(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	cyaml_config_t cfg = *config;
+	struct target_struct {
+		const char *seq[4];
+		unsigned seq_count;
+	} data = {
+		.seq = { "1", "2", NULL, NULL },
+		.seq_count = 2,
+	};
+	static const unsigned char yaml[] =
+		"seq: [ 1, 2 ]\n";
+	struct target_struct *data_tgt = NULL;
+	static const struct cyaml_schema_value sequence_entry = {
+		CYAML_VALUE_STRING(CYAML_FLAG_POINTER, char *,
+				0, CYAML_UNLIMITED)
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_SEQUENCE("seq", CYAML_FLAG_OPTIONAL,
+				struct target_struct, seq, &sequence_entry,
+				0, 4),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = &cfg,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	cfg.log_fn = NULL;
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->seq_count != 2) {
+		return ttest_fail(&tc, "Incorrect sequence entry count");
+	}
+	for (unsigned i = 0; i < 4; i++) {
+		if ((data_tgt->seq[i] == NULL) != (data.seq[i] == NULL)) {
+			return ttest_fail(&tc, "Incorrect value for entry %u",
+					i);
+		}
+		if (data_tgt->seq[i] != NULL) {
+			if (strcmp(data_tgt->seq[i], data.seq[i]) != 0) {
+				return ttest_fail(&tc,
+						"Incorrect value for entry %u",
+						i);
+			}
+		}
+	}
+
+	return ttest_pass(&tc);
+}
+
 /**
  * Run the YAML loading unit tests.
  *
@@ -3117,8 +3680,20 @@ bool load_tests(
 	pass &= test_load_mapping_entry_sequence_ptr_sequence_fixed_ptr_int(rc, &config);
 	pass &= test_load_mapping_entry_sequence_ptr_sequence_fixed_flat_int(rc, &config);
 
+	ttest_heading(rc, "Load tests: sequence count sizes");
+
+	pass &= test_load_mapping_entry_sequence_count_1(rc, &config);
+	pass &= test_load_mapping_entry_sequence_count_2(rc, &config);
+	pass &= test_load_mapping_entry_sequence_count_3(rc, &config);
+	pass &= test_load_mapping_entry_sequence_count_4(rc, &config);
+	pass &= test_load_mapping_entry_sequence_count_5(rc, &config);
+	pass &= test_load_mapping_entry_sequence_count_6(rc, &config);
+	pass &= test_load_mapping_entry_sequence_count_7(rc, &config);
+	pass &= test_load_mapping_entry_sequence_count_8(rc, &config);
+
 	ttest_heading(rc, "Load tests: various");
 
+	pass &= test_load_no_log(rc, &config);
 	pass &= test_load_schema_top_level_scalar(rc, &config);
 	pass &= test_load_schema_top_level_sequence(rc, &config);
 	pass &= test_load_multiple_documents_ignored(rc, &config);
