@@ -3045,6 +3045,72 @@ static bool test_load_sequence_without_max_entries(
 	return ttest_pass(&tc);
 }
 
+/* Test loading without a logging function. */
+static bool test_load_no_log(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	cyaml_config_t cfg = *config;
+	struct target_struct {
+		const char *seq[4];
+		unsigned seq_count;
+	} data = {
+		.seq = { "1", "2", NULL, NULL },
+		.seq_count = 2,
+	};
+	static const unsigned char yaml[] =
+		"seq: [ 1, 2 ]\n";
+	struct target_struct *data_tgt = NULL;
+	static const struct cyaml_schema_value sequence_entry = {
+		CYAML_VALUE_STRING(CYAML_FLAG_POINTER, char *,
+				0, CYAML_UNLIMITED)
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_SEQUENCE("seq", CYAML_FLAG_OPTIONAL,
+				struct target_struct, seq, &sequence_entry,
+				0, 4),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = &cfg,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	cfg.log_fn = NULL;
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->seq_count != 2) {
+		return ttest_fail(&tc, "Incorrect sequence entry count");
+	}
+	for (unsigned i = 0; i < 4; i++) {
+		if ((data_tgt->seq[i] == NULL) != (data.seq[i] == NULL)) {
+			return ttest_fail(&tc, "Incorrect value for entry %u",
+					i);
+		}
+		if (data_tgt->seq[i] != NULL) {
+			if (strcmp(data_tgt->seq[i], data.seq[i]) != 0) {
+				return ttest_fail(&tc,
+						"Incorrect value for entry %u",
+						i);
+			}
+		}
+	}
+
+	return ttest_pass(&tc);
+}
+
 /**
  * Run the YAML loading unit tests.
  *
@@ -3119,6 +3185,7 @@ bool load_tests(
 
 	ttest_heading(rc, "Load tests: various");
 
+	pass &= test_load_no_log(rc, &config);
 	pass &= test_load_schema_top_level_scalar(rc, &config);
 	pass &= test_load_schema_top_level_sequence(rc, &config);
 	pass &= test_load_multiple_documents_ignored(rc, &config);
