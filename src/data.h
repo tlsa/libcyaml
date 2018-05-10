@@ -29,10 +29,6 @@ static inline cyaml_err_t cyaml_data_write(
 {
 	data_target += entry_size - 1;
 
-	if (entry_size > 8 || entry_size == 0) {
-		return CYAML_ERR_INVALID_DATA_SIZE;
-	}
-
 	switch (entry_size) {
 	case 8: *data_target-- = (value >> 56) & 0xff; /* Fall through. */
 	case 7: *data_target-- = (value >> 48) & 0xff; /* Fall through. */
@@ -42,6 +38,9 @@ static inline cyaml_err_t cyaml_data_write(
 	case 3: *data_target-- = (value >> 16) & 0xff; /* Fall through. */
 	case 2: *data_target-- = (value >>  8) & 0xff; /* Fall through. */
 	case 1: *data_target-- = (value >>  0) & 0xff;
+		break;
+	default:
+		return CYAML_ERR_INVALID_DATA_SIZE;
 	}
 
 	return CYAML_OK;
@@ -64,11 +63,6 @@ static inline uint64_t cyaml_data_read(
 {
 	uint64_t ret = 0;
 
-	if (entry_size > 8 || entry_size == 0) {
-		*error_out = CYAML_ERR_INVALID_DATA_SIZE;
-		return ret;
-	}
-
 	data += entry_size - 1;
 
 	switch (entry_size) {
@@ -80,6 +74,10 @@ static inline uint64_t cyaml_data_read(
 	case 3: ret |= ((uint64_t)(*data-- & 0xff)) << 16; /* Fall through. */
 	case 2: ret |= ((uint64_t)(*data-- & 0xff)) <<  8; /* Fall through. */
 	case 1: ret |= ((uint64_t)(*data-- & 0xff)) <<  0;
+		break;
+	default:
+		*error_out = CYAML_ERR_INVALID_DATA_SIZE;
+		return ret;
 	}
 
 	*error_out = CYAML_OK;
