@@ -863,8 +863,8 @@ static bool test_err_schema_sequence_in_sequence(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema expects unit, but value is invalid. */
-static bool test_err_schema_invalid_value_unit(
+/* Test loading when schema expects uint, but value is invalid. */
+static bool test_err_schema_invalid_value_uint(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -1457,7 +1457,7 @@ static bool test_err_schema_invalid_value_int_range_5(
 }
 
 /* Test loading when schema expects uint but value is out of range. */
-static bool test_err_schema_invalid_value_unit_range_1(
+static bool test_err_schema_invalid_value_uint_range_1(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -1498,7 +1498,7 @@ static bool test_err_schema_invalid_value_unit_range_1(
 }
 
 /* Test loading when schema expects uint but value is out of range. */
-static bool test_err_schema_invalid_value_unit_range_2(
+static bool test_err_schema_invalid_value_uint_range_2(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -1539,7 +1539,7 @@ static bool test_err_schema_invalid_value_unit_range_2(
 }
 
 /* Test loading when schema expects uint but value is out of range. */
-static bool test_err_schema_invalid_value_unit_range_3(
+static bool test_err_schema_invalid_value_uint_range_3(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -1580,7 +1580,7 @@ static bool test_err_schema_invalid_value_unit_range_3(
 }
 
 /* Test loading when schema expects uint but value is out of range. */
-static bool test_err_schema_invalid_value_unit_range_4(
+static bool test_err_schema_invalid_value_uint_range_4(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -1621,7 +1621,7 @@ static bool test_err_schema_invalid_value_unit_range_4(
 }
 
 /* Test loading when schema expects uint but value is out of range. */
-static bool test_err_schema_invalid_value_unit_range_5(
+static bool test_err_schema_invalid_value_uint_range_5(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -2807,7 +2807,7 @@ bool errs_tests(
 
 	ttest_heading(rc, "YAML / schema mismatch: bad values");
 
-	pass &= test_err_schema_invalid_value_unit(rc, &config);
+	pass &= test_err_schema_invalid_value_uint(rc, &config);
 	pass &= test_err_schema_invalid_value_flags_1(rc, &config);
 	pass &= test_err_schema_invalid_value_flags_2(rc, &config);
 	pass &= test_err_schema_invalid_value_flags_3(rc, &config);
@@ -2818,11 +2818,11 @@ bool errs_tests(
 	pass &= test_err_schema_invalid_value_int_range_5(rc, &config);
 	pass &= test_err_schema_invalid_value_float_range(rc, &config);
 	pass &= test_err_schema_invalid_value_double_range(rc, &config);
-	pass &= test_err_schema_invalid_value_unit_range_1(rc, &config);
-	pass &= test_err_schema_invalid_value_unit_range_2(rc, &config);
-	pass &= test_err_schema_invalid_value_unit_range_3(rc, &config);
-	pass &= test_err_schema_invalid_value_unit_range_4(rc, &config);
-	pass &= test_err_schema_invalid_value_unit_range_5(rc, &config);
+	pass &= test_err_schema_invalid_value_uint_range_1(rc, &config);
+	pass &= test_err_schema_invalid_value_uint_range_2(rc, &config);
+	pass &= test_err_schema_invalid_value_uint_range_3(rc, &config);
+	pass &= test_err_schema_invalid_value_uint_range_4(rc, &config);
+	pass &= test_err_schema_invalid_value_uint_range_5(rc, &config);
 	pass &= test_err_schema_invalid_value_float_invalid(rc, &config);
 	pass &= test_err_schema_invalid_value_double_invalid(rc, &config);
 
