@@ -14,9 +14,56 @@
 
 #include <cyaml.h>
 
+#include "../../src/mem.h"
 #include "../../src/util.h"
 
 #include "ttest.h"
+
+/* Test cyaml memory functions. */
+static bool test_util_memory_funcs(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	ttest_ctx_t tc = ttest_start(report, __func__, NULL, NULL);
+	unsigned char *mem, *tmp;
+
+	/* Create test allocation */
+	mem = cyaml__alloc(config, 0xff, true);
+	if (mem == NULL) {
+		return ttest_fail(&tc, "Memory allocation failed.");
+	}
+
+	/* Check allocation was zeroed. */
+	for (unsigned i = 0; i < 0x7f; i++) {
+		if (mem[i] != 0) {
+			return ttest_fail(&tc, "Allocation not cleaned.");
+		}
+	}
+
+	/* Set our own known values */
+	for (unsigned i = 0; i < 0xff; i++) {
+		mem[i] = 0xff;
+	}
+
+	/* Shrink allocation */
+	tmp = cyaml__realloc(config, mem, 0xff, 0x7f, true);
+	if (tmp == NULL) {
+		return ttest_fail(&tc, "Allocation shrink failed.");
+	}
+	mem = tmp;
+
+	/* Check for our own values. */
+	for (unsigned i = 0; i < 0x7f; i++) {
+		if (mem[i] != 0xff) {
+			return ttest_fail(&tc, "Data trampled by realloc.");
+		}
+	}
+
+	/* Free test allocation. */
+	cyaml__free(config, mem);
+
+	return ttest_pass(&tc);
+}
 
 /* Test invalid state machine state. */
 static bool test_util_state_invalid(
@@ -121,9 +168,16 @@ bool util_tests(
 		cyaml_log_fn_t log_fn)
 {
 	bool pass = true;
+	cyaml_config_t config = {
+		.log_fn = log_fn,
+		.mem_fn = cyaml_mem,
+		.log_level = log_level,
+		.flags = CYAML_CFG_DEFAULT,
+	};
 
-	CYAML_UNUSED(log_level);
-	CYAML_UNUSED(log_fn);
+	ttest_heading(rc, "Memory utility functions");
+
+	pass &= test_util_memory_funcs(rc, &config);
 
 	ttest_heading(rc, "Error code tests");
 
