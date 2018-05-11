@@ -35,15 +35,6 @@
 /** Identifies that no mapping schema entry was found for key. */
 #define CYAML_SCHEMA_IDX_NONE 0xffff
 
-/** Mapping load state machine sub-states. */
-enum cyaml_mapping_state_e {
-	/** In state \ref CYAML_STATE_IN_MAPPING expecting **key**. */
-	CYAML_FIELD_STATE_KEY,
-
-	/** In state \ref CYAML_STATE_IN_MAPPING expecting **value**. */
-	CYAML_FIELD_STATE_VALUE,
-};
-
 /**
  * A CYAML load state machine stack entry.
  */
@@ -59,13 +50,13 @@ typedef struct cyaml_state {
 			/** Number of documents read in stream. */
 			uint32_t doc_count;
 		} stream;
-		/** Additional state for \ref CYAML_STATE_IN_MAPPING state. */
+		/**
+		 * Additional state for \ref CYAML_STATE_IN_MAP_KEY and
+		 * \ref CYAML_STATE_IN_MAP_VALUE states. */
 		struct {
 			const cyaml_schema_field_t *schema;
 			/** Bit field of mapping fields found. */
 			cyaml_bitfield_t *fields;
-			/** Mapping load state machine sub-state. */
-			enum cyaml_mapping_state_e state;
 			uint16_t schema_idx;
 			uint16_t entries_count;
 		} mapping;
@@ -94,21 +85,21 @@ typedef struct cyaml_ctx {
 } cyaml_ctx_t;
 
 /**
- * CYAML events.  These are a flags which correspond to `libyaml` events.
+ * CYAML events.  These correspond to `libyaml` events.
  */
 typedef enum cyaml_event {
-	CYAML_EVT_NONE          = 0,
-	CYAML_EVT_NO_EVENT      = (1 << YAML_NO_EVENT),
-	CYAML_EVT_STREAM_START  = (1 << YAML_STREAM_START_EVENT),
-	CYAML_EVT_STREAM_END    = (1 << YAML_STREAM_END_EVENT),
-	CYAML_EVT_DOC_START     = (1 << YAML_DOCUMENT_START_EVENT),
-	CYAML_EVT_DOC_END       = (1 << YAML_DOCUMENT_END_EVENT),
-	CYAML_EVT_ALIAS         = (1 << YAML_ALIAS_EVENT),
-	CYAML_EVT_SCALAR        = (1 << YAML_SCALAR_EVENT),
-	CYAML_EVT_SEQ_START     = (1 << YAML_SEQUENCE_START_EVENT),
-	CYAML_EVT_SEQ_END       = (1 << YAML_SEQUENCE_END_EVENT),
-	CYAML_EVT_MAPPING_START = (1 << YAML_MAPPING_START_EVENT),
-	CYAML_EVT_MAPPING_END   = (1 << YAML_MAPPING_END_EVENT),
+	CYAML_EVT_NO_EVENT   = YAML_NO_EVENT,
+	CYAML_EVT_STRM_START = YAML_STREAM_START_EVENT,
+	CYAML_EVT_STRM_END   = YAML_STREAM_END_EVENT,
+	CYAML_EVT_DOC_START  = YAML_DOCUMENT_START_EVENT,
+	CYAML_EVT_DOC_END    = YAML_DOCUMENT_END_EVENT,
+	CYAML_EVT_ALIAS      = YAML_ALIAS_EVENT,
+	CYAML_EVT_SCALAR     = YAML_SCALAR_EVENT,
+	CYAML_EVT_SEQ_START  = YAML_SEQUENCE_START_EVENT,
+	CYAML_EVT_SEQ_END    = YAML_SEQUENCE_END_EVENT,
+	CYAML_EVT_MAP_START  = YAML_MAPPING_START_EVENT,
+	CYAML_EVT_MAP_END    = YAML_MAPPING_END_EVENT,
+	CYAML_EVT__COUNT,
 } cyaml_event_t;
 
 /**
@@ -119,7 +110,7 @@ typedef enum cyaml_event {
  */
 static inline cyaml_event_t cyaml__get_event_type(const yaml_event_t *event)
 {
-	return (1 << event->type);
+	return event->type;
 }
 
 /**
@@ -150,18 +141,14 @@ static const char * cyaml__libyaml_event_type_str(const yaml_event_t *event)
  * Helper function to read the next YAML input event.
  *
  * This gets the next event from the CYAML load context's `libyaml` parser
- * object.  It allows the caller to provide a mask of expected events.
+ * object.
  *
  * \param[in]  ctx    The CYAML loading context.
- * \param[in]  mask   Mask of expected event types.
  * \param[out] event  On success, returns the new event.
- * \return \ref CYAML_OK on success,
- *         \ref CYAML_ERR_UNEXPECTED_EVENT if event type is not in `mask`,
- *         or appropriate error otherwise.
+ * \return \ref CYAML_OK on success, or appropriate error otherwise.
  */
 static cyaml_err_t cyaml_get_next_event(
 		const cyaml_ctx_t *ctx,
-		cyaml_event_t mask,
 		yaml_event_t *event)
 {
 	if (!yaml_parser_parse(ctx->parser, event)) {
@@ -174,14 +161,6 @@ static cyaml_err_t cyaml_get_next_event(
 		/** \todo Add support for alias? */
 		yaml_event_delete(event);
 		return CYAML_ERR_ALIAS;
-	}
-
-	if (!(cyaml__get_event_type(event) & mask)) {
-		cyaml__log(ctx->config, CYAML_LOG_ERROR,
-				"Unexpected event: %s\n",
-				cyaml__libyaml_event_type_str(event));
-		yaml_event_delete(event);
-		return CYAML_ERR_UNEXPECTED_EVENT;
 	}
 
 	cyaml__log(ctx->config, CYAML_LOG_DEBUG, "Event: %s\n",
@@ -218,8 +197,9 @@ static inline uint16_t cyaml__get_entry_from_mapping_schema(
 /**
  *Helper to get the current mapping field.
  *
- * \note The current load state must be \ref CYAML_STATE_IN_MAPPING, and there
- *       must be a current field index in the state.
+ * \note The current load state must be \ref CYAML_STATE_IN_MAP_KEY, or
+ *       \ref CYAML_STATE_IN_MAP_VALUE, and there must be a current field
+ *       index in the state.
  *
  * \param[in]  ctx  The CYAML loading context.
  * \return Current mapping field's schema entry.
@@ -230,7 +210,8 @@ static inline const cyaml_schema_field_t * cyaml_mapping_schema_field(
 	cyaml_state_t *state = ctx->state;
 
 	assert(state != NULL);
-	assert(state->state == CYAML_STATE_IN_MAPPING);
+	assert(state->state == CYAML_STATE_IN_MAP_KEY ||
+	       state->state == CYAML_STATE_IN_MAP_VALUE);
 	assert(state->mapping.schema_idx != CYAML_SCHEMA_IDX_NONE);
 
 	return state->mapping.schema + state->mapping.schema_idx;
@@ -286,13 +267,13 @@ static uint16_t cyaml__get_entry_count_from_mapping_schema(
 }
 
 /**
- * Create \ref CYAML_STATE_IN_MAPPING state's bitfield array allocation.
+ * Create \ref CYAML_STATE_IN_MAP_KEY state's bitfield array allocation.
  *
  * The bitfield is used to record whether the mapping as all the required
  * fields by mapping schema array index.
  *
  * \param[in]  ctx    The CYAML loading context.
- * \param[in]  state  CYAML load state for a \ref CYAML_STATE_IN_MAPPING state.
+ * \param[in]  state  CYAML load state for a \ref CYAML_STATE_IN_MAP_KEY state.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
 static cyaml_err_t cyaml__mapping_bitfieid_create(
@@ -316,10 +297,10 @@ static cyaml_err_t cyaml__mapping_bitfieid_create(
 }
 
 /**
- * Destroy a \ref CYAML_STATE_IN_MAPPING state's bitfield array allocation.
+ * Destroy a \ref CYAML_STATE_IN_MAP_KEY state's bitfield array allocation.
  *
  * \param[in]  ctx    The CYAML loading context.
- * \param[in]  state  CYAML load state for a \ref CYAML_STATE_IN_MAPPING state.
+ * \param[in]  state  CYAML load state for a \ref CYAML_STATE_IN_MAP_KEY state.
  */
 static void cyaml__mapping_bitfieid_destroy(
 		cyaml_ctx_t *ctx,
@@ -331,7 +312,7 @@ static void cyaml__mapping_bitfieid_destroy(
 /**
  * Set the bit for the current mapping's current field, to indicate it exists.
  *
- * Current CYAML load state must be \ref CYAML_STATE_IN_MAPPING.
+ * Current CYAML load state must be \ref CYAML_STATE_IN_MAP_KEY.
  *
  * \param[in]  ctx     The CYAML loading context.
  */
@@ -352,7 +333,7 @@ static void cyaml__mapping_bitfieid_set(
  * entries in the mapping schema array which are not marked with the
  * \ref CYAML_FLAG_OPTIONAL flag.
  *
- * Current CYAML load state must be \ref CYAML_STATE_IN_MAPPING.
+ * Current CYAML load state must be \ref CYAML_STATE_IN_MAP_KEY.
  *
  * \param[in]  ctx     The CYAML loading context.
  * \return \ref CYAML_OK if all required fields are present, or
@@ -423,10 +404,9 @@ static cyaml_err_t cyaml__stack_push(
 	}
 
 	switch (state) {
-	case CYAML_STATE_IN_MAPPING:
+	case CYAML_STATE_IN_MAP_KEY:
 		assert(schema->type == CYAML_MAPPING);
 		s.mapping.schema = schema->mapping.schema;
-		s.mapping.state = CYAML_FIELD_STATE_KEY;
 		err = cyaml__mapping_bitfieid_create(ctx, &s);
 		if (err != CYAML_OK) {
 			return err;
@@ -443,7 +423,7 @@ static cyaml_err_t cyaml__stack_push(
 				return CYAML_ERR_SEQUENCE_IN_SEQUENCE;
 
 			} else if (ctx->state->state ==
-					CYAML_STATE_IN_MAPPING) {
+					CYAML_STATE_IN_MAP_KEY) {
 				const cyaml_schema_field_t *field =
 						cyaml_mapping_schema_field(ctx);
 				s.sequence.count_data = ctx->state->data +
@@ -486,7 +466,8 @@ static void cyaml__stack_pop(
 	assert(idx != 0);
 
 	switch (ctx->state->state) {
-	case CYAML_STATE_IN_MAPPING:
+	case CYAML_STATE_IN_MAP_KEY: /* Fall through. */
+	case CYAML_STATE_IN_MAP_VALUE:
 		cyaml__mapping_bitfieid_destroy(ctx, ctx->state);
 		break;
 	default:
@@ -601,7 +582,8 @@ static void cyaml__backtrace(
 	for (uint32_t idx = ctx->stack_idx - 1; idx != 0; idx--) {
 		cyaml_state_t *state = ctx->stack + idx;
 		switch (state->state) {
-		case CYAML_STATE_IN_MAPPING:
+		case CYAML_STATE_IN_MAP_KEY: /* Fall through. */
+		case CYAML_STATE_IN_MAP_VALUE:
 			if (state->mapping.schema_idx !=
 					CYAML_SCHEMA_IDX_NONE) {
 				cyaml__log(ctx->config, CYAML_LOG_ERROR,
@@ -1008,19 +990,16 @@ static cyaml_err_t cyaml__read_flags_value(
 	yaml_event_t event;
 	cyaml_err_t err = CYAML_OK;
 	uint8_t entry_size = schema->data_size;
-	cyaml_event_t mask = CYAML_EVT_SCALAR | CYAML_EVT_SEQ_END;
 
 	while (!exit) {
 		cyaml_event_t cyaml_event;
-		err = cyaml_get_next_event(ctx, mask, &event);
+		err = cyaml_get_next_event(ctx, &event);
 		if (err != CYAML_OK) {
 			return err;
 		}
 		cyaml_event = cyaml__get_event_type(&event);
 
-		assert(cyaml_event & mask);
-
-		switch (cyaml_event & mask) {
+		switch (cyaml_event) {
 		case CYAML_EVT_SCALAR:
 			err = cyaml__set_flag(ctx, schema,
 					(const char *)event.data.scalar.value,
@@ -1033,6 +1012,9 @@ static cyaml_err_t cyaml__read_flags_value(
 		case CYAML_EVT_SEQ_END:
 			exit = true;
 			break;
+		default:
+			yaml_event_delete(&event);
+			return CYAML_ERR_UNEXPECTED_EVENT;
 		}
 
 		yaml_event_delete(&event);
@@ -1071,12 +1053,6 @@ static cyaml_err_t cyaml__consume_ignored_value(
 		cyaml_ctx_t *ctx,
 		cyaml_event_t cyaml_event)
 {
-	cyaml_event_t mask =
-			CYAML_EVT_SCALAR |
-			CYAML_EVT_MAPPING_START |
-			CYAML_EVT_MAPPING_END |
-			CYAML_EVT_SEQ_START |
-			CYAML_EVT_SEQ_END;
 	cyaml_err_t err = CYAML_OK;
 	yaml_event_t event;
 	unsigned level;
@@ -1085,21 +1061,21 @@ static cyaml_err_t cyaml__consume_ignored_value(
 	case CYAML_EVT_SCALAR:
 		break;
 	case CYAML_EVT_SEQ_START: /* Fall through. */
-	case CYAML_EVT_MAPPING_START:
+	case CYAML_EVT_MAP_START:
 		level = 1;
 		while (level > 0) {
-			err = cyaml_get_next_event(ctx, mask, &event);
+			err = cyaml_get_next_event(ctx, &event);
 			if (err != CYAML_OK) {
 				return err;
 			}
 			switch (cyaml__get_event_type(&event)) {
 			case CYAML_EVT_SEQ_START: /* Fall through */
-			case CYAML_EVT_MAPPING_START:
+			case CYAML_EVT_MAP_START:
 				level++;
 				break;
 
 			case CYAML_EVT_SEQ_END: /* Fall through */
-			case CYAML_EVT_MAPPING_END:
+			case CYAML_EVT_MAP_END:
 				level--;
 				break;
 
@@ -1164,10 +1140,10 @@ static cyaml_err_t cyaml__read_value(
 		err = cyaml__read_flags_value(ctx, schema, data);
 		break;
 	case CYAML_MAPPING:
-		if (cyaml_event != CYAML_EVT_MAPPING_START) {
+		if (cyaml_event != CYAML_EVT_MAP_START) {
 			return CYAML_ERR_INVALID_VALUE;
 		}
-		err = cyaml__stack_push(ctx, CYAML_STATE_IN_MAPPING,
+		err = cyaml__stack_push(ctx, CYAML_STATE_IN_MAP_KEY,
 				schema, data);
 		break;
 	case CYAML_SEQUENCE: /* Fall through. */
@@ -1193,13 +1169,195 @@ static cyaml_err_t cyaml__read_value(
 }
 
 /**
- * Handle a YAML event adding a new entry to a sequence.
+ * YAML loading handler for start of stream in the \ref CYAML_STATE_START state.
  *
  * \param[in]  ctx    The CYAML loading context.
  * \param[in]  event  The YAML event to handle.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
-static cyaml_err_t cyaml__new_sequence_entry(
+static cyaml_err_t cyaml__stream_start(
+		cyaml_ctx_t *ctx,
+		yaml_event_t *event)
+{
+	CYAML_UNUSED(event);
+	return cyaml__stack_push(ctx, CYAML_STATE_IN_STREAM,
+			ctx->state->schema, ctx->state->data);
+}
+
+/**
+ * YAML loading handler for documents in the \ref CYAML_STATE_IN_STREAM state.
+ *
+ * \param[in]  ctx    The CYAML loading context.
+ * \param[in]  event  The YAML event to handle.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__doc_start(
+		cyaml_ctx_t *ctx,
+		yaml_event_t *event)
+{
+	CYAML_UNUSED(event);
+	if (ctx->state->stream.doc_count == 1) {
+		cyaml__log(ctx->config, CYAML_LOG_WARNING,
+				"Ignoring documents after first in stream\n");
+		cyaml__stack_pop(ctx);
+		return CYAML_OK;
+	}
+	ctx->state->stream.doc_count++;
+	return cyaml__stack_push(ctx, CYAML_STATE_IN_DOC,
+			ctx->state->schema, ctx->state->data);
+}
+
+/**
+ * YAML loading handler for finalising the \ref CYAML_STATE_IN_STREAM state.
+ *
+ * \param[in]  ctx    The CYAML loading context.
+ * \param[in]  event  The YAML event to handle.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__stream_end(
+		cyaml_ctx_t *ctx,
+		yaml_event_t *event)
+{
+	CYAML_UNUSED(event);
+	cyaml__stack_pop(ctx);
+	return CYAML_OK;
+}
+
+/**
+ * YAML loading handler for the root value in the \ref CYAML_STATE_IN_DOC state.
+ *
+ * \param[in]  ctx    The CYAML loading context.
+ * \param[in]  event  The YAML event to handle.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__doc_root_value(
+		cyaml_ctx_t *ctx,
+		yaml_event_t *event)
+{
+	return cyaml__read_value(ctx, ctx->state->schema,
+			ctx->state->data, event);
+}
+
+/**
+ * YAML loading handler for finalising the \ref CYAML_STATE_IN_DOC state.
+ *
+ * \param[in]  ctx    The CYAML loading context.
+ * \param[in]  event  The YAML event to handle.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__doc_end(
+		cyaml_ctx_t *ctx,
+		yaml_event_t *event)
+{
+	CYAML_UNUSED(event);
+	cyaml__stack_pop(ctx);
+	return CYAML_OK;
+}
+
+/**
+ * YAML loading handler for new mapping fields in the
+ * \ref CYAML_STATE_IN_MAP_KEY state.
+ *
+ * \param[in]  ctx    The CYAML loading context.
+ * \param[in]  event  The YAML event to handle.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__map_key(
+		cyaml_ctx_t *ctx,
+		yaml_event_t *event)
+{
+	const char *key;
+	cyaml_err_t err = CYAML_OK;
+
+	key = (const char *)event->data.scalar.value;
+	ctx->state->mapping.schema_idx = cyaml__get_entry_from_mapping_schema(
+			ctx->state->mapping.schema, key);
+	cyaml__log(ctx->config, CYAML_LOG_INFO, "[%s]\n", key);
+
+	if (ctx->state->mapping.schema_idx == CYAML_SCHEMA_IDX_NONE) {
+		yaml_event_t ignore_event;
+		cyaml_event_t cyaml_event;
+		if (!(ctx->config->flags &
+				CYAML_CFG_IGNORE_UNKNOWN_KEYS)) {
+			cyaml__log(ctx->config, CYAML_LOG_DEBUG,
+					"Unexpected key: %s\n", key);
+			return CYAML_ERR_INVALID_KEY;
+		}
+		cyaml__log(ctx->config, CYAML_LOG_DEBUG,
+				"Ignoring key: %s\n", key);
+		err = cyaml_get_next_event(ctx, &ignore_event);
+		if (err != CYAML_OK) {
+			return err;
+		}
+		cyaml_event = cyaml__get_event_type(&ignore_event);
+		yaml_event_delete(&ignore_event);
+		return cyaml__consume_ignored_value(ctx, cyaml_event);
+	}
+	cyaml__mapping_bitfieid_set(ctx);
+
+	/* Toggle mapping sub-state to value */
+	ctx->state->state = CYAML_STATE_IN_MAP_VALUE;
+
+	return err;
+}
+
+/**
+ * YAML loading handler for finalising the \ref CYAML_STATE_IN_MAP_KEY state.
+ *
+ * \param[in]  ctx    The CYAML loading context.
+ * \param[in]  event  The YAML event to handle.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__map_end(
+		cyaml_ctx_t *ctx,
+		yaml_event_t *event)
+{
+	cyaml_err_t err;
+
+	CYAML_UNUSED(event);
+
+	err = cyaml__mapping_bitfieid_validate(ctx);
+	if (err != CYAML_OK) {
+		return err;
+	}
+
+	cyaml__stack_pop(ctx);
+	return CYAML_OK;
+}
+
+/**
+ * YAML loading handler for the \ref CYAML_STATE_IN_MAP_VALUE state.
+ *
+ * \param[in]  ctx    The CYAML loading context.
+ * \param[in]  event  The YAML event to handle.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__map_value(
+		cyaml_ctx_t *ctx,
+		yaml_event_t *event)
+{
+	cyaml_state_t *state = ctx->state;
+	const cyaml_schema_field_t *entry = cyaml_mapping_schema_field(ctx);
+	cyaml_data_t *data = state->data + entry->data_offset;
+
+	/* Toggle mapping sub-state back to key.  Do this before
+	 * reading value, because reading value might increase the
+	 * CYAML context stack allocation, causing the state entry
+	 * to move. */
+	state->state = CYAML_STATE_IN_MAP_KEY;
+
+	return cyaml__read_value(ctx, &entry->value, data, event);
+}
+
+/**
+ * YAML loading handler for new sequence entries in the
+ * \ref CYAML_STATE_IN_SEQUENCE state.
+ *
+ * \param[in]  ctx    The CYAML loading context.
+ * \param[in]  event  The YAML event to handle.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__seq_entry(
 		cyaml_ctx_t *ctx,
 		yaml_event_t *event)
 {
@@ -1257,318 +1415,36 @@ static cyaml_err_t cyaml__new_sequence_entry(
 }
 
 /**
- * YAML loading handler for the \ref CYAML_STATE_START state.
+ * YAML loading handler for finalising the \ref CYAML_STATE_IN_SEQUENCE state.
  *
- * \param[in]  ctx  The CYAML loading context.
+ * \param[in]  ctx    The CYAML loading context.
+ * \param[in]  event  The YAML event to handle.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
-static cyaml_err_t cyaml__read_start(
-		cyaml_ctx_t *ctx)
+static cyaml_err_t cyaml__seq_end(
+		cyaml_ctx_t *ctx,
+		yaml_event_t *event)
 {
-	cyaml_err_t err;
-	yaml_event_t event;
-	cyaml_event_t cyaml_event;
-	cyaml_event_t mask = CYAML_EVT_STREAM_START;
-
-	err = cyaml_get_next_event(ctx, mask, &event);
-	if (err != CYAML_OK) {
-		return err;
-	}
-	cyaml_event = cyaml__get_event_type(&event);
-
-	assert(cyaml_event & mask);
-
-	switch (cyaml_event & mask) {
-	case CYAML_EVT_STREAM_START:
-		err = cyaml__stack_push(ctx, CYAML_STATE_IN_STREAM,
-				ctx->state->schema, ctx->state->data);
-		break;
-	}
-
-	/* Could be in error state here; err may not be CYAML_OK. */
-
-	yaml_event_delete(&event);
-	return err;
-}
-
-/**
- * YAML loading handler for the \ref CYAML_STATE_IN_STREAM state.
- *
- * \param[in]  ctx  The CYAML loading context.
- * \return \ref CYAML_OK on success, or appropriate error code otherwise.
- */
-static cyaml_err_t cyaml__read_stream(
-		cyaml_ctx_t *ctx)
-{
-	cyaml_err_t err;
-	yaml_event_t event;
-	cyaml_event_t cyaml_event;
-	cyaml_event_t mask = CYAML_EVT_DOC_START | CYAML_EVT_STREAM_END;
-
-	err = cyaml_get_next_event(ctx, mask, &event);
-	if (err != CYAML_OK) {
-		return err;
-	}
-	cyaml_event = cyaml__get_event_type(&event);
-
-	assert(cyaml_event & mask);
-
-	switch (cyaml_event & mask) {
-	case CYAML_EVT_DOC_START:
-		if (ctx->state->stream.doc_count == 1) {
-			cyaml__log(ctx->config, CYAML_LOG_WARNING,
-					"Ignoring second document in stream\n");
-			cyaml__stack_pop(ctx);
-			break;
-		}
-		ctx->state->stream.doc_count++;
-		err = cyaml__stack_push(ctx, CYAML_STATE_IN_DOC,
-				ctx->state->schema, ctx->state->data);
-		break;
-	case CYAML_EVT_STREAM_END:
-		cyaml__stack_pop(ctx);
-		break;
-	}
-
-	/* Could be in error state here; err may not be CYAML_OK. */
-
-	yaml_event_delete(&event);
-	return err;
-}
-
-/**
- * YAML loading handler for the \ref CYAML_STATE_IN_DOC state.
- *
- * \param[in]  ctx  The CYAML loading context.
- * \return \ref CYAML_OK on success, or appropriate error code otherwise.
- */
-static cyaml_err_t cyaml__read_doc(
-		cyaml_ctx_t *ctx)
-{
-	cyaml_err_t err;
-	yaml_event_t event;
-	cyaml_event_t cyaml_event;
-	cyaml_event_t mask =
-			CYAML_EVT_MAPPING_START |
-			CYAML_EVT_SEQ_START |
-			CYAML_EVT_DOC_END |
-			CYAML_EVT_SCALAR;
-
-	err = cyaml_get_next_event(ctx, mask, &event);
-	if (err != CYAML_OK) {
-		return err;
-	}
-	cyaml_event = cyaml__get_event_type(&event);
-
-	assert(cyaml_event & mask);
-
-	switch (cyaml_event & mask) {
-	case CYAML_EVT_SCALAR:    /* Fall through. */
-	case CYAML_EVT_SEQ_START: /* Fall through. */
-	case CYAML_EVT_MAPPING_START:
-		err = cyaml__read_value(ctx, ctx->state->schema,
-				ctx->state->data, &event);
-		break;
-	case CYAML_EVT_DOC_END:
-		cyaml__stack_pop(ctx);
-		break;
-	}
-
-	/* Could be in error state here; err may not be CYAML_OK. */
-
-	yaml_event_delete(&event);
-	return err;
-}
-
-/**
- * YAML loading handler for the \ref CYAML_FIELD_STATE_KEY sub-state of
- * the \ref CYAML_STATE_IN_MAPPING state.
- *
- * \param[in]  ctx  The CYAML loading context.
- * \return \ref CYAML_OK on success, or appropriate error code otherwise.
- */
-static cyaml_err_t cyaml__read_mapping_key(
-		cyaml_ctx_t *ctx)
-{
-	const char *key;
-	cyaml_err_t err;
-	yaml_event_t event;
-	cyaml_event_t cyaml_event;
-	cyaml_event_t mask = CYAML_EVT_SCALAR | CYAML_EVT_MAPPING_END;
-
-	err = cyaml_get_next_event(ctx, mask, &event);
-	if (err != CYAML_OK) {
-		return err;
-	}
-	cyaml_event = cyaml__get_event_type(&event);
-
-	assert(cyaml_event & mask);
-
-	switch (cyaml_event & mask) {
-	case CYAML_EVT_SCALAR:
-		key = (const char *)event.data.scalar.value;
-		ctx->state->mapping.schema_idx =
-				cyaml__get_entry_from_mapping_schema(
-					ctx->state->mapping.schema, key);
-		cyaml__log(ctx->config, CYAML_LOG_INFO, "[%s]\n", key);
-
-		if (ctx->state->mapping.schema_idx == CYAML_SCHEMA_IDX_NONE) {
-			yaml_event_t ignore_event;
-			if (!(ctx->config->flags &
-					CYAML_CFG_IGNORE_UNKNOWN_KEYS)) {
-				cyaml__log(ctx->config, CYAML_LOG_DEBUG,
-						"Unexpected key: %s\n", key);
-				err = CYAML_ERR_INVALID_KEY;
-				goto out;
-			}
-			cyaml__log(ctx->config, CYAML_LOG_DEBUG,
-					"Ignoring key: %s\n", key);
-			mask = CYAML_EVT_SCALAR |
-					CYAML_EVT_MAPPING_START |
-					CYAML_EVT_SEQ_START;
-			err = cyaml_get_next_event(ctx, mask, &ignore_event);
-			if (err != CYAML_OK) {
-				return err;
-			}
-			cyaml_event = cyaml__get_event_type(&ignore_event);
-			err = cyaml__consume_ignored_value(ctx, cyaml_event);
-			yaml_event_delete(&ignore_event);
-			goto out;
-		}
-		cyaml__mapping_bitfieid_set(ctx);
-		/* Toggle mapping sub-state to value */
-		ctx->state->mapping.state = CYAML_FIELD_STATE_VALUE;
-		break;
-	case CYAML_EVT_MAPPING_END:
-		err = cyaml__mapping_bitfieid_validate(ctx);
-		if (err != CYAML_OK) {
-			goto out;
-		}
-		cyaml__stack_pop(ctx);
-		break;
-	}
-
-out:
-	yaml_event_delete(&event);
-	return err;
-}
-
-/**
- * YAML loading handler for the \ref CYAML_FIELD_STATE_VALUE sub-state of
- * the \ref CYAML_STATE_IN_MAPPING state.
- *
- * \param[in]  ctx  The CYAML loading context.
- * \return \ref CYAML_OK on success, or appropriate error code otherwise.
- */
-static cyaml_err_t cyaml__read_mapping_value(
-		cyaml_ctx_t *ctx)
-{
-	cyaml_err_t err;
-	yaml_event_t event;
 	cyaml_state_t *state = ctx->state;
-	cyaml_event_t mask = CYAML_EVT_SCALAR |
-	                     CYAML_EVT_SEQ_START |
-	                     CYAML_EVT_MAPPING_START;
-	const cyaml_schema_field_t *entry = cyaml_mapping_schema_field(ctx);
-	cyaml_data_t *data = state->data + entry->data_offset;
 
-	err = cyaml_get_next_event(ctx, mask, &event);
-	if (err != CYAML_OK) {
-		return err;
+	CYAML_UNUSED(event);
+
+	if (state->sequence.count < state->schema->sequence.min) {
+		cyaml__log(ctx->config, CYAML_LOG_ERROR, "Insufficient entries "
+				"(%"PRIu32" of %"PRIu32" min) in sequence.\n",
+				state->sequence.count,
+				state->schema->sequence.min);
+		return CYAML_ERR_SEQUENCE_ENTRIES_MIN;
 	}
+	cyaml__log(ctx->config, CYAML_LOG_DEBUG, "Sequence count: %u\n",
+			state->sequence.count);
 
-	/* Toggle mapping sub-state back to key.  Do this before
-	 * reading value, because reading value might increase the
-	 * CYAML context stack allocation, causing the state entry
-	 * to move. */
-	state->mapping.state = CYAML_FIELD_STATE_KEY;
-
-	err = cyaml__read_value(ctx, &entry->value, data, &event);
-
-	/* Could be in error state here; err may not be CYAML_OK. */
-
-	yaml_event_delete(&event);
-	return err;
+	cyaml__stack_pop(ctx);
+	return CYAML_OK;
 }
 
 /**
- * YAML loading handler for the \ref CYAML_STATE_IN_MAPPING state.
- *
- * \param[in]  ctx  The CYAML loading context.
- * \return \ref CYAML_OK on success, or appropriate error code otherwise.
- */
-static cyaml_err_t cyaml__read_mapping(
-		cyaml_ctx_t *ctx)
-{
-	/* Mapping has two sub-states; key and value */
-	switch (ctx->state->mapping.state) {
-	case CYAML_FIELD_STATE_KEY:
-		return cyaml__read_mapping_key(ctx);
-	case CYAML_FIELD_STATE_VALUE:
-		return cyaml__read_mapping_value(ctx);
-	}
-
-	return CYAML_ERR_INTERNAL_ERROR;
-}
-
-/**
- * YAML loading handler for the \ref CYAML_STATE_IN_SEQUENCE state.
- *
- * \param[in]  ctx  The CYAML loading context.
- * \return \ref CYAML_OK on success, or appropriate error code otherwise.
- */
-static cyaml_err_t cyaml__read_sequence(
-		cyaml_ctx_t *ctx)
-{
-	cyaml_err_t err;
-	yaml_event_t event;
-	cyaml_event_t cyaml_event;
-	cyaml_state_t *state = ctx->state;
-	cyaml_event_t mask = CYAML_EVT_MAPPING_START |
-	                     CYAML_EVT_SEQ_START |
-	                     CYAML_EVT_SEQ_END |
-	                     CYAML_EVT_SCALAR;
-
-	err = cyaml_get_next_event(ctx, mask, &event);
-	if (err != CYAML_OK) {
-		return err;
-	}
-	cyaml_event = cyaml__get_event_type(&event);
-
-	assert(cyaml_event & mask);
-
-	switch (cyaml_event & mask) {
-	case CYAML_EVT_SCALAR:    /* Fall through. */
-	case CYAML_EVT_SEQ_START: /* Fall through. */
-	case CYAML_EVT_MAPPING_START:
-		err = cyaml__new_sequence_entry(ctx, &event);
-		break;
-	case CYAML_EVT_SEQ_END:
-		if (state->sequence.count < state->schema->sequence.min) {
-			cyaml__log(ctx->config, CYAML_LOG_ERROR,
-					"Insufficient entries "
-					"(%"PRIu32" of %"PRIu32" min) "
-					"in sequence.\n",
-					state->sequence.count,
-					state->schema->sequence.min);
-			err = CYAML_ERR_SEQUENCE_ENTRIES_MIN;
-			goto out;
-		}
-		cyaml__log(ctx->config, CYAML_LOG_DEBUG, "Sequence count: %u\n",
-				state->sequence.count);
-		cyaml__stack_pop(ctx);
-		break;
-	}
-
-	/* Could be in error state here; err may not be CYAML_OK. */
-
-out:
-	yaml_event_delete(&event);
-	return err;
-}
-
-/**
- * Check that common load params from client are valid.
+ * Check that common load parameters from client are valid.
  *
  * \param[in] config         The client's CYAML library config.
  * \param[in] schema         The schema describing the content of data.
@@ -1604,6 +1480,67 @@ static inline cyaml_err_t cyaml__validate_load_params(
 }
 
 /**
+ * YAML loading helper dispatch function.
+ *
+ * Dispatches events to the appropriate event handler function for the
+ * current combination of load state machine state (from the load context)
+ * and event type.
+ *
+ * \param[in]  ctx    The CYAML loading context.
+ * \param[in]  event  The YAML event to handle.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static inline cyaml_err_t cyaml__load_event(
+		cyaml_ctx_t *ctx,
+		yaml_event_t *event)
+{
+	cyaml_state_t *state = ctx->state;
+	typedef cyaml_err_t (* const cyaml_read_fn)(
+			cyaml_ctx_t *ctx,
+			yaml_event_t *event);
+	static const cyaml_read_fn fns[CYAML_STATE__COUNT][CYAML_EVT__COUNT] = {
+		[CYAML_STATE_START] = {
+			[CYAML_EVT_STRM_START] = cyaml__stream_start,
+		},
+		[CYAML_STATE_IN_STREAM] = {
+			[CYAML_EVT_DOC_START]  = cyaml__doc_start,
+			[CYAML_EVT_STRM_END]   = cyaml__stream_end,
+		},
+		[CYAML_STATE_IN_DOC] = {
+			[CYAML_EVT_SCALAR]     = cyaml__doc_root_value,
+			[CYAML_EVT_SEQ_START]  = cyaml__doc_root_value,
+			[CYAML_EVT_MAP_START]  = cyaml__doc_root_value,
+			[CYAML_EVT_DOC_END]    = cyaml__doc_end,
+		},
+		[CYAML_STATE_IN_MAP_KEY] = {
+			[CYAML_EVT_SCALAR]     = cyaml__map_key,
+			[CYAML_EVT_MAP_END]    = cyaml__map_end,
+		},
+		[CYAML_STATE_IN_MAP_VALUE] = {
+			[CYAML_EVT_SCALAR]     = cyaml__map_value,
+			[CYAML_EVT_SEQ_START]  = cyaml__map_value,
+			[CYAML_EVT_MAP_START]  = cyaml__map_value,
+		},
+		[CYAML_STATE_IN_SEQUENCE] = {
+			[CYAML_EVT_SCALAR]     = cyaml__seq_entry,
+			[CYAML_EVT_SEQ_START]  = cyaml__seq_entry,
+			[CYAML_EVT_MAP_START]  = cyaml__seq_entry,
+			[CYAML_EVT_SEQ_END]    = cyaml__seq_end,
+		},
+	};
+	const cyaml_read_fn fn = fns[state->state][event->type];
+	cyaml_err_t err = CYAML_ERR_UNEXPECTED_EVENT;
+
+	if (fn != NULL) {
+		cyaml__log(ctx->config, CYAML_LOG_DEBUG, "Handle state %s\n",
+				cyaml__state_to_str(state->state));
+		err = fn(ctx, event);
+	}
+
+	return err;
+}
+
+/**
  * The main YAML loading function.
  *
  * The public interfaces are wrappers around this.
@@ -1632,15 +1569,6 @@ static cyaml_err_t cyaml__load(
 		.config = config,
 		.parser = parser,
 	};
-	typedef cyaml_err_t (* const cyaml_read_fn)(
-			cyaml_ctx_t *ctx);
-	static const cyaml_read_fn fn[CYAML_STATE__COUNT] = {
-		[CYAML_STATE_START]       = cyaml__read_start,
-		[CYAML_STATE_IN_STREAM]   = cyaml__read_stream,
-		[CYAML_STATE_IN_DOC]      = cyaml__read_doc,
-		[CYAML_STATE_IN_MAPPING]  = cyaml__read_mapping,
-		[CYAML_STATE_IN_SEQUENCE] = cyaml__read_sequence,
-	};
 	cyaml_err_t err = CYAML_OK;
 
 	err = cyaml__validate_load_params(config, schema,
@@ -1655,9 +1583,15 @@ static cyaml_err_t cyaml__load(
 	}
 
 	do {
-		cyaml__log(ctx.config, CYAML_LOG_DEBUG, "Handle state %s\n",
-				cyaml__state_to_str(ctx.state->state));
-		err = fn[ctx.state->state](&ctx);
+		yaml_event_t event;
+
+		err = cyaml_get_next_event(&ctx, &event);
+		if (err != CYAML_OK) {
+			goto out;
+		}
+
+		err = cyaml__load_event(&ctx, &event);
+		yaml_event_delete(&event);
 		if (err != CYAML_OK) {
 			goto out;
 		}
