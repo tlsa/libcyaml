@@ -25,13 +25,14 @@ typedef uint32_t cyaml_bitfield_t;
 
 /** CYAML state machine states. */
 enum cyaml_state_e {
-	CYAML_STATE_START,       /**< Initial state. */
-	CYAML_STATE_IN_STREAM,   /**< In a stream. */
-	CYAML_STATE_IN_DOC,      /**< In a document. */
-	CYAML_STATE_IN_MAPPING,  /**< In a mapping. */
-	CYAML_STATE_IN_SEQUENCE, /**< In a sequence. */
-	CYAML_STATE__COUNT,      /**< Count of states, **not a valid
-	                              state itself**. */
+	CYAML_STATE_START,        /**< Initial state. */
+	CYAML_STATE_IN_STREAM,    /**< In a stream. */
+	CYAML_STATE_IN_DOC,       /**< In a document. */
+	CYAML_STATE_IN_MAP_KEY,   /**< In a mapping. */
+	CYAML_STATE_IN_MAP_VALUE, /**< In a mapping. */
+	CYAML_STATE_IN_SEQUENCE,  /**< In a sequence. */
+	CYAML_STATE__COUNT,       /**< Count of states, **not a valid
+	                               state itself**. */
 };
 
 /**
@@ -43,11 +44,12 @@ enum cyaml_state_e {
 static inline const char * cyaml__state_to_str(enum cyaml_state_e state)
 {
 	static const char * const strings[CYAML_STATE__COUNT] = {
-		[CYAML_STATE_START]       = "start",
-		[CYAML_STATE_IN_STREAM]   = "in stream",
-		[CYAML_STATE_IN_DOC]      = "in doc",
-		[CYAML_STATE_IN_MAPPING]  = "in mapping",
-		[CYAML_STATE_IN_SEQUENCE] = "in sequence",
+		[CYAML_STATE_START]        = "start",
+		[CYAML_STATE_IN_STREAM]    = "in stream",
+		[CYAML_STATE_IN_DOC]       = "in doc",
+		[CYAML_STATE_IN_MAP_KEY]   = "in mapping (key)",
+		[CYAML_STATE_IN_MAP_VALUE] = "in mapping (value)",
+		[CYAML_STATE_IN_SEQUENCE]  = "in sequence",
 	};
 	if ((unsigned)state >= CYAML_STATE__COUNT) {
 		return "<invalid>";
