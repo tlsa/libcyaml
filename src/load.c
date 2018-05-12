@@ -110,7 +110,7 @@ typedef enum cyaml_event {
  */
 static inline cyaml_event_t cyaml__get_event_type(const yaml_event_t *event)
 {
-	return event->type;
+	return (cyaml_event_t)event->type;
 }
 
 /**
@@ -1053,17 +1053,16 @@ static cyaml_err_t cyaml__consume_ignored_value(
 		cyaml_ctx_t *ctx,
 		cyaml_event_t cyaml_event)
 {
-	cyaml_err_t err = CYAML_OK;
-	yaml_event_t event;
-	unsigned level;
+	if (cyaml_event != CYAML_EVT_SCALAR) {
+		unsigned level = 1;
 
-	switch (cyaml_event) {
-	case CYAML_EVT_SCALAR:
-		break;
-	case CYAML_EVT_SEQ_START: /* Fall through. */
-	case CYAML_EVT_MAP_START:
-		level = 1;
+		assert(cyaml_event == CYAML_EVT_SEQ_START ||
+		       cyaml_event == CYAML_EVT_MAP_START);
+
 		while (level > 0) {
+			cyaml_err_t err;
+			yaml_event_t event;
+
 			err = cyaml_get_next_event(ctx, &event);
 			if (err != CYAML_OK) {
 				return err;
@@ -1084,13 +1083,9 @@ static cyaml_err_t cyaml__consume_ignored_value(
 			}
 			yaml_event_delete(&event);
 		}
-		break;
-	default:
-		err = CYAML_ERR_INTERNAL_ERROR;
-		break;
 	}
 
-	return err;
+	return CYAML_OK;
 }
 
 /**
@@ -1529,7 +1524,7 @@ static inline cyaml_err_t cyaml__load_event(
 		},
 	};
 	const cyaml_read_fn fn = fns[state->state][event->type];
-	cyaml_err_t err = CYAML_ERR_UNEXPECTED_EVENT;
+	cyaml_err_t err = CYAML_ERR_INTERNAL_ERROR;
 
 	if (fn != NULL) {
 		cyaml__log(ctx->config, CYAML_LOG_DEBUG, "Handle state %s\n",
