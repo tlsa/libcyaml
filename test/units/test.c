@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: ISC
  *
- * Copyright (C) 2017 Michael Drake <tlsa@netsurf-browser.org>
+ * Copyright (C) 2017-2018 Michael Drake <tlsa@netsurf-browser.org>
  */
 
 #include <stdbool.h>
@@ -46,13 +46,23 @@ extern bool errs_tests(
 		cyaml_log_t log_level,
 		cyaml_log_fn_t log_fn);
 
-/** Print program usage */
+/**
+ * Print program usage
+ *
+ * \param[in]  prog_name  Name of program.
+ */
 void usage(const char *prog_name)
 {
 	fprintf(stderr, "Usage: %s [-q|-v|-d]\n", prog_name);
 }
 
-/** Main entry point */
+/**
+ * Main entry point from OS.
+ *
+ * \param[in]  argc  Argument count.
+ * \param[in]  argv  Vector of string arguments.
+ * \return Program return code.
+ */
 int main(int argc, char *argv[])
 {
 	bool pass = true;

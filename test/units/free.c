@@ -17,9 +17,16 @@
 
 #include "ttest.h"
 
+/** Macro to squash unused variable compiler warnings. */
 #define UNUSED(_x) ((void)(_x))
 
-/* Test cyaml_free with NULL data. */
+/**
+ * Test cyaml_free with NULL data.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_free_null_data(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -47,7 +54,13 @@ static bool test_free_null_data(
 	return ttest_pass(&tc);
 }
 
-/* Test cyaml_free with NULL config. */
+/**
+ * Test cyaml_free with NULL config.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_free_null_config(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -65,7 +78,13 @@ static bool test_free_null_config(
 	return ttest_pass(&tc);
 }
 
-/* Test cyaml_free with NULL memory allocation function. */
+/**
+ * Test cyaml_free with NULL memory allocation function.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_free_null_mem_fn(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -84,7 +103,13 @@ static bool test_free_null_mem_fn(
 	return ttest_pass(&tc);
 }
 
-/* Test cyaml_free with NULL schema. */
+/**
+ * Test cyaml_free with NULL schema.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_free_null_schema(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)

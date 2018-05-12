@@ -18,9 +18,15 @@
 #include "../../src/data.h"
 #include "ttest.h"
 
+/** Macro to squash unused variable compiler warnings. */
 #define UNUSED(_x) ((void)(_x))
+
+/** Helper macro to count bytes of YAML input data. */
 #define YAML_LEN(_y) (sizeof(_y) - 1)
 
+/**
+ * Unit test context data.
+ */
 typedef struct test_data {
 	cyaml_data_t **data;
 	unsigned *seq_count;
@@ -28,7 +34,11 @@ typedef struct test_data {
 	const struct cyaml_schema_value *schema;
 } test_data_t;
 
-/* Common cleanup function to free data loaded by tests. */
+/**
+ * Common clean up function to free data loaded by tests.
+ *
+ * \param[in]  data  The unit test context data.
+ */
 static void cyaml_cleanup(void *data)
 {
 	struct test_data *td = data;
@@ -41,7 +51,13 @@ static void cyaml_cleanup(void *data)
 	cyaml_free(td->config, td->schema, *(td->data), seq_count);
 }
 
-/* Test loading a positive signed integer. */
+/**
+ * Test loading a positive signed integer.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_int_pos(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -83,7 +99,13 @@ static bool test_load_mapping_entry_int_pos(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a negative signed integer. */
+/**
+ * Test loading a negative signed integer.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_int_neg(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -125,7 +147,13 @@ static bool test_load_mapping_entry_int_neg(
 	return ttest_pass(&tc);
 }
 
-/* Test loading an unsigned integer. */
+/**
+ * Test loading an unsigned integer.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_uint(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -167,7 +195,13 @@ static bool test_load_mapping_entry_uint(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a floating point value as a float. */
+/**
+ * Test loading a floating point value as a float.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_float(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -211,7 +245,13 @@ static bool test_load_mapping_entry_float(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a floating point value as a double. */
+/**
+ * Test loading a floating point value as a double.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_double(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -255,7 +295,13 @@ static bool test_load_mapping_entry_double(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a boolean value (true). */
+/**
+ * Test loading a boolean value (true).
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_bool_true(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -297,7 +343,13 @@ static bool test_load_mapping_entry_bool_true(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a boolean value (false). */
+/**
+ * Test loading a boolean value (false).
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_bool_false(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -339,7 +391,13 @@ static bool test_load_mapping_entry_bool_false(
 	return ttest_pass(&tc);
 }
 
-/* Test loading an enumeration. */
+/**
+ * Test loading an enumeration.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_enum(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -392,7 +450,13 @@ static bool test_load_mapping_entry_enum(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a string to a character array. */
+/**
+ * Test loading a string to a character array.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_string(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -444,7 +508,13 @@ static bool test_load_mapping_entry_string(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a string to a allocated char pointer. */
+/**
+ * Test loading a string to a allocated char pointer.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_string_ptr(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -487,7 +557,13 @@ static bool test_load_mapping_entry_string_ptr(
 	return ttest_pass(&tc);
 }
 
-/* Test loading an ignored value with descendants. */
+/**
+ * Test loading an ignored value with descendants.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_ignore_deep(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -531,7 +607,13 @@ static bool test_load_mapping_entry_ignore_deep(
 	return ttest_pass(&tc);
 }
 
-/* Test loading an ignored value. */
+/**
+ * Test loading an ignored value.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_ignore_scalar(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -571,7 +653,13 @@ static bool test_load_mapping_entry_ignore_scalar(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a flag word. */
+/**
+ * Test loading a flag word.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_flags(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -636,7 +724,13 @@ static bool test_load_mapping_entry_flags(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a mapping, to an internal structure. */
+/**
+ * Test loading a mapping, to an internal structure.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_mapping(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -693,7 +787,13 @@ static bool test_load_mapping_entry_mapping(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a mapping, to an allocated structure. */
+/**
+ * Test loading a mapping, to an allocated structure.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_mapping_ptr(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -750,7 +850,13 @@ static bool test_load_mapping_entry_mapping_ptr(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a sequence of integers into an int[]. */
+/**
+ * Test loading a sequence of integers into an int[].
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_sequence_int(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -811,7 +917,13 @@ static bool test_load_mapping_entry_sequence_int(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a sequence of enums into an enum test_enum[]. */
+/**
+ * Test loading a sequence of enums into an enum test_enum[].
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_sequence_enum(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -880,7 +992,13 @@ static bool test_load_mapping_entry_sequence_enum(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a sequence of unsigned integers into an unsigned[]. */
+/**
+ * Test loading a sequence of unsigned integers into an unsigned[].
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_sequence_uint(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -941,7 +1059,13 @@ static bool test_load_mapping_entry_sequence_uint(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a sequence of boolean values into an bool[]. */
+/**
+ * Test loading a sequence of boolean values into an bool[].
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_sequence_bool(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1004,7 +1128,13 @@ static bool test_load_mapping_entry_sequence_bool(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a sequence of flag sequences into an array of flag words. */
+/**
+ * Test loading a sequence of flag sequences into an array of flag words.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_sequence_flags(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1087,7 +1217,13 @@ static bool test_load_mapping_entry_sequence_flags(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a sequence of strings into an array of char[7]. */
+/**
+ * Test loading a sequence of strings into an array of char[7].
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_sequence_string(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1151,7 +1287,13 @@ static bool test_load_mapping_entry_sequence_string(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a sequence of strings into an array of allocated strings. */
+/**
+ * Test loading a sequence of strings into an array of allocated strings.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_sequence_string_ptr(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1216,7 +1358,13 @@ static bool test_load_mapping_entry_sequence_string_ptr(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a sequence of mappings into an array of structures. */
+/**
+ * Test loading a sequence of mappings into an array of structures.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_sequence_mapping(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1290,7 +1438,13 @@ static bool test_load_mapping_entry_sequence_mapping(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a sequence of mappings into an array of pointers to structs. */
+/**
+ * Test loading a sequence of mappings into an array of pointers to structs.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_sequence_mapping_ptr(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1365,7 +1519,13 @@ static bool test_load_mapping_entry_sequence_mapping_ptr(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a sequence of sequences of int into int[4][3]. */
+/**
+ * Test loading a sequence of sequences of int into int[4][3].
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_sequence_sequence_fixed_int(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1440,7 +1600,13 @@ static bool test_load_mapping_entry_sequence_sequence_fixed_int(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a sequence of sequences of int into int*[4]. */
+/**
+ * Test loading a sequence of sequences of int into int*[4].
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_sequence_sequence_fixed_ptr_int(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1515,7 +1681,13 @@ static bool test_load_mapping_entry_sequence_sequence_fixed_ptr_int(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a sequence of sequences of int into one-dimensional int[]. */
+/**
+ * Test loading a sequence of sequences of int into one-dimensional int[].
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_sequence_sequence_fixed_flat_int(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1606,7 +1778,13 @@ static bool test_load_mapping_entry_sequence_sequence_fixed_flat_int(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a sequence of integers to allocated int* array. */
+/**
+ * Test loading a sequence of integers to allocated int* array.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_sequence_ptr_int(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1667,7 +1845,13 @@ static bool test_load_mapping_entry_sequence_ptr_int(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a sequence of enums to allocated enum test_enum* array. */
+/**
+ * Test loading a sequence of enums to allocated enum test_enum* array.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_sequence_ptr_enum(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1736,7 +1920,13 @@ static bool test_load_mapping_entry_sequence_ptr_enum(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a sequence of unsigned integers to allocated unsigned* array. */
+/**
+ * Test loading a sequence of unsigned integers to allocated unsigned* array.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_sequence_ptr_uint(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1797,7 +1987,13 @@ static bool test_load_mapping_entry_sequence_ptr_uint(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a sequence of boolean values to allocated bool* array. */
+/**
+ * Test loading a sequence of boolean values to allocated bool* array.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_sequence_ptr_bool(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1860,7 +2056,13 @@ static bool test_load_mapping_entry_sequence_ptr_bool(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a sequence of flag sequences to allocated flag words array. */
+/**
+ * Test loading a sequence of flag sequences to allocated flag words array.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_sequence_ptr_flags(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1943,7 +2145,13 @@ static bool test_load_mapping_entry_sequence_ptr_flags(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a sequence of strings to allocated array of char[7]. */
+/**
+ * Test loading a sequence of strings to allocated array of char[7].
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_sequence_ptr_string(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -2007,8 +2215,14 @@ static bool test_load_mapping_entry_sequence_ptr_string(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a sequence of strings to allocated array of
- * allocated strings. */
+/**
+ * Test loading a sequence of strings to allocated array of
+ * allocated strings.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_sequence_ptr_string_ptr(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -2073,7 +2287,13 @@ static bool test_load_mapping_entry_sequence_ptr_string_ptr(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a sequence of mappings to allocated array mapping structs. */
+/**
+ * Test loading a sequence of mappings to allocated array mapping structs.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_sequence_ptr_mapping(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -2148,8 +2368,14 @@ static bool test_load_mapping_entry_sequence_ptr_mapping(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a sequence of mappings to allocated array of pointers to
- * mapping structs. */
+/**
+ * Test loading a sequence of mappings to allocated array of pointers to
+ * mapping structs.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_sequence_ptr_mapping_ptr(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -2224,8 +2450,14 @@ static bool test_load_mapping_entry_sequence_ptr_mapping_ptr(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a sequence of sequences of integers to allocated array
- * of int[3]. */
+/**
+ * Test loading a sequence of sequences of integers to allocated array
+ * of int[3].
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_sequence_ptr_sequence_fixed_int(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -2300,8 +2532,14 @@ static bool test_load_mapping_entry_sequence_ptr_sequence_fixed_int(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a sequence of sequences of integers to allocated array
- * of allocated arrays of integers. */
+/**
+ * Test loading a sequence of sequences of integers to allocated array
+ * of allocated arrays of integers.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_sequence_ptr_sequence_fixed_ptr_int(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -2376,8 +2614,14 @@ static bool test_load_mapping_entry_sequence_ptr_sequence_fixed_ptr_int(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a sequence of sequences of integers a one-dimensional allocated
- * array of integers. */
+/**
+ * Test loading a sequence of sequences of integers a one-dimensional allocated
+ * array of integers.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_sequence_ptr_sequence_fixed_flat_int(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -2468,7 +2712,13 @@ static bool test_load_mapping_entry_sequence_ptr_sequence_fixed_flat_int(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a sequence of integers with 1 byte sequence count. */
+/**
+ * Test loading a sequence of integers with 1 byte sequence count.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_sequence_count_1(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -2530,7 +2780,13 @@ static bool test_load_mapping_entry_sequence_count_1(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a sequence of integers with 2 byte sequence count. */
+/**
+ * Test loading a sequence of integers with 2 byte sequence count.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_sequence_count_2(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -2592,7 +2848,13 @@ static bool test_load_mapping_entry_sequence_count_2(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a sequence of integers with 3 byte sequence count. */
+/**
+ * Test loading a sequence of integers with 3 byte sequence count.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_sequence_count_3(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -2654,7 +2916,13 @@ static bool test_load_mapping_entry_sequence_count_3(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a sequence of integers with 4 byte sequence count. */
+/**
+ * Test loading a sequence of integers with 4 byte sequence count.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_sequence_count_4(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -2716,7 +2984,13 @@ static bool test_load_mapping_entry_sequence_count_4(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a sequence of integers with 5 byte sequence count. */
+/**
+ * Test loading a sequence of integers with 5 byte sequence count.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_sequence_count_5(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -2778,7 +3052,13 @@ static bool test_load_mapping_entry_sequence_count_5(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a sequence of integers with 6 byte sequence count. */
+/**
+ * Test loading a sequence of integers with 6 byte sequence count.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_sequence_count_6(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -2840,7 +3120,13 @@ static bool test_load_mapping_entry_sequence_count_6(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a sequence of integers with 7 byte sequence count. */
+/**
+ * Test loading a sequence of integers with 7 byte sequence count.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_sequence_count_7(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -2902,7 +3188,13 @@ static bool test_load_mapping_entry_sequence_count_7(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a sequence of integers with 8 byte sequence count. */
+/**
+ * Test loading a sequence of integers with 8 byte sequence count.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_entry_sequence_count_8(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -2964,7 +3256,13 @@ static bool test_load_mapping_entry_sequence_count_8(
 	return ttest_pass(&tc);
 }
 
-/* Test loading with schema with scalar top level type. */
+/**
+ * Test loading with schema with scalar top level type.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_schema_top_level_scalar(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -3001,7 +3299,13 @@ static bool test_load_schema_top_level_scalar(
 	return ttest_pass(&tc);
 }
 
-/* Test loading with schema with sequence_fixed top level type. */
+/**
+ * Test loading with schema with sequence_fixed top level type.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_schema_top_level_sequence(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -3050,7 +3354,13 @@ static bool test_load_schema_top_level_sequence(
 	return ttest_pass(&tc);
 }
 
-/* Test loading with schema with sequence_fixed top level type. */
+/**
+ * Test loading with schema with sequence_fixed top level type.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_schema_top_level_sequence_fixed(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -3093,7 +3403,13 @@ static bool test_load_schema_top_level_sequence_fixed(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a stream with more than one document. */
+/**
+ * Test loading a stream with more than one document.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_multiple_documents_ignored(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -3139,7 +3455,13 @@ static bool test_load_multiple_documents_ignored(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a mapping multiple fields. */
+/**
+ * Test loading a mapping multiple fields.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_with_multiple_fields(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -3215,7 +3537,13 @@ static bool test_load_mapping_with_multiple_fields(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a mapping with optional fields. */
+/**
+ * Test loading a mapping with optional fields.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_with_optional_fields(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -3361,7 +3689,13 @@ static bool test_load_mapping_with_optional_fields(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a mapping with only optional fields. */
+/**
+ * Test loading a mapping with only optional fields.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_only_optional_fields(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -3406,7 +3740,13 @@ static bool test_load_mapping_only_optional_fields(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a mapping with unknown keys ignored by config. */
+/**
+ * Test loading a mapping with unknown keys ignored by config.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_mapping_ignored_unknown_keys(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -3478,7 +3818,13 @@ static bool test_load_mapping_ignored_unknown_keys(
 	return ttest_pass(&tc);
 }
 
-/* Test loading a sequence with max size 4, and only 2 entries in YAML. */
+/**
+ * Test loading a sequence with max size 4, and only 2 entries in YAML.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_sequence_without_max_entries(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -3542,7 +3888,13 @@ static bool test_load_sequence_without_max_entries(
 	return ttest_pass(&tc);
 }
 
-/* Test loading without a logging function. */
+/**
+ * Test loading without a logging function.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_load_no_log(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)

@@ -17,6 +17,9 @@
 
 #include "ttest.h"
 
+/**
+ * Unit test context data.
+ */
 typedef struct test_data {
 	cyaml_data_t **data;
 	unsigned *seq_count;
@@ -24,7 +27,11 @@ typedef struct test_data {
 	const struct cyaml_schema_value *schema;
 } test_data_t;
 
-/* Common cleanup function to free data loaded by tests. */
+/**
+ * Common clean up function to free data loaded by tests.
+ *
+ * \param[in]  data  The unit test context data.
+ */
 static void cyaml_cleanup(void *data)
 {
 	struct test_data *td = data;
@@ -37,7 +44,13 @@ static void cyaml_cleanup(void *data)
 	cyaml_free(td->config, td->schema, *(td->data), seq_count);
 }
 
-/* Test loading a non-existent file. */
+/**
+ * Test loading a non-existent file.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_file_load_bad_path(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -70,7 +83,13 @@ static bool test_file_load_bad_path(
 	return ttest_pass(&tc);
 }
 
-/* Test loading the basic YAML file. */
+/**
+ * Test loading the basic YAML file.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_file_load_basic(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -135,7 +154,13 @@ static bool test_file_load_basic(
 	return ttest_pass(&tc);
 }
 
-/* Test loading the basic YAML file, with a mismatching schema. */
+/**
+ * Test loading the basic YAML file, with a mismatching schema.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_file_load_basic_invalid(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
