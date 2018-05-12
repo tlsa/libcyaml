@@ -110,7 +110,7 @@ typedef enum cyaml_event {
  */
 static inline cyaml_event_t cyaml__get_event_type(const yaml_event_t *event)
 {
-	return event->type;
+	return (cyaml_event_t)event->type;
 }
 
 /**
