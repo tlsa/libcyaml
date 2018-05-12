@@ -17,9 +17,15 @@
 
 #include "ttest.h"
 
+/** Macro to squash unused variable compiler warnings. */
 #define UNUSED(_x) ((void)(_x))
+
+/** Helper macro to count bytes of YAML input data. */
 #define YAML_LEN(_y) (sizeof(_y) - 1)
 
+/**
+ * Unit test context data.
+ */
 typedef struct test_data {
 	cyaml_data_t **data;
 	unsigned *seq_count;
@@ -27,7 +33,11 @@ typedef struct test_data {
 	const struct cyaml_schema_value *schema;
 } test_data_t;
 
-/* Common cleanup function to free data loaded by tests. */
+/**
+ * Common clean up function to free data loaded by tests.
+ *
+ * \param[in]  data  The unit test context data.
+ */
 static void cyaml_cleanup(void *data)
 {
 	struct test_data *td = data;
@@ -40,7 +50,13 @@ static void cyaml_cleanup(void *data)
 	cyaml_free(td->config, td->schema, *(td->data), seq_count);
 }
 
-/* Test loading with NULL data parameter. */
+/**
+ * Test loading with NULL data parameter.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_load_null_data(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -78,7 +94,13 @@ static bool test_err_load_null_data(
 	return ttest_pass(&tc);
 }
 
-/* Test loading with NULL config parameter. */
+/**
+ * Test loading with NULL config parameter.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_load_null_config(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -107,7 +129,13 @@ static bool test_err_load_null_config(
 	return ttest_pass(&tc);
 }
 
-/* Test loading with NULL memory allocation function. */
+/**
+ * Test loading with NULL memory allocation function.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_load_null_mem_fn(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -139,7 +167,13 @@ static bool test_err_load_null_mem_fn(
 	return ttest_pass(&tc);
 }
 
-/* Test loading with NULL schema. */
+/**
+ * Test loading with NULL schema.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_load_null_schema(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -168,7 +202,13 @@ static bool test_err_load_null_schema(
 	return ttest_pass(&tc);
 }
 
-/* Test loading with schema with bad top level type (non-pointer). */
+/**
+ * Test loading with schema with bad top level type (non-pointer).
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_top_level_non_pointer(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -201,7 +241,13 @@ static bool test_err_schema_top_level_non_pointer(
 	return ttest_pass(&tc);
 }
 
-/* Test loading with schema with bad top level sequence and no seq_count. */
+/**
+ * Test loading with schema with bad top level sequence and no seq_count.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_top_level_sequence_no_count(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -241,7 +287,13 @@ static bool test_err_schema_top_level_sequence_no_count(
 	return ttest_pass(&tc);
 }
 
-/* Test loading with schema with bad top level sequence and no seq_count. */
+/**
+ * Test loading with schema with bad top level sequence and no seq_count.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_top_level_not_sequence_count(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -276,7 +328,13 @@ static bool test_err_schema_top_level_not_sequence_count(
 	return ttest_pass(&tc);
 }
 
-/* Test loading with schema with bad type. */
+/**
+ * Test loading with schema with bad type.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_bad_type(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -324,7 +382,13 @@ static bool test_err_schema_bad_type(
 	return ttest_pass(&tc);
 }
 
-/* Test loading with schema with string min greater than max. */
+/**
+ * Test loading with schema with string min greater than max.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_string_min_max(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -366,7 +430,13 @@ static bool test_err_schema_string_min_max(
 	return ttest_pass(&tc);
 }
 
-/* Test loading with schema with data size (0). */
+/**
+ * Test loading with schema with data size (0).
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_bad_data_size_1(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -414,7 +484,13 @@ static bool test_err_schema_bad_data_size_1(
 	return ttest_pass(&tc);
 }
 
-/* Test loading with schema with data size (9). */
+/**
+ * Test loading with schema with data size (9).
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_bad_data_size_2(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -462,7 +538,13 @@ static bool test_err_schema_bad_data_size_2(
 	return ttest_pass(&tc);
 }
 
-/* Test loading with schema with data size (0) for flags. */
+/**
+ * Test loading with schema with data size (0) for flags.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_bad_data_size_3(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -522,7 +604,13 @@ static bool test_err_schema_bad_data_size_3(
 	return ttest_pass(&tc);
 }
 
-/* Test loading with schema with data size (0) for sequence count. */
+/**
+ * Test loading with schema with data size (0) for sequence count.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_bad_data_size_4(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -585,7 +673,13 @@ static bool test_err_schema_bad_data_size_4(
 	return ttest_pass(&tc);
 }
 
-/* Test loading with schema with data size (9) for sequence count. */
+/**
+ * Test loading with schema with data size (9) for sequence count.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_bad_data_size_5(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -648,7 +742,13 @@ static bool test_err_schema_bad_data_size_5(
 	return ttest_pass(&tc);
 }
 
-/* Test loading with schema with data size (9) for sequence count. */
+/**
+ * Test loading with schema with data size (9) for sequence count.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_bad_data_size_6(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -711,7 +811,13 @@ static bool test_err_schema_bad_data_size_6(
 	return ttest_pass(&tc);
 }
 
-/* Test loading with schema with sequence fixed with unequal min and max. */
+/**
+ * Test loading with schema with sequence fixed with unequal min and max.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_sequence_min_max(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -772,7 +878,13 @@ static bool test_err_schema_sequence_min_max(
 	return ttest_pass(&tc);
 }
 
-/* Test loading with schema with data size for float. */
+/**
+ * Test loading with schema with data size for float.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_bad_data_size_float(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -820,7 +932,13 @@ static bool test_err_schema_bad_data_size_float(
 	return ttest_pass(&tc);
 }
 
-/* Test loading with schema with sequence in sequence. */
+/**
+ * Test loading with schema with sequence in sequence.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_sequence_in_sequence(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -863,7 +981,13 @@ static bool test_err_schema_sequence_in_sequence(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema expects uint, but value is invalid. */
+/**
+ * Test loading when schema expects uint, but value is invalid.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_invalid_value_uint(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -904,7 +1028,13 @@ static bool test_err_schema_invalid_value_uint(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema expects flags, but numerical value is invalid. */
+/**
+ * Test loading when schema expects flags, but numerical value is invalid.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_invalid_value_flags_1(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -965,7 +1095,13 @@ static bool test_err_schema_invalid_value_flags_1(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema expects flags, but numerical value is invalid. */
+/**
+ * Test loading when schema expects flags, but numerical value is invalid.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_invalid_value_flags_2(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1026,7 +1162,13 @@ static bool test_err_schema_invalid_value_flags_2(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema expects flags, but numerical value is invalid. */
+/**
+ * Test loading when schema expects flags, but numerical value is invalid.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_invalid_value_flags_3(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1087,7 +1229,13 @@ static bool test_err_schema_invalid_value_flags_3(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema expects float but value is out of range. */
+/**
+ * Test loading when schema expects float but value is out of range.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_invalid_value_float_range(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1128,7 +1276,13 @@ static bool test_err_schema_invalid_value_float_range(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema expects float but value is invalid. */
+/**
+ * Test loading when schema expects float but value is invalid.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_invalid_value_float_invalid(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1169,7 +1323,13 @@ static bool test_err_schema_invalid_value_float_invalid(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema expects double but value is out of range. */
+/**
+ * Test loading when schema expects double but value is out of range.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_invalid_value_double_range(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1210,7 +1370,13 @@ static bool test_err_schema_invalid_value_double_range(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema expects double but value is invalid. */
+/**
+ * Test loading when schema expects double but value is invalid.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_invalid_value_double_invalid(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1251,7 +1417,13 @@ static bool test_err_schema_invalid_value_double_invalid(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema expects int but value is out of range. */
+/**
+ * Test loading when schema expects int but value is out of range.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_invalid_value_int_range_1(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1292,7 +1464,13 @@ static bool test_err_schema_invalid_value_int_range_1(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema expects int but value is out of range. */
+/**
+ * Test loading when schema expects int but value is out of range.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_invalid_value_int_range_2(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1333,7 +1511,13 @@ static bool test_err_schema_invalid_value_int_range_2(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema expects int but value is out of range. */
+/**
+ * Test loading when schema expects int but value is out of range.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_invalid_value_int_range_3(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1374,7 +1558,13 @@ static bool test_err_schema_invalid_value_int_range_3(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema expects int but value is out of range. */
+/**
+ * Test loading when schema expects int but value is out of range.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_invalid_value_int_range_4(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1415,7 +1605,13 @@ static bool test_err_schema_invalid_value_int_range_4(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema expects int but value is out of range. */
+/**
+ * Test loading when schema expects int but value is out of range.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_invalid_value_int_range_5(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1456,7 +1652,13 @@ static bool test_err_schema_invalid_value_int_range_5(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema expects uint but value is out of range. */
+/**
+ * Test loading when schema expects uint but value is out of range.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_invalid_value_uint_range_1(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1497,7 +1699,13 @@ static bool test_err_schema_invalid_value_uint_range_1(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema expects uint but value is out of range. */
+/**
+ * Test loading when schema expects uint but value is out of range.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_invalid_value_uint_range_2(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1538,7 +1746,13 @@ static bool test_err_schema_invalid_value_uint_range_2(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema expects uint but value is out of range. */
+/**
+ * Test loading when schema expects uint but value is out of range.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_invalid_value_uint_range_3(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1579,7 +1793,13 @@ static bool test_err_schema_invalid_value_uint_range_3(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema expects uint but value is out of range. */
+/**
+ * Test loading when schema expects uint but value is out of range.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_invalid_value_uint_range_4(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1620,7 +1840,13 @@ static bool test_err_schema_invalid_value_uint_range_4(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema expects uint but value is out of range. */
+/**
+ * Test loading when schema expects uint but value is out of range.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_invalid_value_uint_range_5(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1661,7 +1887,13 @@ static bool test_err_schema_invalid_value_uint_range_5(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema expects string, but it's too short. */
+/**
+ * Test loading when schema expects string, but it's too short.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_string_min_length(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1702,7 +1934,13 @@ static bool test_err_schema_string_min_length(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema expects string, but it's too long. */
+/**
+ * Test loading when schema expects string, but it's too long.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_string_max_length(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1743,7 +1981,13 @@ static bool test_err_schema_string_max_length(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema expects mapping field which is not present. */
+/**
+ * Test loading when schema expects mapping field which is not present.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_missing_mapping_field(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1787,7 +2031,13 @@ static bool test_err_schema_missing_mapping_field(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema disallows mapping field. */
+/**
+ * Test loading when schema disallows mapping field.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_unknown_mapping_field(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1828,7 +2078,13 @@ static bool test_err_schema_unknown_mapping_field(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema expects sequence, it has too few entries. */
+/**
+ * Test loading when schema expects sequence, it has too few entries.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_sequence_min_entries(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1876,7 +2132,13 @@ static bool test_err_schema_sequence_min_entries(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema expects sequence, it has too many entries. */
+/**
+ * Test loading when schema expects sequence, it has too many entries.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_sequence_max_entries(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1925,7 +2187,13 @@ static bool test_err_schema_sequence_max_entries(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema expects flags and finds a mapping inside. */
+/**
+ * Test loading when schema expects flags and finds a mapping inside.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_flags_mapping(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -1988,7 +2256,13 @@ static bool test_err_schema_flags_mapping(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema expects enum, but string is not allowed. */
+/**
+ * Test loading when schema expects enum, but string is not allowed.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_enum_bad_string(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -2041,7 +2315,13 @@ static bool test_err_schema_enum_bad_string(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema expects flags but YAML has bad flag string. */
+/**
+ * Test loading when schema expects flags but YAML has bad flag string.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_flags_bad_string(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -2102,7 +2382,13 @@ static bool test_err_schema_flags_bad_string(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema expects strict enum but YAML has bad string. */
+/**
+ * Test loading when schema expects strict enum but YAML has bad string.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_strict_enum_bad_string(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -2155,7 +2441,13 @@ static bool test_err_schema_strict_enum_bad_string(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema expects strict flags but YAML has bad string. */
+/**
+ * Test loading when schema expects strict flags but YAML has bad string.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_strict_flags_bad_string(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -2216,7 +2508,13 @@ static bool test_err_schema_strict_flags_bad_string(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema expects int, but YAML has sequence. */
+/**
+ * Test loading when schema expects int, but YAML has sequence.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_expect_int_read_seq(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -2258,7 +2556,13 @@ static bool test_err_schema_expect_int_read_seq(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema expects int, but YAML ends. */
+/**
+ * Test loading when schema expects int, but YAML ends.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_expect_int_read_end_1(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -2299,7 +2603,13 @@ static bool test_err_schema_expect_int_read_end_1(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema expects int, but YAML ends. */
+/**
+ * Test loading when schema expects int, but YAML ends.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_expect_int_read_end_2(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -2341,7 +2651,13 @@ static bool test_err_schema_expect_int_read_end_2(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema expects flags, but YAML has scalar. */
+/**
+ * Test loading when schema expects flags, but YAML has scalar.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_expect_flags_read_scalar(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -2391,7 +2707,13 @@ static bool test_err_schema_expect_flags_read_scalar(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema expects mapping, but YAML has scalar. */
+/**
+ * Test loading when schema expects mapping, but YAML has scalar.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_expect_mapping_read_scalar(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -2440,7 +2762,13 @@ static bool test_err_schema_expect_mapping_read_scalar(
 	return ttest_pass(&tc);
 }
 
-/* Test loading when schema expects sequence, but YAML has scalar. */
+/**
+ * Test loading when schema expects sequence, but YAML has scalar.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_schema_expect_sequence_read_scalar(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -2486,7 +2814,13 @@ static bool test_err_schema_expect_sequence_read_scalar(
 	return ttest_pass(&tc);
 }
 
-/* Test loading, with all memory allocation failure at every possible point. */
+/**
+ * Test loading, with all memory allocation failure at every possible point.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_free_null(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -2507,7 +2841,15 @@ static struct test_cyaml_mem_ctx_s {
 	unsigned current;
 } test_cyaml_mem_ctx;
 
-/* Allocation counter */
+/*
+ * Allocation counter.
+ *
+ * Used to count all allocations made when loading an input.
+ *
+ * \param[in]  ptr   Pointer to allocation to resize or NULL.
+ * \param[in]  size  Size to set allocation to.
+ * \return Pointer to new allocation, or NULL on failure.
+ */
 static void * test_cyaml_mem_count_allocs(
 		void *ptr,
 		size_t size)
@@ -2522,7 +2864,15 @@ static void * test_cyaml_mem_count_allocs(
 	return realloc(ptr, size);
 }
 
-/* Allocation failure tester */
+/**
+ * Allocation failure tester.
+ *
+ * Used to make specific allocation fail.
+ *
+ * \param[in]  ptr   Pointer to allocation to resize or NULL.
+ * \param[in]  size  Size to set allocation to.
+ * \return Pointer to new allocation, or NULL on failure.
+ */
 static void * test_cyaml_mem_fail(
 		void *ptr,
 		size_t size)
@@ -2541,7 +2891,13 @@ static void * test_cyaml_mem_fail(
 	return realloc(ptr, size);
 }
 
-/* Test loading, with all memory allocation failure at every possible point. */
+/**
+ * Test loading, with all memory allocation failure at every possible point.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_load_alloc_oom_1(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -2646,7 +3002,13 @@ static bool test_err_load_alloc_oom_1(
 	return ttest_pass(&tc);
 }
 
-/* Test loading, with all memory allocation failure at every possible point. */
+/**
+ * Test loading, with all memory allocation failure at every possible point.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_load_alloc_oom_2(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)

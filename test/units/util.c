@@ -19,7 +19,13 @@
 
 #include "ttest.h"
 
-/* Test cyaml memory functions. */
+/**
+ * Test cyaml memory functions.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_util_memory_funcs(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -65,7 +71,12 @@ static bool test_util_memory_funcs(
 	return ttest_pass(&tc);
 }
 
-/* Test invalid state machine state. */
+/**
+ * Test invalid state machine state.
+ *
+ * \param[in]  report  The test report context.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_util_state_invalid(
 		ttest_report_ctx_t *report)
 {
@@ -84,7 +95,12 @@ static bool test_util_state_invalid(
 	return ttest_pass(&tc);
 }
 
-/* Test CYAML_OK error code. */
+/**
+ * Test CYAML_OK error code.
+ *
+ * \param[in]  report  The test report context.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_util_err_success_zero(
 		ttest_report_ctx_t *report)
 {
@@ -97,7 +113,12 @@ static bool test_util_err_success_zero(
 	return ttest_pass(&tc);
 }
 
-/* Test valid cyaml_strerror strings. */
+/**
+ * Test valid cyaml_strerror strings.
+ *
+ * \param[in]  report  The test report context.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_util_err_strings_valid(
 		ttest_report_ctx_t *report)
 {
@@ -129,7 +150,12 @@ static bool test_util_err_strings_valid(
 	return ttest_pass(&tc);
 }
 
-/* Test invalid cyaml_strerror strings. */
+/**
+ * Test invalid cyaml_strerror strings.
+ *
+ * \param[in]  report  The test report context.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_util_err_strings_invalid(
 		ttest_report_ctx_t *report)
 {
