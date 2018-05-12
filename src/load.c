@@ -1524,7 +1524,7 @@ static inline cyaml_err_t cyaml__load_event(
 		},
 	};
 	const cyaml_read_fn fn = fns[state->state][event->type];
-	cyaml_err_t err = CYAML_ERR_UNEXPECTED_EVENT;
+	cyaml_err_t err = CYAML_ERR_INTERNAL_ERROR;
 
 	if (fn != NULL) {
 		cyaml__log(ctx->config, CYAML_LOG_DEBUG, "Handle state %s\n",
