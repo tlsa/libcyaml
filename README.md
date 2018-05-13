@@ -36,8 +36,7 @@ arranged in memory.
 Status
 ------
 
-Under development.  Until a release is made, the API may change, and
-various features may not yet be implemented.  Feedback welcome.
+Until a release is made the API may change.  Feedback welcome.
 
 Building
 --------
