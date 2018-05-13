@@ -9,8 +9,6 @@
  * \brief CYAML library public header.
  *
  * CYAML is a C library for parsing and serialising structured YAML documents.
- *
- * \todo Add cyaml_save_* functions for serialisation to YAML.
  */
 
 #ifndef CYAML_H
@@ -306,8 +304,11 @@ typedef enum cyaml_err {
 	CYAML_ERR_BAD_CONFIG_NULL_MEMFN, /**< Client gave NULL mem function. */
 	CYAML_ERR_BAD_PARAM_NULL_CONFIG, /**< Client gave NULL config arg. */
 	CYAML_ERR_BAD_PARAM_NULL_SCHEMA, /**< Client gave NULL schema arg. */
+	CYAML_ERR_LIBYAML_EMITTER_INIT,  /**< Failed to initialise libyaml. */
 	CYAML_ERR_LIBYAML_PARSER_INIT,   /**< Failed to initialise libyaml. */
-	CYAML_ERR_LIBYAML_PARSER,        /**< Error inside libyaml. */
+	CYAML_ERR_LIBYAML_EVENT_INIT,    /**< Failed to initialise libyaml. */
+	CYAML_ERR_LIBYAML_EMITTER,       /**< Error inside libyaml emitter. */
+	CYAML_ERR_LIBYAML_PARSER,        /**< Error inside libyaml parser. */
 	CYAML_ERR__COUNT,                /**< Count of CYAML return codes.
 	                                  *   This is **not a valid return
 	                                  *   code** itself.
@@ -962,6 +963,24 @@ extern cyaml_err_t cyaml_load_data(
 		const cyaml_schema_value_t *schema,
 		cyaml_data_t **data_out,
 		unsigned *seq_count_out);
+
+/**
+ * Save a YAML document to a file at the given path.
+ *
+ * \param[in] path       Path to YAML file to write.
+ * \param[in] config     Client's CYAML configuration structure.
+ * \param[in] schema     CYAML schema for the YAML to be saved.
+ * \param[in] data       The caller-owned data to be saved.
+ * \param[in] seq_count  If top level type is sequence, this should be the
+ *                       entry count, otherwise it is ignored.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+extern cyaml_err_t cyaml_save_file(
+		const char *path,
+		const cyaml_config_t *config,
+		const cyaml_schema_value_t *schema,
+		const cyaml_data_t *data,
+		unsigned seq_count);
 
 /**
  * Free data returned by a CYAML load function.

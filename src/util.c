@@ -103,7 +103,10 @@ const char * cyaml_strerror(
 		[CYAML_ERR_BAD_CONFIG_NULL_MEMFN] = "Bad config: NULL mem function",
 		[CYAML_ERR_BAD_PARAM_NULL_CONFIG] = "Bad parameter: NULL config",
 		[CYAML_ERR_BAD_PARAM_NULL_SCHEMA] = "Bad parameter: NULL schema",
+		[CYAML_ERR_LIBYAML_EMITTER_INIT]  = "libyaml emitter init failed",
 		[CYAML_ERR_LIBYAML_PARSER_INIT]   = "libyaml parser init failed",
+		[CYAML_ERR_LIBYAML_EVENT_INIT]    = "libyaml event init failed",
+		[CYAML_ERR_LIBYAML_EMITTER]       = "libyaml emitter error",
 		[CYAML_ERR_LIBYAML_PARSER]        = "libyaml parser error",
 	};
 	if ((unsigned)err >= CYAML_ERR__COUNT) {
