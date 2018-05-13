@@ -53,7 +53,7 @@ else
 	LDFLAGS_COV =
 endif
 
-LIB_SRC_FILES = mem.c free.c load.c util.c
+LIB_SRC_FILES = mem.c free.c load.c save.c util.c
 LIB_SRC := $(addprefix src/,$(LIB_SRC_FILES))
 LIB_OBJ = $(patsubst %.c,%.o, $(addprefix $(BUILDDIR)/,$(LIB_SRC)))
 
