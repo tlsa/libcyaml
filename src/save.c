@@ -1130,3 +1130,97 @@ cyaml_err_t cyaml_save_file(
 
 	return CYAML_OK;
 }
+
+/** CYAML save buffer context. */
+typedef struct cyaml_buffer_ctx {
+	/** Client's CYAML configuration structure. */
+	const cyaml_config_t *config;
+	size_t len;  /**< Current length of `data` allocation. */
+	size_t used; /**< Current number of bytes used in `data`. */
+	char *data;  /**< Current allocation for serialised output. */
+} cyaml_buffer_ctx_t;
+
+/**
+ * Write handler for libyaml.
+ *
+ * The write handler is called when the emitter needs to flush the accumulated
+ * characters to the output.  The handler should write size bytes of the
+ * buffer to the output.
+ *
+ * \todo Could be more efficient about this, but for now, this is fine.
+ *
+ * \param[in]  data    A pointer to cyaml buffer context struture.
+ * \param[in]  buffer  The buffer with bytes to be written.
+ * \param[in]  size    The number of bytes to be written.
+ * \return 1 on sucess, 0 otherwise.
+ */
+static int cyaml__buffer_handler(
+		void *data,
+		unsigned char *buffer,
+		size_t size)
+{
+	cyaml_buffer_ctx_t *buffer_ctx = data;
+	enum {
+		RETURN_SUCCESS = 1,
+		RETURN_FAILURE = 0,
+	};
+
+	if (size > (buffer_ctx->len - buffer_ctx->used)) {
+		char *temp = cyaml__realloc(
+				buffer_ctx->config,
+				buffer_ctx->data,
+				buffer_ctx->len,
+				buffer_ctx->used + size,
+				false);
+		if (temp == NULL) {
+			return RETURN_FAILURE;
+		}
+		buffer_ctx->data = temp;
+		buffer_ctx->len = buffer_ctx->used + size;
+	}
+
+	memcpy(buffer_ctx->data + buffer_ctx->used, buffer, size);
+	buffer_ctx->used += size;
+
+	return RETURN_SUCCESS;
+}
+
+/* Exported function, documented in include/cyaml/cyaml.h */
+cyaml_err_t cyaml_save_data(
+		char **output,
+		size_t *len,
+		const cyaml_config_t *config,
+		const cyaml_schema_value_t *schema,
+		const cyaml_data_t *data,
+		unsigned seq_count)
+{
+	cyaml_err_t err;
+	yaml_emitter_t emitter;
+	cyaml_buffer_ctx_t buffer_ctx = {
+		.config = config,
+	};
+
+	/* Initialize parser */
+	if (!yaml_emitter_initialize(&emitter)) {
+		return CYAML_ERR_LIBYAML_EMITTER_INIT;
+	}
+
+	/* Set input file */
+	yaml_emitter_set_output(&emitter, cyaml__buffer_handler, &buffer_ctx);
+
+	/* Parse the input */
+	err = cyaml__save(config, schema, data, seq_count, &emitter);
+	if (err != CYAML_OK) {
+		yaml_emitter_delete(&emitter);
+		cyaml__free(config, buffer_ctx.data);
+		return err;
+	}
+
+	/* Cleanup */
+	yaml_emitter_delete(&emitter);
+
+	*output = buffer_ctx.data;
+	*len = buffer_ctx.used;
+
+	return CYAML_OK;
+}

@@ -983,6 +983,51 @@ extern cyaml_err_t cyaml_save_file(
 		unsigned seq_count);
 
 /**
+ * Save a YAML document into a string in memory.
+ *
+ * This allocates a buffer containing the serialised YAML data.
+ *
+ * To free the returned YAML string, clients should use the \ref cyaml_mem_fn_t
+ * function set in the \ref cyaml_config_t passed to this function.
+ * For example:
+ *
+ * ```
+ * char *yaml;
+ * size_t len;
+ * err = cyaml_save_file(&yaml, &len, &config, &client_schema, client_data, 0);
+ * if (err == CYAML_OK) {
+ *         // Use `yaml`:
+ *         printf("%*s\n", len, yaml);
+ *         // Free `yaml`:
+ *         config.mem_fn(yaml, 0);
+ * }
+ * ```
+ *
+ * \note The returned YAML string does not have a trailing '\0'.
+ *
+ * \param[out] output     Returns the caller-owned serialised YAML data on
+ *                        success, untouched on failure.  Clients should use
+ *                        the \ref cyaml_mem_fn_t function set in the \ref
+ *                        cyaml_config_t to free the data.
+ * \param[out] len        Returns the length of the data in output on success,
+ *                        untouched on failure.
+ * \param[out] len        Path to YAML file to write.
+ * \param[in]  config     Client's CYAML configuration structure.
+ * \param[in]  schema     CYAML schema for the YAML to be saved.
+ * \param[in]  data       The caller-owned data to be saved.
+ * \param[in]  seq_count  If top level type is sequence, this should be the
+ *                        entry count, otherwise it is ignored.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+extern cyaml_err_t cyaml_save_data(
+		char **output,
+		size_t *len,
+		const cyaml_config_t *config,
+		const cyaml_schema_value_t *schema,
+		const cyaml_data_t *data,
+		unsigned seq_count);
+
+/**
  * Free data returned by a CYAML load function.
  *
  * This is a convenience function, which is here purely to minimise the
