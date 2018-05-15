@@ -101,6 +101,62 @@ static bool test_save_mapping_entry_int_pos(
 }
 
 /**
+ * Test saving a negative signed integer.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_mapping_entry_int_neg(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char ref[] =
+		"---\n"
+		"test_int: -14\n"
+		"...\n";
+	static const struct target_struct {
+		int test_int;
+	} data = {
+		.test_int = -14,
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_INT("test_int", CYAML_FLAG_DEFAULT,
+				struct target_struct, test_int),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer;
+	size_t len;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%*s\n\n"
+				"GOT (%zu):\n\n%*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Run the YAML saving unit tests.
  *
  * \param[in]  rc         The ttest report context.
@@ -124,6 +180,7 @@ bool save_tests(
 	ttest_heading(rc, "Save single entry mapping tests: simple types");
 
 	pass &= test_save_mapping_entry_int_pos(rc, &config);
+	pass &= test_save_mapping_entry_int_neg(rc, &config);
 
 	return pass;
 }
