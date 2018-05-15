@@ -1098,6 +1098,13 @@ static cyaml_err_t cyaml__save(
 
 	assert(ctx.stack_idx == 0);
 
+	if (!yaml_emitter_flush(emitter)) {
+		cyaml__log(config, CYAML_LOG_ERROR,
+				"LibYAML: Failed to flush emitter: %s\n",
+				emitter->problem);
+		err = CYAML_ERR_LIBYAML_EMITTER;
+	}
+
 out:
 	if (err != CYAML_OK) {
 		cyaml__backtrace(&ctx);
