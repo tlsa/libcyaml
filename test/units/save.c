@@ -89,15 +89,12 @@ static bool test_save_mapping_entry_int_pos(
 		return ttest_fail(&tc, cyaml_strerror(err));
 	}
 
-	if (len != YAML_LEN(ref)) {
-		return ttest_fail(&tc, "Bad length: Expected %zu, got: %zu",
-				YAML_LEN(ref), len);
-	}
-
-	if (memcmp(ref, buffer, len) != 0) {
-		return ttest_fail(&tc, "Bad data: "
-				"EXPECTED:\n\n%*s\n\nGOT:\n\n%*s\n",
-				len, ref, len, buffer);
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%*s\n\n"
+				"GOT (%zu):\n\n%*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
 	}
 
 	return ttest_pass(&tc);
