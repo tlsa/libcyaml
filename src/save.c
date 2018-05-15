@@ -592,12 +592,8 @@ static cyaml_err_t cyaml__write_enum(
 	if (err == CYAML_OK) {
 		const char * const *strings = schema->enumeration.strings;
 		const char *string = NULL;
-		while (strings != NULL && *strings != NULL) {
-			if (number == (strings - schema->enumeration.strings)) {
-				string = *strings;
-				break;
-			}
-			strings++;
+		if (number < schema->enumeration.count) {
+			string = strings[number];
 		}
 		if (string == NULL) {
 			if (schema->flags & CYAML_FLAG_STRICT) {
