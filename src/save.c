@@ -741,7 +741,12 @@ static cyaml_err_t cyaml__emit_flags_sequence(
 		if (schema->flags & CYAML_FLAG_STRICT) {
 			return CYAML_ERR_INVALID_VALUE;
 		} else {
-			return cyaml__write_int(ctx, schema, data);
+			const char *string = cyaml__get_uint(number);
+			err = cyaml__emit_scalar(ctx, schema, string,
+					YAML_STR_TAG);
+			if (err != CYAML_OK) {
+				return err;
+			}
 		}
 	}
 
