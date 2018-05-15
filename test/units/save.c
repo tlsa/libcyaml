@@ -819,6 +819,143 @@ static bool test_save_mapping_entry_mapping_ptr(
 }
 
 /**
+ * Test saving a strict flags value.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_mapping_entry_flags_strict(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	enum test_f {
+		NONE   = 0,
+		FIRST  = (1 << 0),
+		SECOND = (1 << 1),
+		THIRD  = (1 << 2),
+		FOURTH = (1 << 3),
+	};
+	static const char * const strings[] = {
+		"first", "second", "third", "fourth"
+	};
+	static const unsigned char ref[] =
+		"---\n"
+		"test_flags:\n"
+		"- first\n"
+		"- fourth\n"
+		"...\n";
+	static const struct target_struct {
+		enum test_f test_flags;
+	} data = {
+		.test_flags = FIRST | FOURTH,
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_FLAGS("test_flags", CYAML_FLAG_STRICT,
+				struct target_struct, test_flags, strings, 4),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer;
+	size_t len;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%*s\n\n"
+				"GOT (%zu):\n\n%*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving a numerical flags value.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_mapping_entry_flags_number(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	enum test_f {
+		NONE   = 0,
+		FIRST  = (1 << 0),
+		SECOND = (1 << 1),
+		THIRD  = (1 << 2),
+		FOURTH = (1 << 3),
+	};
+	static const char *strings[] = {
+		"first", "second", "third", "fourth"
+	};
+	static const unsigned char ref[] =
+		"---\n"
+		"test_flags:\n"
+		"- first\n"
+		"- fourth\n"
+		"- 1024\n"
+		"...\n";
+	static const struct target_struct {
+		enum test_f test_flags;
+	} data = {
+		.test_flags = FIRST | FOURTH | 1024,
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_FLAGS("test_flags", CYAML_FLAG_DEFAULT,
+				struct target_struct, test_flags, strings, 4),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer;
+	size_t len;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%*s\n\n"
+				"GOT (%zu):\n\n%*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Run the YAML saving unit tests.
  *
  * \param[in]  rc         The ttest report context.
@@ -857,6 +994,8 @@ bool save_tests(
 
 	pass &= test_save_mapping_entry_mapping(rc, &config);
 	pass &= test_save_mapping_entry_mapping_ptr(rc, &config);
+	pass &= test_save_mapping_entry_flags_strict(rc, &config);
+	pass &= test_save_mapping_entry_flags_number(rc, &config);
 
 	return pass;
 }
