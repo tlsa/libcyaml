@@ -698,15 +698,13 @@ static cyaml_err_t cyaml__write_scalar_value(
  *
  * \param[in]  ctx     The CYAML saving context.
  * \param[in]  schema  The schema for the value to be read.
- * \param[in]  data    The place to read the value from in the client data.
  * \param[in]  number  The value of the flag data.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
 static cyaml_err_t cyaml__emit_flags_sequence(
 		const cyaml_ctx_t *ctx,
 		const cyaml_schema_value_t *schema,
-		const cyaml_data_t *data,
-		int64_t number)
+		uint64_t number)
 {
 	const char * const *strings = schema->enumeration.strings;
 	yaml_event_t event;
@@ -722,11 +720,9 @@ static cyaml_err_t cyaml__emit_flags_sequence(
 		return err;
 	}
 
-	while (strings != NULL && *strings != NULL) {
+	for (uint32_t i = 0; i < schema->enumeration.count; i++) {
 		cyaml_err_t err;
-		int64_t flag;
-
-		flag = ((int64_t)1) << (strings - schema->enumeration.strings);
+		uint64_t flag = ((int64_t)1) << i;
 		if (number & flag) {
 			err = cyaml__emit_scalar(ctx, schema, *strings,
 					YAML_STR_TAG);
@@ -771,12 +767,12 @@ static cyaml_err_t cyaml__write_flags_value(
 		const cyaml_schema_value_t *schema,
 		const cyaml_data_t *data)
 {
-	int64_t number;
+	uint64_t number;
 	cyaml_err_t err;
 
 	number = cyaml_data_read(schema->data_size, data, &err);
 	if (err == CYAML_OK) {
-		err = cyaml__emit_flags_sequence(ctx, schema, data, number);
+		err = cyaml__emit_flags_sequence(ctx, schema, number);
 	}
 
 	return err;
