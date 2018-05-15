@@ -677,6 +677,148 @@ static bool test_save_mapping_entry_enum_number(
 }
 
 /**
+ * Test saving a mapping.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_mapping_entry_mapping(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct value_s {
+		short a;
+		long b;
+	};
+	static const unsigned char ref[] =
+		"---\n"
+		"mapping:\n"
+		"  a: 123\n"
+		"  b: 9999\n"
+		"...\n";
+	static const struct target_struct {
+		struct value_s test_mapping;
+	} data = {
+		.test_mapping = {
+			.a = 123,
+			.b = 9999
+		},
+	};
+	static const struct cyaml_schema_field test_mapping_schema[] = {
+		CYAML_FIELD_INT("a", CYAML_FLAG_DEFAULT, struct value_s, a),
+		CYAML_FIELD_INT("b", CYAML_FLAG_DEFAULT, struct value_s, b),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_MAPPING("mapping", CYAML_FLAG_DEFAULT,
+				struct target_struct, test_mapping,
+				test_mapping_schema),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer;
+	size_t len;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%*s\n\n"
+				"GOT (%zu):\n\n%*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving a mapping pointer.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_mapping_entry_mapping_ptr(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct value_s {
+		short a;
+		long b;
+	} value = {
+		.a = 123,
+		.b = 9999
+	};
+	static const unsigned char ref[] =
+		"---\n"
+		"mapping:\n"
+		"  a: 123\n"
+		"  b: 9999\n"
+		"...\n";
+	const struct target_struct {
+		struct value_s *test_mapping;
+	} data = {
+		.test_mapping = &value,
+	};
+	static const struct cyaml_schema_field test_mapping_schema[] = {
+		CYAML_FIELD_INT("a", CYAML_FLAG_DEFAULT, struct value_s, a),
+		CYAML_FIELD_INT("b", CYAML_FLAG_DEFAULT, struct value_s, b),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_MAPPING_PTR("mapping", CYAML_FLAG_POINTER,
+				struct target_struct, test_mapping,
+				test_mapping_schema),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer;
+	size_t len;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%*s\n\n"
+				"GOT (%zu):\n\n%*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Run the YAML saving unit tests.
  *
  * \param[in]  rc         The ttest report context.
@@ -710,6 +852,11 @@ bool save_tests(
 	pass &= test_save_mapping_entry_string_ptr(rc, &config);
 	pass &= test_save_mapping_entry_enum_strict(rc, &config);
 	pass &= test_save_mapping_entry_enum_number(rc, &config);
+
+	ttest_heading(rc, "Save single entry mapping tests: complex types");
+
+	pass &= test_save_mapping_entry_mapping(rc, &config);
+	pass &= test_save_mapping_entry_mapping_ptr(rc, &config);
 
 	return pass;
 }
