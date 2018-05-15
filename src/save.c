@@ -475,6 +475,27 @@ static const char * cyaml__get_double(
 }
 
 /**
+ * Pad a signed value that's smaller than 64-bit to an int64_t.
+ *
+ * This sets all the bits in the padded region.
+ *
+ * \param[in]  raw   Contains a signed value of size bytes.
+ * \param[in]  size  Number of bytes used in raw.
+ * \return Value padded to 64-bit signed.
+ */
+static int64_t cyaml_sign_pad(uint64_t raw, size_t size)
+{
+	uint64_t sign_bit = 1 << (size * CHAR_BIT - 1);
+	unsigned padding = (sizeof(raw) - size) * CHAR_BIT;
+
+	if ((sign_bit & raw) && (padding != 0)) {
+		raw |= (((uint64_t)1 << padding) - 1) << (size * CHAR_BIT);
+	}
+
+	return (int64_t)raw;
+}
+
+/**
  * Read a value of type \ref CYAML_INT.
  *
  * \param[in]  ctx     The CYAML saving context.
@@ -487,10 +508,12 @@ static cyaml_err_t cyaml__write_int(
 		const cyaml_schema_value_t *schema,
 		const uint8_t *data)
 {
-	int64_t number;
 	cyaml_err_t err;
+	int64_t number;
 
-	number = cyaml_data_read(schema->data_size, data, &err);
+	number = cyaml_sign_pad(
+			cyaml_data_read(schema->data_size, data, &err),
+			schema->data_size);
 	if (err == CYAML_OK) {
 		const char *string = cyaml__get_int(number);
 		err = cyaml__emit_scalar(ctx, schema, string, YAML_INT_TAG);
