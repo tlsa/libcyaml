@@ -969,17 +969,9 @@ static cyaml_err_t cyaml__write_sequence(
 	if (ctx->state->sequence.entry < ctx->state->sequence.count) {
 		const cyaml_schema_value_t *schema = ctx->state->schema;
 		const cyaml_schema_value_t *value = schema->sequence.schema;
-		size_t offset = value->data_size * ctx->state->sequence.entry;
 		unsigned seq_count = 0;
-
-		cyaml__log(ctx->config, CYAML_LOG_INFO,
-				"Sequence entry %u of %u\n",
-				ctx->state->sequence.entry + 1,
-				ctx->state->sequence.count);
-
-		/* Advance the entry before writing value, since writing the
-		 * value can put a new state entry on the stack. */
-		ctx->state->sequence.entry++;
+		size_t data_size;
+		size_t offset;
 
 		if (value->type == CYAML_SEQUENCE) {
 			return CYAML_ERR_SEQUENCE_IN_SEQUENCE;
@@ -990,6 +982,25 @@ static cyaml_err_t cyaml__write_sequence(
 			}
 			seq_count = value->sequence.max;
 		}
+
+		if (value->flags & CYAML_FLAG_POINTER) {
+			data_size = sizeof(NULL);
+		} else {
+			data_size = value->data_size;
+			if (value->type == CYAML_SEQUENCE_FIXED) {
+				data_size *= seq_count;
+			}
+		}
+		offset = data_size * ctx->state->sequence.entry;
+
+		cyaml__log(ctx->config, CYAML_LOG_INFO,
+				"Sequence entry %u of %u\n",
+				ctx->state->sequence.entry + 1,
+				ctx->state->sequence.count);
+
+		/* Advance the entry before writing value, since writing the
+		 * value can put a new state entry on the stack. */
+		ctx->state->sequence.entry++;
 
 		err = cyaml__write_value(ctx, value,
 				ctx->state->data + offset,
