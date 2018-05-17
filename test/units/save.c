@@ -956,6 +956,963 @@ static bool test_save_mapping_entry_flags_number(
 }
 
 /**
+ * Test saving a sequence of integers.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_mapping_entry_sequence_int(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char ref[] =
+		"---\n"
+		"sequence:\n"
+		"- 1\n"
+		"- 1\n"
+		"- 2\n"
+		"- 3\n"
+		"- 5\n"
+		"- 8\n"
+		"...\n";
+	static const struct target_struct {
+		int seq[6];
+		uint32_t seq_count;
+	} data = {
+		.seq = { 1, 1, 2, 3, 5, 8 },
+		.seq_count = CYAML_ARRAY_LEN(data.seq),
+	};
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, *(data.seq)),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_SEQUENCE("sequence", CYAML_FLAG_DEFAULT,
+				struct target_struct, seq, &entry_schema,
+				0, CYAML_ARRAY_LEN(ref)),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer;
+	size_t len;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%*s\n\n"
+				"GOT (%zu):\n\n%*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving a sequence of unsigned integers.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_mapping_entry_sequence_uint(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char ref[] =
+		"---\n"
+		"sequence:\n"
+		"- 1\n"
+		"- 1\n"
+		"- 2\n"
+		"- 3\n"
+		"- 5\n"
+		"- 8\n"
+		"...\n";
+	static const struct target_struct {
+		unsigned seq[6];
+		uint32_t seq_count;
+	} data = {
+		.seq = { 1, 1, 2, 3, 5, 8 },
+		.seq_count = CYAML_ARRAY_LEN(data.seq),
+	};
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_UINT(CYAML_FLAG_DEFAULT, *(data.seq)),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_SEQUENCE("sequence", CYAML_FLAG_DEFAULT,
+				struct target_struct, seq, &entry_schema,
+				0, CYAML_ARRAY_LEN(ref)),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer;
+	size_t len;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%*s\n\n"
+				"GOT (%zu):\n\n%*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving a sequence of enums.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_mapping_entry_sequence_enum(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	enum test_enum {
+		TEST_ENUM_FIRST,
+		TEST_ENUM_SECOND,
+		TEST_ENUM_THIRD,
+		TEST_ENUM__COUNT,
+	};
+	static const char * const strings[TEST_ENUM__COUNT] = {
+		[TEST_ENUM_FIRST]  = "first",
+		[TEST_ENUM_SECOND] = "second",
+		[TEST_ENUM_THIRD]  = "third",
+	};
+	static const unsigned char ref[] =
+		"---\n"
+		"sequence:\n"
+		"- first\n"
+		"- second\n"
+		"- third\n"
+		"...\n";
+	static const struct target_struct {
+		enum test_enum seq[3];
+		uint32_t seq_count;
+	} data = {
+		.seq = { TEST_ENUM_FIRST, TEST_ENUM_SECOND, TEST_ENUM_THIRD },
+		.seq_count = CYAML_ARRAY_LEN(data.seq),
+	};
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_ENUM(CYAML_FLAG_DEFAULT, *(data.seq),
+				strings, TEST_ENUM__COUNT),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_SEQUENCE("sequence", CYAML_FLAG_DEFAULT,
+				struct target_struct, seq, &entry_schema,
+				0, CYAML_ARRAY_LEN(ref)),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer;
+	size_t len;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%*s\n\n"
+				"GOT (%zu):\n\n%*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving a sequence of boolean values.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_mapping_entry_sequence_bool(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char ref[] =
+		"---\n"
+		"sequence:\n"
+		"- true\n"
+		"- false\n"
+		"- true\n"
+		"- false\n"
+		"- true\n"
+		"- false\n"
+		"- true\n"
+		"- false\n"
+		"...\n";
+	static const struct target_struct {
+		bool seq[8];
+		uint32_t seq_count;
+	} data = {
+		.seq = { true, false, true, false, true, false, true, false },
+		.seq_count = CYAML_ARRAY_LEN(data.seq),
+	};
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_BOOL(CYAML_FLAG_DEFAULT, *(data.seq)),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_SEQUENCE("sequence", CYAML_FLAG_DEFAULT,
+				struct target_struct, seq, &entry_schema,
+				0, CYAML_ARRAY_LEN(ref)),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer;
+	size_t len;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%*s\n\n"
+				"GOT (%zu):\n\n%*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving a sequence of flags.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_mapping_entry_sequence_flags(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	enum test_flags {
+		TEST_FLAGS_NONE   = 0,
+		TEST_FLAGS_FIRST  = (1 << 0),
+		TEST_FLAGS_SECOND = (1 << 1),
+		TEST_FLAGS_THIRD  = (1 << 2),
+		TEST_FLAGS_FOURTH = (1 << 3),
+		TEST_FLAGS_FIFTH  = (1 << 4),
+		TEST_FLAGS_SIXTH  = (1 << 5),
+	};
+	#define TEST_FLAGS__COUNT 6
+	static const char * const strings[TEST_FLAGS__COUNT] = {
+		"first",
+		"second",
+		"third",
+		"fourth",
+		"fifth",
+		"sixth",
+	};
+	static const unsigned char ref[] =
+		"---\n"
+		"sequence:\n"
+		"- - second\n"
+		"  - fifth\n"
+		"  - 1024\n"
+		"- - first\n"
+		"- - fourth\n"
+		"  - sixth\n"
+		"...\n";
+	static const struct target_struct {
+		enum test_flags seq[3];
+		uint32_t seq_count;
+	} data = {
+		.seq = {
+			TEST_FLAGS_SECOND | TEST_FLAGS_FIFTH | 1024,
+			TEST_FLAGS_FIRST,
+			TEST_FLAGS_FOURTH | TEST_FLAGS_SIXTH },
+		.seq_count = CYAML_ARRAY_LEN(data.seq),
+	};
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_FLAGS(CYAML_FLAG_DEFAULT, *(data.seq),
+				strings, TEST_FLAGS__COUNT),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_SEQUENCE("sequence", CYAML_FLAG_DEFAULT,
+				struct target_struct, seq, &entry_schema,
+				0, CYAML_ARRAY_LEN(ref)),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer;
+	size_t len;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%*s\n\n"
+				"GOT (%zu):\n\n%*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving a sequence of strings.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_mapping_entry_sequence_string(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char ref[] =
+		"---\n"
+		"sequence:\n"
+		"- This\n"
+		"- is\n"
+		"- merely\n"
+		"- a\n"
+		"- test\n"
+		"...\n";
+	static const struct target_struct {
+		char seq[5][7];
+		uint32_t seq_count;
+	} data = {
+		.seq = {
+			"This",
+			"is",
+			"merely",
+			"a",
+			"test", },
+		.seq_count = CYAML_ARRAY_LEN(data.seq),
+	};
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_STRING(CYAML_FLAG_DEFAULT, *(data.seq), 0, 6),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_SEQUENCE("sequence", CYAML_FLAG_DEFAULT,
+				struct target_struct, seq, &entry_schema,
+				0, CYAML_ARRAY_LEN(ref)),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer;
+	size_t len;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%*s\n\n"
+				"GOT (%zu):\n\n%*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving a sequence of strings.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_mapping_entry_sequence_string_ptr(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char ref[] =
+		"---\n"
+		"sequence:\n"
+		"- This\n"
+		"- is\n"
+		"- merely\n"
+		"- a\n"
+		"- test\n"
+		"...\n";
+	static const struct target_struct {
+		char *seq[5];
+		uint32_t seq_count;
+	} data = {
+		.seq = {
+			"This",
+			"is",
+			"merely",
+			"a",
+			"test", },
+		.seq_count = CYAML_ARRAY_LEN(data.seq),
+	};
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_STRING(CYAML_FLAG_POINTER, *(data.seq),
+				0, CYAML_UNLIMITED),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_SEQUENCE("sequence", CYAML_FLAG_DEFAULT,
+				struct target_struct, seq, &entry_schema,
+				0, CYAML_ARRAY_LEN(ref)),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer;
+	size_t len;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%*s\n\n"
+				"GOT (%zu):\n\n%*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving a sequence of mappings.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_mapping_entry_sequence_mapping(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct value_s {
+		short a;
+		long b;
+	};
+	static const unsigned char ref[] =
+		"---\n"
+		"sequence:\n"
+		"- a: 123\n"
+		"  b: 9999\n"
+		"- a: 4000\n"
+		"  b: 62000\n"
+		"- a: 1\n"
+		"  b: 765\n"
+		"...\n";
+	static const struct target_struct {
+		struct value_s seq[3];
+		uint32_t seq_count;
+	} data = {
+		.seq = {
+			[0] = { .a = 123,  .b = 9999  },
+			[1] = { .a = 4000, .b = 62000 },
+			[2] = { .a = 1,    .b = 765   }, },
+		.seq_count = CYAML_ARRAY_LEN(data.seq),
+	};
+	static const struct cyaml_schema_field test_mapping_schema[] = {
+		CYAML_FIELD_INT("a", CYAML_FLAG_DEFAULT, struct value_s, a),
+		CYAML_FIELD_INT("b", CYAML_FLAG_DEFAULT, struct value_s, b),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT,
+				struct value_s, test_mapping_schema),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_SEQUENCE("sequence", CYAML_FLAG_DEFAULT,
+				struct target_struct, seq, &entry_schema,
+				0, CYAML_ARRAY_LEN(ref)),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer;
+	size_t len;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%*s\n\n"
+				"GOT (%zu):\n\n%*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving a sequence of mappings pointers.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_mapping_entry_sequence_mapping_ptr(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const struct value_s {
+		short a;
+		long b;
+	} v[3] = {
+		{ .a =  123, .b =  9999, },
+		{ .a = 4000, .b = 62000, },
+		{ .a =    1, .b =   765, },
+	};
+	static const unsigned char ref[] =
+		"---\n"
+		"sequence:\n"
+		"- a: 123\n"
+		"  b: 9999\n"
+		"- a: 4000\n"
+		"  b: 62000\n"
+		"- a: 1\n"
+		"  b: 765\n"
+		"...\n";
+	static const struct target_struct {
+		const struct value_s *seq[3];
+		uint32_t seq_count;
+	} data = {
+		.seq = {
+			[0] = &v[0],
+			[1] = &v[1],
+			[2] = &v[2], },
+		.seq_count = CYAML_ARRAY_LEN(data.seq),
+	};
+	static const struct cyaml_schema_field test_mapping_schema[] = {
+		CYAML_FIELD_INT("a", CYAML_FLAG_DEFAULT, struct value_s, a),
+		CYAML_FIELD_INT("b", CYAML_FLAG_DEFAULT, struct value_s, b),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct value_s, test_mapping_schema),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_SEQUENCE("sequence", CYAML_FLAG_DEFAULT,
+				struct target_struct, seq, &entry_schema,
+				0, CYAML_ARRAY_LEN(ref)),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer;
+	size_t len;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%*s\n\n"
+				"GOT (%zu):\n\n%*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving a sequence of fixed-length sequences.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_mapping_entry_sequence_sequence_fixed_int(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char ref[] =
+		"---\n"
+		"sequence:\n"
+		"- - 1\n"
+		"  - 2\n"
+		"  - 3\n"
+		"- - 4\n"
+		"  - 5\n"
+		"  - 6\n"
+		"- - 7\n"
+		"  - 8\n"
+		"  - 9\n"
+		"- - 10\n"
+		"  - 11\n"
+		"  - 12\n"
+		"...\n";
+	static const struct target_struct {
+		int seq[4][3];
+		uint32_t seq_count;
+	} data = {
+		.seq = {
+			{  1,  2,  3 },
+			{  4,  5,  6 },
+			{  7,  8,  9 },
+			{ 10, 11, 12 },
+		},
+		.seq_count = CYAML_ARRAY_LEN(data.seq),
+	};
+	static const struct cyaml_schema_value entry_schema_int = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, **(data.seq)),
+	};
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_SEQUENCE_FIXED(
+				CYAML_FLAG_DEFAULT, **(data.seq),
+				&entry_schema_int, CYAML_ARRAY_LEN(*data.seq))
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_SEQUENCE("sequence", CYAML_FLAG_DEFAULT,
+				struct target_struct, seq, &entry_schema,
+				0, CYAML_ARRAY_LEN(ref)),
+		CYAML_FIELD_END,
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer;
+	size_t len;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%*s\n\n"
+				"GOT (%zu):\n\n%*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving a sequence of fixed-length sequences pointers.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_mapping_entry_sequence_sequence_fixed_ptr_int(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const int v[4][3] = {
+		{  1,  2,  3 },
+		{  4,  5,  6 },
+		{  7,  8,  9 },
+		{ 10, 11, 12 },
+	};
+	static const unsigned char ref[] =
+		"---\n"
+		"sequence:\n"
+		"- - 1\n"
+		"  - 2\n"
+		"  - 3\n"
+		"- - 4\n"
+		"  - 5\n"
+		"  - 6\n"
+		"- - 7\n"
+		"  - 8\n"
+		"  - 9\n"
+		"- - 10\n"
+		"  - 11\n"
+		"  - 12\n"
+		"...\n";
+	static const struct target_struct {
+		const int *seq[4];
+		uint32_t seq_count;
+	} data = {
+		.seq = {
+			v[0],
+			v[1],
+			v[2],
+			v[3],
+		},
+		.seq_count = CYAML_ARRAY_LEN(data.seq),
+	};
+	static const struct cyaml_schema_value entry_schema_int = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, **(data.seq)),
+	};
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_SEQUENCE_FIXED(
+				CYAML_FLAG_POINTER, **(data.seq),
+				&entry_schema_int, CYAML_ARRAY_LEN(*v))
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_SEQUENCE("sequence", CYAML_FLAG_DEFAULT,
+				struct target_struct, seq, &entry_schema,
+				0, CYAML_ARRAY_LEN(ref)),
+		CYAML_FIELD_END,
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer;
+	size_t len;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%*s\n\n"
+				"GOT (%zu):\n\n%*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving a flattened sequence of fixed-length sequences.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_mapping_entry_sequence_sequence_fixed_flat_int(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char ref[] =
+		"---\n"
+		"sequence:\n"
+		"- - 1\n"
+		"  - 2\n"
+		"  - 3\n"
+		"- - 4\n"
+		"  - 5\n"
+		"  - 6\n"
+		"- - 7\n"
+		"  - 8\n"
+		"  - 9\n"
+		"- - 10\n"
+		"  - 11\n"
+		"  - 12\n"
+		"...\n";
+	static const struct target_struct {
+		int seq[12];
+		uint32_t seq_count;
+	} data = {
+		.seq = {
+			 1,  2,  3,
+			 4,  5,  6,
+			 7,  8,  9,
+			10, 11, 12,
+		},
+		/* Note: count is count of entries of the outer sequence
+		 * entries, so, 4, not 12. */
+		.seq_count = CYAML_ARRAY_LEN(data.seq) / 3,
+	};
+	static const struct cyaml_schema_value entry_schema_int = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, int),
+	};
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_SEQUENCE_FIXED(
+				CYAML_FLAG_DEFAULT, int,
+				&entry_schema_int, 3),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		{
+			.key = "sequence",
+			.value = {
+				.type = CYAML_SEQUENCE,
+				.flags = CYAML_FLAG_DEFAULT,
+				.data_size = sizeof(int[3]),
+				.sequence = {
+					.schema = &entry_schema,
+					.min = 0,
+					.max = CYAML_UNLIMITED,
+				}
+			},
+			.data_offset = offsetof(struct target_struct, seq),
+			.count_size = sizeof(data.seq_count),
+			.count_offset = offsetof(struct target_struct, seq_count),
+		},
+		CYAML_FIELD_END,
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer;
+	size_t len;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%*s\n\n"
+				"GOT (%zu):\n\n%*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Run the YAML saving unit tests.
  *
  * \param[in]  rc         The ttest report context.
@@ -996,6 +1953,21 @@ bool save_tests(
 	pass &= test_save_mapping_entry_mapping_ptr(rc, &config);
 	pass &= test_save_mapping_entry_flags_strict(rc, &config);
 	pass &= test_save_mapping_entry_flags_number(rc, &config);
+
+	ttest_heading(rc, "Save single entry mapping tests: sequences");
+
+	pass &= test_save_mapping_entry_sequence_int(rc, &config);
+	pass &= test_save_mapping_entry_sequence_uint(rc, &config);
+	pass &= test_save_mapping_entry_sequence_enum(rc, &config);
+	pass &= test_save_mapping_entry_sequence_bool(rc, &config);
+	pass &= test_save_mapping_entry_sequence_flags(rc, &config);
+	pass &= test_save_mapping_entry_sequence_string(rc, &config);
+	pass &= test_save_mapping_entry_sequence_mapping(rc, &config);
+	pass &= test_save_mapping_entry_sequence_string_ptr(rc, &config);
+	pass &= test_save_mapping_entry_sequence_mapping_ptr(rc, &config);
+	pass &= test_save_mapping_entry_sequence_sequence_fixed_int(rc, &config);
+	pass &= test_save_mapping_entry_sequence_sequence_fixed_ptr_int(rc, &config);
+	pass &= test_save_mapping_entry_sequence_sequence_fixed_flat_int(rc, &config);
 
 	return pass;
 }
