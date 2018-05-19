@@ -254,6 +254,7 @@ static cyaml_err_t cyaml__stack_push(
  *
  * \param[in]  ctx     The CYAML saving context.
  * \param[in]  state   The CYAML load state we're popping from the stack.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
 static cyaml_err_t cyaml__stack_pop_write_event(
 		const cyaml_ctx_t *ctx,
@@ -292,8 +293,9 @@ static cyaml_err_t cyaml__stack_pop_write_event(
  *
  * \param[in]  ctx     The CYAML saving context.
  * \param[in]  emit    Whether end events should be emitted.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
-static void cyaml__stack_pop(
+static cyaml_err_t cyaml__stack_pop(
 		cyaml_ctx_t *ctx,
 		bool emit)
 {
@@ -302,7 +304,11 @@ static void cyaml__stack_pop(
 	assert(idx != 0);
 
 	if (emit) {
-		cyaml__stack_pop_write_event(ctx, ctx->state->state);
+		cyaml_err_t err;
+		err = cyaml__stack_pop_write_event(ctx, ctx->state->state);
+		if (err != CYAML_OK) {
+			return err;
+		}
 	}
 
 	idx--;
@@ -312,6 +318,8 @@ static void cyaml__stack_pop(
 
 	ctx->state = (idx == 0) ? NULL : &ctx->stack[idx - 1];
 	ctx->stack_idx = idx;
+
+	return CYAML_OK;
 }
 
 /**
@@ -862,8 +870,7 @@ static cyaml_err_t cyaml__write_stream(
 	cyaml_err_t err;
 
 	if (ctx->state->done) {
-		err = CYAML_OK;
-		cyaml__stack_pop(ctx, true);
+		err = cyaml__stack_pop(ctx, true);
 	} else {
 		ctx->stack[CYAML_STATE_IN_STREAM].done = true;
 		err = cyaml__stack_push(ctx, CYAML_STATE_IN_DOC,
@@ -884,8 +891,7 @@ static cyaml_err_t cyaml__write_doc(
 	cyaml_err_t err;
 
 	if (ctx->state->done) {
-		err = CYAML_OK;
-		cyaml__stack_pop(ctx, true);
+		err = cyaml__stack_pop(ctx, true);
 	} else {
 		unsigned seq_count = ctx->seq_count;
 		if (ctx->state->schema->type == CYAML_SEQUENCE_FIXED) {
@@ -949,7 +955,7 @@ static cyaml_err_t cyaml__write_mapping(
 				ctx->state->data + field->data_offset,
 				seq_count);
 	} else {
-		cyaml__stack_pop(ctx, true);
+		err = cyaml__stack_pop(ctx, true);
 	}
 
 	return err;
@@ -1006,7 +1012,7 @@ static cyaml_err_t cyaml__write_sequence(
 				ctx->state->data + offset,
 				seq_count);
 	} else {
-		cyaml__stack_pop(ctx, true);
+		err = cyaml__stack_pop(ctx, true);
 	}
 
 	return err;
