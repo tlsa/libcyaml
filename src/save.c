@@ -1179,9 +1179,10 @@ cyaml_err_t cyaml_save_file(
 typedef struct cyaml_buffer_ctx {
 	/** Client's CYAML configuration structure. */
 	const cyaml_config_t *config;
-	size_t len;  /**< Current length of `data` allocation. */
-	size_t used; /**< Current number of bytes used in `data`. */
-	char *data;  /**< Current allocation for serialised output. */
+	size_t len;      /**< Current length of `data` allocation. */
+	size_t used;     /**< Current number of bytes used in `data`. */
+	char *data;      /**< Current allocation for serialised output. */
+	cyaml_err_t err; /**< Any error encounted in buffer handling. */
 } cyaml_buffer_ctx_t;
 
 /**
@@ -1217,6 +1218,7 @@ static int cyaml__buffer_handler(
 				buffer_ctx->used + size,
 				false);
 		if (temp == NULL) {
+			buffer_ctx->err = CYAML_ERR_OOM;
 			return RETURN_FAILURE;
 		}
 		buffer_ctx->data = temp;
@@ -1242,6 +1244,7 @@ cyaml_err_t cyaml_save_data(
 	yaml_emitter_t emitter;
 	cyaml_buffer_ctx_t buffer_ctx = {
 		.config = config,
+		.err = CYAML_OK,
 	};
 
 	/* Initialize parser */
@@ -1256,7 +1259,12 @@ cyaml_err_t cyaml_save_data(
 	err = cyaml__save(config, schema, data, seq_count, &emitter);
 	if (err != CYAML_OK) {
 		yaml_emitter_delete(&emitter);
-		cyaml__free(config, buffer_ctx.data);
+		if ((config != NULL) && (config->mem_fn != NULL)) {
+			cyaml__free(config, buffer_ctx.data);
+		}
+		if (buffer_ctx.err != CYAML_OK) {
+			err = buffer_ctx.err;
+		}
 		return err;
 	}
 
