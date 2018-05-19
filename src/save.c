@@ -144,7 +144,7 @@ static cyaml_err_t cyaml__emit_event_helper(
 	valid = yaml_emitter_emit(ctx->emitter, event);
 	if (valid == 0) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
-				"LibYAML: Failed to emit event %s\n",
+				"LibYAML: Failed to emit event: %s\n",
 				ctx->emitter->problem);
 		return CYAML_ERR_LIBYAML_EMITTER;
 	}
