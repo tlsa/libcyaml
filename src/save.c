@@ -1109,7 +1109,7 @@ static cyaml_err_t cyaml__save(
 		if (err != CYAML_OK) {
 			goto out;
 		}
-	} while (ctx.state->state > CYAML_STATE_START);
+	} while (ctx.stack_idx > 1);
 
 	cyaml__stack_pop(&ctx, true);
 
