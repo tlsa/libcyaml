@@ -626,10 +626,17 @@ static cyaml_err_t cyaml__read_int(
 {
 	long long temp;
 	char *end = NULL;
-	int64_t max = ((~(uint64_t)0) >> ((8 - schema->data_size) * 8)) / 2;
-	int64_t min = (-max) - 1;
+	int64_t max;
+	int64_t min;
 
 	CYAML_UNUSED(ctx);
+
+	if (schema->data_size == 0) {
+		return CYAML_ERR_INVALID_DATA_SIZE;
+	}
+
+	max = ((~(uint64_t)0) >> ((8 - schema->data_size) * 8)) / 2;
+	min = (-max) - 1;
 
 	errno = 0;
 	temp = strtoll(value, &end, 0);
@@ -659,9 +666,15 @@ static cyaml_err_t cyaml__read_uint(
 {
 	long long temp;
 	char *end = NULL;
-	uint64_t max = (~(uint64_t)0) >> ((8 - schema->data_size) * 8);
+	uint64_t max;
 
 	CYAML_UNUSED(ctx);
+
+	if (schema->data_size == 0) {
+		return CYAML_ERR_INVALID_DATA_SIZE;
+	}
+
+	max = (~(uint64_t)0) >> ((8 - schema->data_size) * 8);
 
 	errno = 0;
 	temp = strtoll(value, &end, 0);
