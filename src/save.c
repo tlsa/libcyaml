@@ -493,7 +493,7 @@ static const char * cyaml__get_double(
  */
 static int64_t cyaml_sign_pad(uint64_t raw, size_t size)
 {
-	uint64_t sign_bit = 1 << (size * CHAR_BIT - 1);
+	uint64_t sign_bit = ((uint64_t)1) << (size * CHAR_BIT - 1);
 	unsigned padding = (sizeof(raw) - size) * CHAR_BIT;
 
 	if ((sign_bit & raw) && (padding != 0)) {
@@ -1109,7 +1109,7 @@ static cyaml_err_t cyaml__save(
 		if (err != CYAML_OK) {
 			goto out;
 		}
-	} while (ctx.state->state > CYAML_STATE_START);
+	} while (ctx.stack_idx > 1);
 
 	cyaml__stack_pop(&ctx, true);
 
