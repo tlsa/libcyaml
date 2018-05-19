@@ -48,7 +48,9 @@ static void cyaml_cleanup(void *data)
 		seq_count = *(td->seq_count);
 	}
 
-	cyaml_free(td->config, td->schema, *(td->data), seq_count);
+	if (td->data != NULL) {
+		cyaml_free(td->config, td->schema, *(td->data), seq_count);
+	}
 }
 
 /**
