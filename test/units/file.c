@@ -41,7 +41,9 @@ static void cyaml_cleanup(void *data)
 		seq_count = *(td->seq_count);
 	}
 
-	cyaml_free(td->config, td->schema, *(td->data), seq_count);
+	if (td->data != NULL) {
+		cyaml_free(td->config, td->schema, *(td->data), seq_count);
+	}
 }
 
 /**
@@ -76,6 +78,45 @@ static bool test_file_load_bad_path(
 
 	err = cyaml_load_file("/cyaml/path/shouldn't/exist.yaml",
 			config, &top_schema, (cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_FILE_OPEN) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a non-existent file.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_file_save_bad_path(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct target_struct {
+		char *cakes;
+	} *data = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = NULL,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_file("/cyaml/path/shouldn't/exist.yaml",
+			config, &top_schema, data, 0);
 	if (err != CYAML_ERR_FILE_OPEN) {
 		return ttest_fail(&tc, cyaml_strerror(err));
 	}
@@ -147,6 +188,83 @@ static bool test_file_load_basic(
 
 	err = cyaml_load_file("test/data/basic.yaml", config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading and then saving the basic YAML file.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_file_load_save_basic(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct animal {
+		char *kind;
+		char **sounds;
+		unsigned sounds_count;
+	};
+	struct target_struct {
+		struct animal *animals;
+		unsigned animals_count;
+		char **cakes;
+		unsigned cakes_count;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_value sounds_entry_schema = {
+		CYAML_VALUE_STRING(CYAML_FLAG_POINTER, char, 0, CYAML_UNLIMITED),
+	};
+	static const struct cyaml_schema_field animal_mapping_schema[] = {
+		CYAML_FIELD_STRING_PTR("kind", CYAML_FLAG_POINTER,
+				struct animal, kind, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_SEQUENCE("sounds", CYAML_FLAG_POINTER,
+				struct animal, sounds,
+				&sounds_entry_schema, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value animals_entry_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT,
+				struct animal, animal_mapping_schema),
+	};
+	static const struct cyaml_schema_value cakes_entry_schema = {
+		CYAML_VALUE_STRING(CYAML_FLAG_POINTER, char, 0, CYAML_UNLIMITED),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_SEQUENCE("animals", CYAML_FLAG_POINTER,
+				struct target_struct, animals,
+				&animals_entry_schema, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_SEQUENCE("cakes", CYAML_FLAG_POINTER,
+				struct target_struct, cakes,
+				&cakes_entry_schema, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_file("test/data/basic.yaml", config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	err = cyaml_save_file("build/load_save.yaml", config, &top_schema,
+				data_tgt, 0);
 	if (err != CYAML_OK) {
 		return ttest_fail(&tc, cyaml_strerror(err));
 	}
@@ -250,6 +368,7 @@ bool file_tests(
 	ttest_heading(rc, "File loading tests");
 
 	pass &= test_file_load_basic(rc, &config);
+	pass &= test_file_load_save_basic(rc, &config);
 
 	/* Since we expect loads of error logging for these tests,
 	 * suppress log output if required log level is greater
@@ -260,6 +379,7 @@ bool file_tests(
 	}
 
 	pass &= test_file_load_bad_path(rc, &config);
+	pass &= test_file_save_bad_path(rc, &config);
 	pass &= test_file_load_basic_invalid(rc, &config);
 
 	return pass;

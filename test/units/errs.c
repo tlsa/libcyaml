@@ -27,6 +27,7 @@
  * Unit test context data.
  */
 typedef struct test_data {
+	char **buffer;
 	cyaml_data_t **data;
 	unsigned *seq_count;
 	const struct cyaml_config *config;
@@ -47,7 +48,13 @@ static void cyaml_cleanup(void *data)
 		seq_count = *(td->seq_count);
 	}
 
-	cyaml_free(td->config, td->schema, *(td->data), seq_count);
+	if (td->config->mem_fn != NULL && td->buffer != NULL) {
+		td->config->mem_fn(*(td->buffer), 0);
+	}
+
+	if (td->data != NULL) {
+		cyaml_free(td->config, td->schema, *(td->data), seq_count);
+	}
 }
 
 /**
@@ -95,6 +102,50 @@ static bool test_err_load_null_data(
 }
 
 /**
+ * Test saving with NULL data parameter.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_save_null_data(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct target_struct {
+		int value;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema, NULL, 0);
+	if (err != CYAML_ERR_BAD_PARAM_NULL_DATA) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (buffer != NULL || len != 0) {
+		return ttest_fail(&tc, "Buffer/len not untouched.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading with NULL config parameter.
  *
  * \param[in]  report  The test report context.
@@ -124,6 +175,53 @@ static bool test_err_load_null_config(
 
 	if (data_tgt != NULL) {
 		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving with NULL config parameter.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_save_null_config(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const struct target_struct {
+		unsigned test_uint;
+	} data = {
+		.test_uint = 555,
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("test_uint", CYAML_FLAG_DEFAULT,
+				struct target_struct, test_uint),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, NULL, &top_schema, &data, 0);
+	if (err != CYAML_ERR_BAD_PARAM_NULL_CONFIG) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (buffer != NULL || len != 0) {
+		return ttest_fail(&tc, "Buffer/len not untouched.");
 	}
 
 	return ttest_pass(&tc);
@@ -168,6 +266,56 @@ static bool test_err_load_null_mem_fn(
 }
 
 /**
+ * Test saving with NULL memory allocation function.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_save_null_mem_fn(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	cyaml_config_t cfg = *config;
+	static const struct target_struct {
+		unsigned test_uint;
+	} data = {
+		.test_uint = 555,
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("test_uint", CYAML_FLAG_DEFAULT,
+				struct target_struct, test_uint),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = &cfg,
+	};
+	cyaml_err_t err;
+
+	cfg.mem_fn = NULL;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, &cfg, &top_schema, &data, 0);
+	if (err != CYAML_ERR_BAD_CONFIG_NULL_MEMFN) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (buffer != NULL || len != 0) {
+		return ttest_fail(&tc, "Buffer/len not untouched.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading with NULL schema.
  *
  * \param[in]  report  The test report context.
@@ -203,13 +351,51 @@ static bool test_err_load_null_schema(
 }
 
 /**
+ * Test saving with NULL schema.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_save_null_schema(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const struct target_struct {
+		unsigned test_uint;
+	} data = {
+		.test_uint = 555,
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, NULL, &data, 0);
+	if (err != CYAML_ERR_BAD_PARAM_NULL_SCHEMA) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (buffer != NULL || len != 0) {
+		return ttest_fail(&tc, "Buffer/len not untouched.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading with schema with bad top level type (non-pointer).
  *
  * \param[in]  report  The test report context.
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_top_level_non_pointer(
+static bool test_err_load_schema_top_level_non_pointer(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -242,13 +428,54 @@ static bool test_err_schema_top_level_non_pointer(
 }
 
 /**
+ * Test saving with schema with bad top level type (non-pointer).
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_save_schema_top_level_non_pointer(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const struct target_struct {
+		unsigned test_uint;
+	} data = {
+		.test_uint = 555,
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, int)
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema, &data, 0);
+	if (err != CYAML_ERR_TOP_LEVEL_NON_PTR) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (buffer != NULL || len != 0) {
+		return ttest_fail(&tc, "Buffer/len not untouched.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading with schema with bad top level sequence and no seq_count.
  *
  * \param[in]  report  The test report context.
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_top_level_sequence_no_count(
+static bool test_err_load_schema_top_level_sequence_no_count(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -294,7 +521,7 @@ static bool test_err_schema_top_level_sequence_no_count(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_top_level_not_sequence_count(
+static bool test_err_load_schema_top_level_not_sequence_count(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -329,13 +556,54 @@ static bool test_err_schema_top_level_not_sequence_count(
 }
 
 /**
+ * Test saving with schema with a non-sequence and non-zero sequence count.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_save_schema_top_level_not_sequence_count(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const struct target_struct {
+		unsigned *test_uint;
+	} data = {
+		.test_uint = NULL,
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_POINTER, int)
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema, &data, 42);
+	if (err != CYAML_ERR_BAD_PARAM_SEQ_COUNT) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (buffer != NULL || len != 0) {
+		return ttest_fail(&tc, "Buffer/len not untouched.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading with schema with bad type.
  *
  * \param[in]  report  The test report context.
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_bad_type(
+static bool test_err_load_schema_bad_type(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -389,7 +657,7 @@ static bool test_err_schema_bad_type(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_string_min_max(
+static bool test_err_load_schema_string_min_max(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -437,7 +705,7 @@ static bool test_err_schema_string_min_max(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_bad_data_size_1(
+static bool test_err_load_schema_bad_data_size_1(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -491,7 +759,7 @@ static bool test_err_schema_bad_data_size_1(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_bad_data_size_2(
+static bool test_err_load_schema_bad_data_size_2(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -545,7 +813,7 @@ static bool test_err_schema_bad_data_size_2(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_bad_data_size_3(
+static bool test_err_load_schema_bad_data_size_3(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -611,7 +879,7 @@ static bool test_err_schema_bad_data_size_3(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_bad_data_size_4(
+static bool test_err_load_schema_bad_data_size_4(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -680,7 +948,7 @@ static bool test_err_schema_bad_data_size_4(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_bad_data_size_5(
+static bool test_err_load_schema_bad_data_size_5(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -749,7 +1017,7 @@ static bool test_err_schema_bad_data_size_5(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_bad_data_size_6(
+static bool test_err_load_schema_bad_data_size_6(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -818,7 +1086,7 @@ static bool test_err_schema_bad_data_size_6(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_sequence_min_max(
+static bool test_err_load_schema_sequence_min_max(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -885,7 +1153,7 @@ static bool test_err_schema_sequence_min_max(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_bad_data_size_float(
+static bool test_err_load_schema_bad_data_size_float(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -939,7 +1207,7 @@ static bool test_err_schema_bad_data_size_float(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_sequence_in_sequence(
+static bool test_err_load_schema_sequence_in_sequence(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -988,7 +1256,7 @@ static bool test_err_schema_sequence_in_sequence(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_invalid_value_uint(
+static bool test_err_load_schema_invalid_value_uint(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -1035,7 +1303,7 @@ static bool test_err_schema_invalid_value_uint(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_invalid_value_flags_1(
+static bool test_err_load_schema_invalid_value_flags_1(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -1102,7 +1370,7 @@ static bool test_err_schema_invalid_value_flags_1(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_invalid_value_flags_2(
+static bool test_err_load_schema_invalid_value_flags_2(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -1169,7 +1437,7 @@ static bool test_err_schema_invalid_value_flags_2(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_invalid_value_flags_3(
+static bool test_err_load_schema_invalid_value_flags_3(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -1236,7 +1504,7 @@ static bool test_err_schema_invalid_value_flags_3(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_invalid_value_float_range(
+static bool test_err_load_schema_invalid_value_float_range(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -1283,7 +1551,7 @@ static bool test_err_schema_invalid_value_float_range(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_invalid_value_float_invalid(
+static bool test_err_load_schema_invalid_value_float_invalid(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -1330,7 +1598,7 @@ static bool test_err_schema_invalid_value_float_invalid(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_invalid_value_double_range(
+static bool test_err_load_schema_invalid_value_double_range(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -1377,7 +1645,7 @@ static bool test_err_schema_invalid_value_double_range(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_invalid_value_double_invalid(
+static bool test_err_load_schema_invalid_value_double_invalid(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -1424,7 +1692,7 @@ static bool test_err_schema_invalid_value_double_invalid(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_invalid_value_int_range_1(
+static bool test_err_load_schema_invalid_value_int_range_1(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -1471,7 +1739,7 @@ static bool test_err_schema_invalid_value_int_range_1(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_invalid_value_int_range_2(
+static bool test_err_load_schema_invalid_value_int_range_2(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -1518,7 +1786,7 @@ static bool test_err_schema_invalid_value_int_range_2(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_invalid_value_int_range_3(
+static bool test_err_load_schema_invalid_value_int_range_3(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -1565,7 +1833,7 @@ static bool test_err_schema_invalid_value_int_range_3(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_invalid_value_int_range_4(
+static bool test_err_load_schema_invalid_value_int_range_4(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -1612,7 +1880,7 @@ static bool test_err_schema_invalid_value_int_range_4(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_invalid_value_int_range_5(
+static bool test_err_load_schema_invalid_value_int_range_5(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -1659,7 +1927,7 @@ static bool test_err_schema_invalid_value_int_range_5(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_invalid_value_uint_range_1(
+static bool test_err_load_schema_invalid_value_uint_range_1(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -1706,7 +1974,7 @@ static bool test_err_schema_invalid_value_uint_range_1(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_invalid_value_uint_range_2(
+static bool test_err_load_schema_invalid_value_uint_range_2(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -1753,7 +2021,7 @@ static bool test_err_schema_invalid_value_uint_range_2(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_invalid_value_uint_range_3(
+static bool test_err_load_schema_invalid_value_uint_range_3(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -1800,7 +2068,7 @@ static bool test_err_schema_invalid_value_uint_range_3(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_invalid_value_uint_range_4(
+static bool test_err_load_schema_invalid_value_uint_range_4(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -1847,7 +2115,7 @@ static bool test_err_schema_invalid_value_uint_range_4(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_invalid_value_uint_range_5(
+static bool test_err_load_schema_invalid_value_uint_range_5(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -1894,7 +2162,7 @@ static bool test_err_schema_invalid_value_uint_range_5(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_string_min_length(
+static bool test_err_load_schema_string_min_length(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -1941,7 +2209,7 @@ static bool test_err_schema_string_min_length(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_string_max_length(
+static bool test_err_load_schema_string_max_length(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -1988,7 +2256,7 @@ static bool test_err_schema_string_max_length(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_missing_mapping_field(
+static bool test_err_load_schema_missing_mapping_field(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -2038,7 +2306,7 @@ static bool test_err_schema_missing_mapping_field(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_unknown_mapping_field(
+static bool test_err_load_schema_unknown_mapping_field(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -2085,7 +2353,7 @@ static bool test_err_schema_unknown_mapping_field(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_sequence_min_entries(
+static bool test_err_load_schema_sequence_min_entries(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -2139,7 +2407,7 @@ static bool test_err_schema_sequence_min_entries(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_sequence_max_entries(
+static bool test_err_load_schema_sequence_max_entries(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -2194,7 +2462,7 @@ static bool test_err_schema_sequence_max_entries(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_flags_mapping(
+static bool test_err_load_schema_flags_mapping(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -2263,7 +2531,7 @@ static bool test_err_schema_flags_mapping(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_enum_bad_string(
+static bool test_err_load_schema_enum_bad_string(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -2322,7 +2590,7 @@ static bool test_err_schema_enum_bad_string(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_flags_bad_string(
+static bool test_err_load_schema_flags_bad_string(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -2383,13 +2651,73 @@ static bool test_err_schema_flags_bad_string(
 }
 
 /**
+ * Test saving when schema expects strict enum, but value not allowed.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_save_schema_strict_enum_bad_value(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	enum test_enum {
+		TEST_ENUM_FIRST,
+		TEST_ENUM_SECOND,
+		TEST_ENUM_THIRD,
+		TEST_ENUM__COUNT,
+	};
+	static const char * const strings[TEST_ENUM__COUNT] = {
+		[TEST_ENUM_FIRST]  = "first",
+		[TEST_ENUM_SECOND] = "second",
+		[TEST_ENUM_THIRD]  = "third",
+	};
+	struct target_struct {
+		enum test_enum a;
+	} data = {
+		.a = 876,
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_ENUM("key", CYAML_FLAG_STRICT,
+				struct target_struct, a,
+				strings, TEST_ENUM__COUNT),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (buffer != NULL || len != 0) {
+		return ttest_fail(&tc, "Buffer/len not untouched.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading when schema expects strict enum but YAML has bad string.
  *
  * \param[in]  report  The test report context.
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_strict_enum_bad_string(
+static bool test_err_load_schema_strict_enum_bad_string(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -2442,13 +2770,79 @@ static bool test_err_schema_strict_enum_bad_string(
 }
 
 /**
+ * Test saving when schema expects strict flags, but value not allowed.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_save_schema_strict_flags_bad_value(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	enum test_flags {
+		TEST_FLAGS_NONE   = 0,
+		TEST_FLAGS_FIRST  = (1 << 0),
+		TEST_FLAGS_SECOND = (1 << 1),
+		TEST_FLAGS_THIRD  = (1 << 2),
+		TEST_FLAGS_FOURTH = (1 << 3),
+		TEST_FLAGS_FIFTH  = (1 << 4),
+		TEST_FLAGS_SIXTH  = (1 << 5),
+	};
+	static const char * const strings[] = {
+		"first",
+		"second",
+		"third",
+		"fourth",
+		"fifth",
+		"sixth",
+	};
+	struct target_struct {
+		enum test_flags a;
+	} data = {
+		.a = TEST_FLAGS_SECOND | TEST_FLAGS_FIFTH | (1 << 9),
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_FLAGS("key", CYAML_FLAG_STRICT,
+				struct target_struct, a,
+				strings, CYAML_ARRAY_LEN(strings)),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (buffer != NULL || len != 0) {
+		return ttest_fail(&tc, "Buffer/len not untouched.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading when schema expects strict flags but YAML has bad string.
  *
  * \param[in]  report  The test report context.
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_strict_flags_bad_string(
+static bool test_err_load_schema_strict_flags_bad_string(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -2515,7 +2909,7 @@ static bool test_err_schema_strict_flags_bad_string(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_expect_int_read_seq(
+static bool test_err_load_schema_expect_int_read_seq(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -2563,7 +2957,7 @@ static bool test_err_schema_expect_int_read_seq(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_expect_int_read_end_1(
+static bool test_err_load_schema_expect_int_read_end_1(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -2610,7 +3004,7 @@ static bool test_err_schema_expect_int_read_end_1(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_expect_int_read_end_2(
+static bool test_err_load_schema_expect_int_read_end_2(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -2658,7 +3052,7 @@ static bool test_err_schema_expect_int_read_end_2(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_expect_flags_read_scalar(
+static bool test_err_load_schema_expect_flags_read_scalar(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -2714,7 +3108,7 @@ static bool test_err_schema_expect_flags_read_scalar(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_expect_mapping_read_scalar(
+static bool test_err_load_schema_expect_mapping_read_scalar(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -2769,7 +3163,7 @@ static bool test_err_schema_expect_mapping_read_scalar(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_schema_expect_sequence_read_scalar(
+static bool test_err_load_schema_expect_sequence_read_scalar(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -3013,20 +3407,41 @@ static bool test_err_load_alloc_oom_2(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
+	enum test_f {
+		NONE   = 0,
+		FIRST  = (1 << 0),
+		SECOND = (1 << 1),
+		THIRD  = (1 << 2),
+		FOURTH = (1 << 3),
+	};
+	static const char * const strings[] = {
+		"first", "second", "third", "fourth"
+	};
 	cyaml_config_t cfg = *config;
 	static const unsigned char yaml[] =
 		"animals:\n"
 		"  - kind: cat\n"
 		"    sound: meow\n"
 		"    position: [ 1, 2, 1]\n"
+		"    flags:\n"
+		"      - first\n"
+		"      - second\n"
+		"      - third\n"
+		"      - fourth\n"
 		"  - kind: snake\n"
 		"    sound: hiss\n"
-		"    position: [ 3, 1, 0]\n";
+		"    position: [ 3, 1, 0]\n"
+		"    flags:\n"
+		"      - first\n"
+		"      - second\n"
+		"      - third\n"
+		"      - fourth\n";
 	struct animal_s {
 		char *kind;
 		char *sound;
 		int **position;
 		unsigned position_count;
+		enum test_f *flags;
 	};
 	struct target_struct {
 		struct animal_s **animal;
@@ -3043,6 +3458,9 @@ static bool test_err_load_alloc_oom_2(
 		CYAML_FIELD_SEQUENCE("position", CYAML_FLAG_POINTER,
 				struct animal_s, position,
 				&position_entry_schema, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_FLAGS("flags",
+				CYAML_FLAG_STRICT | CYAML_FLAG_POINTER,
+				struct animal_s, flags, strings, 4),
 		CYAML_FIELD_END
 	};
 	static const struct cyaml_schema_value animal_entry_schema = {
@@ -3115,13 +3533,282 @@ static bool test_err_load_alloc_oom_2(
 }
 
 /**
+ * Test saving, with memory allocation failure at every possible point.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_save_alloc_oom_1(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	cyaml_config_t cfg = *config;
+	static const unsigned char yaml[] =
+		"animals:\n"
+		"  - kind: cat\n"
+		"    sound: meow\n"
+		"    position: [ 1, 2, 1]\n"
+		"  - kind: snake\n"
+		"    sound: hiss\n"
+		"    position: [ 3, 1, 0]\n";
+	struct animal_s {
+		char *kind;
+		char *sound;
+		int *position;
+	};
+	struct target_struct {
+		struct animal_s **animal;
+		uint32_t animal_count;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_value position_entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, int),
+	};
+	static const struct cyaml_schema_field animal_schema[] = {
+		CYAML_FIELD_STRING_PTR("kind", CYAML_FLAG_POINTER,
+				struct animal_s, kind, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_STRING_PTR("sound", CYAML_FLAG_POINTER,
+				struct animal_s, sound, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_SEQUENCE_FIXED("position", CYAML_FLAG_POINTER,
+				struct animal_s, position,
+				&position_entry_schema, 3),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value animal_entry_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER, **(data_tgt->animal),
+				animal_schema),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_SEQUENCE("animals", CYAML_FLAG_POINTER,
+				struct target_struct, animal,
+				&animal_entry_schema, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	test_data_t td = {
+		.buffer = &buffer,
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = &cfg,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	/* First we load the YAML, so we have something to test saving. */
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	/*
+	 * First we load the YAML with the counting allocation function,
+	 * to find the number of allocations required to load the document.
+	 * This is deterministic.
+	 */
+	cfg.mem_fn = test_cyaml_mem_count_allocs;
+	test_cyaml_mem_ctx.required = 0;
+
+	err = cyaml_save_data(&buffer, &len, &cfg, &top_schema, data_tgt, 0);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (test_cyaml_mem_ctx.required == 0) {
+		return ttest_fail(&tc, "There were no allocations.");
+	}
+
+	/* Now free what was loaded. */
+	cyaml_mem(buffer, 0);
+	buffer = NULL;
+	len = 0;
+
+	/*
+	 * Now we load the document multiple times, forcing every possible
+	 * allocation to fail.
+	 */
+	cfg.mem_fn = test_cyaml_mem_fail;
+
+	for (test_cyaml_mem_ctx.fail = 0;
+			test_cyaml_mem_ctx.fail < test_cyaml_mem_ctx.required;
+			test_cyaml_mem_ctx.fail++) {
+		test_cyaml_mem_ctx.current = 0;
+		err = cyaml_save_data(&buffer, &len, &cfg, &top_schema,
+				data_tgt, 0);
+		if (err != CYAML_ERR_OOM) {
+			return ttest_fail(&tc, cyaml_strerror(err));
+		}
+
+		/* Now free what was loaded. */
+		cyaml_mem(buffer, 0);
+		buffer = NULL;
+		len = 0;
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading, with all memory allocation failure at every possible point.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_save_alloc_oom_2(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	enum test_f {
+		NONE   = 0,
+		FIRST  = (1 << 0),
+		SECOND = (1 << 1),
+		THIRD  = (1 << 2),
+		FOURTH = (1 << 3),
+	};
+	static const char * const strings[] = {
+		"first", "second", "third", "fourth"
+	};
+	cyaml_config_t cfg = *config;
+	static const unsigned char yaml[] =
+		"animals:\n"
+		"  - kind: cat\n"
+		"    sound: meow\n"
+		"    position: [ 1, 2, 1]\n"
+		"    flags:\n"
+		"      - first\n"
+		"      - second\n"
+		"      - third\n"
+		"      - fourth\n"
+		"  - kind: snake\n"
+		"    sound: hiss\n"
+		"    position: [ 3, 1, 0]\n"
+		"    flags:\n"
+		"      - first\n"
+		"      - second\n"
+		"      - third\n"
+		"      - fourth\n";
+	struct animal_s {
+		char *kind;
+		char *sound;
+		int **position;
+		unsigned position_count;
+		enum test_f *flags;
+	};
+	struct target_struct {
+		struct animal_s **animal;
+		uint32_t animal_count;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_value position_entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_POINTER, int),
+	};
+	static const struct cyaml_schema_field animal_schema[] = {
+		CYAML_FIELD_STRING_PTR("kind", CYAML_FLAG_POINTER,
+				struct animal_s, kind, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_STRING_PTR("sound", CYAML_FLAG_POINTER,
+				struct animal_s, sound, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_SEQUENCE("position", CYAML_FLAG_POINTER,
+				struct animal_s, position,
+				&position_entry_schema, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_FLAGS("flags",
+				CYAML_FLAG_STRICT | CYAML_FLAG_POINTER,
+				struct animal_s, flags, strings, 4),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value animal_entry_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER, **(data_tgt->animal),
+				animal_schema),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_SEQUENCE("animals", CYAML_FLAG_POINTER,
+				struct target_struct, animal,
+				&animal_entry_schema, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	test_data_t td = {
+		.buffer = &buffer,
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = &cfg,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	/* First we load the YAML, so we have something to test saving. */
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	/*
+	 * First we load the YAML with the counting allocation function,
+	 * to find the number of allocations required to load the document.
+	 * This is deterministic.
+	 */
+	cfg.mem_fn = test_cyaml_mem_count_allocs;
+	test_cyaml_mem_ctx.required = 0;
+
+	err = cyaml_save_data(&buffer, &len, &cfg, &top_schema, data_tgt, 0);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (test_cyaml_mem_ctx.required == 0) {
+		return ttest_fail(&tc, "There were no allocations.");
+	}
+
+	/* Now free what was loaded. */
+	cyaml_mem(buffer, 0);
+	buffer = NULL;
+	len = 0;
+
+	/*
+	 * Now we load the document multiple times, forcing every possible
+	 * allocation to fail.
+	 */
+	cfg.mem_fn = test_cyaml_mem_fail;
+
+	for (test_cyaml_mem_ctx.fail = 0;
+			test_cyaml_mem_ctx.fail < test_cyaml_mem_ctx.required;
+			test_cyaml_mem_ctx.fail++) {
+		test_cyaml_mem_ctx.current = 0;
+		err = cyaml_save_data(&buffer, &len, &cfg, &top_schema,
+				data_tgt, 0);
+		if (err != CYAML_ERR_OOM) {
+			return ttest_fail(&tc, cyaml_strerror(err));
+		}
+
+		/* Now free what was loaded. */
+		cyaml_mem(buffer, 0);
+		buffer = NULL;
+		len = 0;
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading a mapping with an aliased value.
  *
  * \param[in]  report  The test report context.
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_flag_value_alias(
+static bool test_err_load_flag_value_alias(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -3176,7 +3863,7 @@ static bool test_err_flag_value_alias(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_mapping_value_alias(
+static bool test_err_load_mapping_value_alias(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -3257,90 +3944,100 @@ bool errs_tests(
 	ttest_heading(rc, "Bad parameter tests");
 
 	pass &= test_err_load_null_data(rc, &config);
+	pass &= test_err_save_null_data(rc, &config);
 	pass &= test_err_load_null_config(rc, &config);
+	pass &= test_err_save_null_config(rc, &config);
 	pass &= test_err_load_null_mem_fn(rc, &config);
+	pass &= test_err_save_null_mem_fn(rc, &config);
 	pass &= test_err_load_null_schema(rc, &config);
-	pass &= test_err_schema_top_level_non_pointer(rc, &config);
-	pass &= test_err_schema_top_level_sequence_no_count(rc, &config);
-	pass &= test_err_schema_top_level_not_sequence_count(rc, &config);
+	pass &= test_err_save_null_schema(rc, &config);
+	pass &= test_err_load_schema_top_level_non_pointer(rc, &config);
+	pass &= test_err_save_schema_top_level_non_pointer(rc, &config);
+	pass &= test_err_load_schema_top_level_sequence_no_count(rc, &config);
+	pass &= test_err_load_schema_top_level_not_sequence_count(rc, &config);
+	pass &= test_err_save_schema_top_level_not_sequence_count(rc, &config);
 
 	ttest_heading(rc, "Bad schema tests");
 
-	pass &= test_err_schema_bad_type(rc, &config);
-	pass &= test_err_schema_string_min_max(rc, &config);
-	pass &= test_err_schema_bad_data_size_1(rc, &config);
-	pass &= test_err_schema_bad_data_size_2(rc, &config);
-	pass &= test_err_schema_bad_data_size_3(rc, &config);
-	pass &= test_err_schema_bad_data_size_4(rc, &config);
-	pass &= test_err_schema_bad_data_size_5(rc, &config);
-	pass &= test_err_schema_bad_data_size_6(rc, &config);
-	pass &= test_err_schema_sequence_min_max(rc, &config);
-	pass &= test_err_schema_bad_data_size_float(rc, &config);
-	pass &= test_err_schema_sequence_in_sequence(rc, &config);
+	pass &= test_err_load_schema_bad_type(rc, &config);
+	pass &= test_err_load_schema_string_min_max(rc, &config);
+	pass &= test_err_load_schema_bad_data_size_1(rc, &config);
+	pass &= test_err_load_schema_bad_data_size_2(rc, &config);
+	pass &= test_err_load_schema_bad_data_size_3(rc, &config);
+	pass &= test_err_load_schema_bad_data_size_4(rc, &config);
+	pass &= test_err_load_schema_bad_data_size_5(rc, &config);
+	pass &= test_err_load_schema_bad_data_size_6(rc, &config);
+	pass &= test_err_load_schema_sequence_min_max(rc, &config);
+	pass &= test_err_load_schema_bad_data_size_float(rc, &config);
+	pass &= test_err_load_schema_sequence_in_sequence(rc, &config);
 
 	ttest_heading(rc, "YAML / schema mismatch: bad values");
 
-	pass &= test_err_schema_invalid_value_uint(rc, &config);
-	pass &= test_err_schema_invalid_value_flags_1(rc, &config);
-	pass &= test_err_schema_invalid_value_flags_2(rc, &config);
-	pass &= test_err_schema_invalid_value_flags_3(rc, &config);
-	pass &= test_err_schema_invalid_value_int_range_1(rc, &config);
-	pass &= test_err_schema_invalid_value_int_range_2(rc, &config);
-	pass &= test_err_schema_invalid_value_int_range_3(rc, &config);
-	pass &= test_err_schema_invalid_value_int_range_4(rc, &config);
-	pass &= test_err_schema_invalid_value_int_range_5(rc, &config);
-	pass &= test_err_schema_invalid_value_float_range(rc, &config);
-	pass &= test_err_schema_invalid_value_double_range(rc, &config);
-	pass &= test_err_schema_invalid_value_uint_range_1(rc, &config);
-	pass &= test_err_schema_invalid_value_uint_range_2(rc, &config);
-	pass &= test_err_schema_invalid_value_uint_range_3(rc, &config);
-	pass &= test_err_schema_invalid_value_uint_range_4(rc, &config);
-	pass &= test_err_schema_invalid_value_uint_range_5(rc, &config);
-	pass &= test_err_schema_invalid_value_float_invalid(rc, &config);
-	pass &= test_err_schema_invalid_value_double_invalid(rc, &config);
+	pass &= test_err_load_schema_invalid_value_uint(rc, &config);
+	pass &= test_err_load_schema_invalid_value_flags_1(rc, &config);
+	pass &= test_err_load_schema_invalid_value_flags_2(rc, &config);
+	pass &= test_err_load_schema_invalid_value_flags_3(rc, &config);
+	pass &= test_err_load_schema_invalid_value_int_range_1(rc, &config);
+	pass &= test_err_load_schema_invalid_value_int_range_2(rc, &config);
+	pass &= test_err_load_schema_invalid_value_int_range_3(rc, &config);
+	pass &= test_err_load_schema_invalid_value_int_range_4(rc, &config);
+	pass &= test_err_load_schema_invalid_value_int_range_5(rc, &config);
+	pass &= test_err_load_schema_invalid_value_float_range(rc, &config);
+	pass &= test_err_load_schema_invalid_value_double_range(rc, &config);
+	pass &= test_err_load_schema_invalid_value_uint_range_1(rc, &config);
+	pass &= test_err_load_schema_invalid_value_uint_range_2(rc, &config);
+	pass &= test_err_load_schema_invalid_value_uint_range_3(rc, &config);
+	pass &= test_err_load_schema_invalid_value_uint_range_4(rc, &config);
+	pass &= test_err_load_schema_invalid_value_uint_range_5(rc, &config);
+	pass &= test_err_load_schema_invalid_value_float_invalid(rc, &config);
+	pass &= test_err_load_schema_invalid_value_double_invalid(rc, &config);
 
 	ttest_heading(rc, "YAML / schema mismatch: string lengths");
 
-	pass &= test_err_schema_string_min_length(rc, &config);
-	pass &= test_err_schema_string_max_length(rc, &config);
+	pass &= test_err_load_schema_string_min_length(rc, &config);
+	pass &= test_err_load_schema_string_max_length(rc, &config);
 
 	ttest_heading(rc, "YAML / schema mismatch: mapping fields");
 
-	pass &= test_err_schema_missing_mapping_field(rc, &config);
-	pass &= test_err_schema_unknown_mapping_field(rc, &config);
+	pass &= test_err_load_schema_missing_mapping_field(rc, &config);
+	pass &= test_err_load_schema_unknown_mapping_field(rc, &config);
 
 	ttest_heading(rc, "YAML / schema mismatch: sequence counts");
 
-	pass &= test_err_schema_sequence_min_entries(rc, &config);
-	pass &= test_err_schema_sequence_max_entries(rc, &config);
+	pass &= test_err_load_schema_sequence_min_entries(rc, &config);
+	pass &= test_err_load_schema_sequence_max_entries(rc, &config);
 
 	ttest_heading(rc, "YAML / schema mismatch: bad flags/enum strings");
 
-	pass &= test_err_schema_flags_mapping(rc, &config);
-	pass &= test_err_schema_enum_bad_string(rc, &config);
-	pass &= test_err_schema_flags_bad_string(rc, &config);
-	pass &= test_err_schema_strict_enum_bad_string(rc, &config);
-	pass &= test_err_schema_strict_flags_bad_string(rc, &config);
+	pass &= test_err_load_schema_flags_mapping(rc, &config);
+	pass &= test_err_load_schema_enum_bad_string(rc, &config);
+	pass &= test_err_load_schema_flags_bad_string(rc, &config);
+	pass &= test_err_save_schema_strict_enum_bad_value(rc, &config);
+	pass &= test_err_load_schema_strict_enum_bad_string(rc, &config);
+	pass &= test_err_save_schema_strict_flags_bad_value(rc, &config);
+	pass &= test_err_load_schema_strict_flags_bad_string(rc, &config);
 
 	ttest_heading(rc, "YAML / schema mismatch: expected value type tests");
 
-	pass &= test_err_schema_expect_int_read_seq(rc, &config);
-	pass &= test_err_schema_expect_int_read_end_1(rc, &config);
-	pass &= test_err_schema_expect_int_read_end_2(rc, &config);
-	pass &= test_err_schema_expect_flags_read_scalar(rc, &config);
-	pass &= test_err_schema_expect_mapping_read_scalar(rc, &config);
-	pass &= test_err_schema_expect_sequence_read_scalar(rc, &config);
+	pass &= test_err_load_schema_expect_int_read_seq(rc, &config);
+	pass &= test_err_load_schema_expect_int_read_end_1(rc, &config);
+	pass &= test_err_load_schema_expect_int_read_end_2(rc, &config);
+	pass &= test_err_load_schema_expect_flags_read_scalar(rc, &config);
+	pass &= test_err_load_schema_expect_mapping_read_scalar(rc, &config);
+	pass &= test_err_load_schema_expect_sequence_read_scalar(rc, &config);
 
 	ttest_heading(rc, "Memory allocation handling tests");
 
 	pass &= test_err_free_null(rc, &config);
 	pass &= test_err_load_alloc_oom_1(rc, &config);
 	pass &= test_err_load_alloc_oom_2(rc, &config);
+	pass &= test_err_save_alloc_oom_1(rc, &config);
+	pass &= test_err_save_alloc_oom_2(rc, &config);
 
 	ttest_heading(rc, "Alias tests");
 
-	pass &= test_err_flag_value_alias(rc, &config);
-	pass &= test_err_mapping_value_alias(rc, &config);
+	pass &= test_err_load_flag_value_alias(rc, &config);
+	pass &= test_err_load_mapping_value_alias(rc, &config);
 
 	return pass;
 }

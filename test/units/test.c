@@ -46,6 +46,12 @@ extern bool errs_tests(
 		cyaml_log_t log_level,
 		cyaml_log_fn_t log_fn);
 
+/** In save.c */
+extern bool save_tests(
+		ttest_report_ctx_t *rc,
+		cyaml_log_t log_level,
+		cyaml_log_fn_t log_fn);
+
 /**
  * Print program usage
  *
@@ -101,6 +107,7 @@ int main(int argc, char *argv[])
 	pass &= load_tests(&rc, log_level, log_fn);
 	pass &= errs_tests(&rc, log_level, log_fn);
 	pass &= file_tests(&rc, log_level, log_fn);
+	pass &= save_tests(&rc, log_level, log_fn);
 
 	ttest_report(&rc);
 
