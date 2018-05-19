@@ -1080,6 +1080,60 @@ static bool test_err_load_schema_bad_data_size_6(
 }
 
 /**
+ * Test loading with schema with data size (0).
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_bad_data_size_7(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"key: 1\n";
+	struct target_struct {
+		unsigned value;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		{
+			.key = "key",
+			.value = {
+				.type = CYAML_UINT,
+				.flags = CYAML_FLAG_DEFAULT,
+				.data_size = 0,
+			},
+			.data_offset = offsetof(struct target_struct, value),
+		},
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_DATA_SIZE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading with schema with sequence fixed with unequal min and max.
  *
  * \param[in]  report  The test report context.
@@ -3967,6 +4021,7 @@ bool errs_tests(
 	pass &= test_err_load_schema_bad_data_size_4(rc, &config);
 	pass &= test_err_load_schema_bad_data_size_5(rc, &config);
 	pass &= test_err_load_schema_bad_data_size_6(rc, &config);
+	pass &= test_err_load_schema_bad_data_size_7(rc, &config);
 	pass &= test_err_load_schema_sequence_min_max(rc, &config);
 	pass &= test_err_load_schema_bad_data_size_float(rc, &config);
 	pass &= test_err_load_schema_sequence_in_sequence(rc, &config);
