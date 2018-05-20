@@ -3132,7 +3132,7 @@ bool save_tests(
 	pass &= test_save_mapping_entry_sequence_ptr_sequence_fixed_ptr_int(rc, &config);
 	pass &= test_save_mapping_entry_sequence_ptr_sequence_fixed_flat_int(rc, &config);
 
-	ttest_heading(rc, "Load tests: various");
+	ttest_heading(rc, "Save tests: various");
 
 	pass &= test_save_mapping_entry_ignored(rc, &config);
 	pass &= test_save_schema_top_level_sequence_fixed(rc, &config);
