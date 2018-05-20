@@ -837,10 +837,6 @@ static cyaml_err_t cyaml__write_value(
 			ctx->state->sequence.count = seq_count;
 		}
 		break;
-	case CYAML_IGNORE:
-		/* Nothing to output for ignored values; CYAML_IGNORE is an
-		 * input filter only. */
-		break;
 	default:
 		err = CYAML_ERR_BAD_TYPE_IN_SCHEMA;
 		break;
@@ -925,6 +921,11 @@ static cyaml_err_t cyaml__write_mapping(
 
 	if (field != NULL && field->key != NULL) {
 		unsigned seq_count = 0;
+
+		if (field->value.type == CYAML_IGNORE) {
+			ctx->state->mapping.field++;
+			return CYAML_OK;
+		}
 
 		err = cyaml__emit_scalar(ctx, NULL, field->key,
 				YAML_STR_TAG);
