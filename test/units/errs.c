@@ -651,6 +651,60 @@ static bool test_err_load_schema_bad_type(
 }
 
 /**
+ * Test saving with schema with bad type.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_save_schema_bad_type(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct target_struct {
+		int value;
+	} data = {
+		.value = 99,
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		{
+			.key = "key",
+			.value = {
+				.type = 99999,
+				.flags = CYAML_FLAG_DEFAULT,
+				.data_size = sizeof(data.value),
+			},
+			.data_offset = offsetof(struct target_struct, value),
+		},
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema, &data, 0);
+	if (err != CYAML_ERR_BAD_TYPE_IN_SCHEMA) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (buffer != NULL || len != 0) {
+		return ttest_fail(&tc, "Buffer/len not untouched.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading with schema with string min greater than max.
  *
  * \param[in]  report  The test report context.
@@ -1134,6 +1188,423 @@ static bool test_err_load_schema_bad_data_size_7(
 }
 
 /**
+ * Test saving with schema with data size (0).
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_save_schema_bad_data_size_1(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const struct target_struct {
+		int value;
+	} data = {
+		.value = 9,
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		{
+			.key = "key",
+			.value = {
+				.type = CYAML_INT,
+				.flags = CYAML_FLAG_DEFAULT,
+				.data_size = 0,
+			},
+			.data_offset = offsetof(struct target_struct, value),
+		},
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema, &data, 0);
+	if (err != CYAML_ERR_INVALID_DATA_SIZE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (buffer != NULL || len != 0) {
+		return ttest_fail(&tc, "Buffer/len not untouched.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving with schema with data size (0).
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_save_schema_bad_data_size_2(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const struct target_struct {
+		unsigned value;
+	} data = {
+		.value = 9,
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		{
+			.key = "key",
+			.value = {
+				.type = CYAML_UINT,
+				.flags = CYAML_FLAG_DEFAULT,
+				.data_size = 0,
+			},
+			.data_offset = offsetof(struct target_struct, value),
+		},
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema, &data, 0);
+	if (err != CYAML_ERR_INVALID_DATA_SIZE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (buffer != NULL || len != 0) {
+		return ttest_fail(&tc, "Buffer/len not untouched.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving with schema with data size (0).
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_save_schema_bad_data_size_3(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const struct target_struct {
+		bool value;
+	} data = {
+		.value = 1,
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		{
+			.key = "key",
+			.value = {
+				.type = CYAML_BOOL,
+				.flags = CYAML_FLAG_DEFAULT,
+				.data_size = 0,
+			},
+			.data_offset = offsetof(struct target_struct, value),
+		},
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema, &data, 0);
+	if (err != CYAML_ERR_INVALID_DATA_SIZE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (buffer != NULL || len != 0) {
+		return ttest_fail(&tc, "Buffer/len not untouched.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving with schema with data size (0).
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_save_schema_bad_data_size_4(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	enum test_e {
+		FIRST, SECOND, THIRD, FOURTH, COUNT
+	};
+	static const char *strings[COUNT] = {
+		[FIRST]  = "first",
+		[SECOND] = "second",
+		[THIRD]  = "third",
+		[FOURTH] = "fourth"
+	};
+	static const struct target_struct {
+		enum test_e value;
+	} data = {
+		.value = 1,
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		{
+			.key = "key",
+			.value = {
+				.type = CYAML_ENUM,
+				.flags = CYAML_FLAG_DEFAULT,
+				.data_size = 0,
+				.enumeration = {
+					.strings = strings,
+					.count = COUNT,
+				},
+			},
+			.data_offset = offsetof(struct target_struct, value),
+		},
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema, &data, 0);
+	if (err != CYAML_ERR_INVALID_DATA_SIZE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (buffer != NULL || len != 0) {
+		return ttest_fail(&tc, "Buffer/len not untouched.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving with schema with data size (5 for floating point value).
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_save_schema_bad_data_size_5(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const struct target_struct {
+		float value;
+	} data = {
+		.value = 3.14,
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		{
+			.key = "key",
+			.value = {
+				.type = CYAML_FLOAT,
+				.flags = CYAML_FLAG_DEFAULT,
+				.data_size = 5,
+			},
+			.data_offset = offsetof(struct target_struct, value),
+		},
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema, &data, 0);
+	if (err != CYAML_ERR_INVALID_DATA_SIZE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (buffer != NULL || len != 0) {
+		return ttest_fail(&tc, "Buffer/len not untouched.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving with schema with data size (0).
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_save_schema_bad_data_size_6(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	enum test_f {
+		NONE   = 0,
+		FIRST  = (1 << 0),
+		SECOND = (1 << 1),
+		THIRD  = (1 << 2),
+		FOURTH = (1 << 3),
+	};
+	static const char * const strings[] = {
+		"first", "second", "third", "fourth"
+	};
+	static const struct target_struct {
+		enum test_f value;
+	} data = {
+		.value = THIRD,
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		{
+			.key = "key",
+			.value = {
+				.type = CYAML_FLAGS,
+				.flags = CYAML_FLAG_DEFAULT,
+				.data_size = 0,
+				.enumeration = {
+					.strings = strings,
+					.count = 4,
+				},
+			},
+			.data_offset = offsetof(struct target_struct, value),
+		},
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema, &data, 0);
+	if (err != CYAML_ERR_INVALID_DATA_SIZE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (buffer != NULL || len != 0) {
+		return ttest_fail(&tc, "Buffer/len not untouched.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving with schema with a bad sequence count size.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_save_schema_bad_data_size_7(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct target_struct {
+		unsigned *seq;
+		uint32_t seq_count;
+	} data = {
+		.seq = NULL,
+	};
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_UINT(CYAML_FLAG_DEFAULT, *(data.seq)),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		{
+			.key = "sequence",
+			.value = {
+				.type = CYAML_SEQUENCE,
+				.flags = CYAML_FLAG_POINTER,
+				.data_size = sizeof(*(data.seq)),
+				.sequence = {
+					.schema = &entry_schema,
+					.min = 0,
+					.max = 10,
+
+				},
+			},
+			.data_offset = offsetof(struct target_struct, seq),
+			.count_offset = offsetof(struct target_struct, seq_count),
+			.count_size = 9,
+		},
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema, &data, 0);
+	if (err != CYAML_ERR_INVALID_DATA_SIZE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (buffer != NULL || len != 0) {
+		return ttest_fail(&tc, "Buffer/len not untouched.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading with schema with sequence fixed with unequal min and max.
  *
  * \param[in]  report  The test report context.
@@ -1195,6 +1666,69 @@ static bool test_err_load_schema_sequence_min_max(
 
 	if (data_tgt != NULL) {
 		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving with schema with sequence fixed with unequal min and max.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_save_schema_sequence_min_max(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct target_struct {
+		unsigned *seq;
+	} data = {
+		.seq = NULL,
+	};
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_UINT(CYAML_FLAG_DEFAULT, *(data.seq)),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		{
+			.key = "sequence",
+			.value = {
+				.type = CYAML_SEQUENCE_FIXED,
+				.flags = CYAML_FLAG_POINTER,
+				.data_size = sizeof(*(data.seq)),
+				.sequence = {
+					.schema = &entry_schema,
+					.min = 0,
+					.max = CYAML_UNLIMITED,
+
+				},
+			},
+			.data_offset = offsetof(struct target_struct, seq),
+		},
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema, &data, 0);
+	if (err != CYAML_ERR_SEQUENCE_FIXED_COUNT) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (buffer != NULL || len != 0) {
+		return ttest_fail(&tc, "Buffer/len not untouched.");
 	}
 
 	return ttest_pass(&tc);
@@ -1298,6 +1832,52 @@ static bool test_err_load_schema_sequence_in_sequence(
 
 	if (seq != NULL) {
 		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving with schema with sequence in sequence.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_save_schema_sequence_in_sequence(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned seq[4] = { 1, 2, 3 };
+	static const unsigned *data[] = { seq, seq };
+	static const struct cyaml_schema_value inner_entry_schema = {
+		CYAML_VALUE_UINT(CYAML_FLAG_DEFAULT, **data),
+	};
+	static const struct cyaml_schema_value outer_entry_schema = {
+		CYAML_VALUE_SEQUENCE(CYAML_FLAG_POINTER, unsigned,
+				&inner_entry_schema, 0, CYAML_UNLIMITED)
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_SEQUENCE(CYAML_FLAG_POINTER, unsigned *,
+				&outer_entry_schema, 0, CYAML_UNLIMITED)
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema, &data, 2);
+	if (err != CYAML_ERR_SEQUENCE_IN_SEQUENCE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (buffer != NULL || len != 0) {
+		return ttest_fail(&tc, "Buffer/len not untouched.");
 	}
 
 	return ttest_pass(&tc);
@@ -4014,6 +4594,7 @@ bool errs_tests(
 	ttest_heading(rc, "Bad schema tests");
 
 	pass &= test_err_load_schema_bad_type(rc, &config);
+	pass &= test_err_save_schema_bad_type(rc, &config);
 	pass &= test_err_load_schema_string_min_max(rc, &config);
 	pass &= test_err_load_schema_bad_data_size_1(rc, &config);
 	pass &= test_err_load_schema_bad_data_size_2(rc, &config);
@@ -4022,9 +4603,18 @@ bool errs_tests(
 	pass &= test_err_load_schema_bad_data_size_5(rc, &config);
 	pass &= test_err_load_schema_bad_data_size_6(rc, &config);
 	pass &= test_err_load_schema_bad_data_size_7(rc, &config);
+	pass &= test_err_save_schema_bad_data_size_1(rc, &config);
+	pass &= test_err_save_schema_bad_data_size_2(rc, &config);
+	pass &= test_err_save_schema_bad_data_size_3(rc, &config);
+	pass &= test_err_save_schema_bad_data_size_4(rc, &config);
+	pass &= test_err_save_schema_bad_data_size_5(rc, &config);
+	pass &= test_err_save_schema_bad_data_size_6(rc, &config);
+	pass &= test_err_save_schema_bad_data_size_7(rc, &config);
 	pass &= test_err_load_schema_sequence_min_max(rc, &config);
+	pass &= test_err_save_schema_sequence_min_max(rc, &config);
 	pass &= test_err_load_schema_bad_data_size_float(rc, &config);
 	pass &= test_err_load_schema_sequence_in_sequence(rc, &config);
+	pass &= test_err_save_schema_sequence_in_sequence(rc, &config);
 
 	ttest_heading(rc, "YAML / schema mismatch: bad values");
 
