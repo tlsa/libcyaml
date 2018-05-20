@@ -825,8 +825,12 @@ static cyaml_err_t cyaml__write_value(
 		err = cyaml__stack_push(ctx, CYAML_STATE_IN_MAP_KEY,
 				schema, data);
 		break;
-	case CYAML_SEQUENCE: /* Fall through. */
 	case CYAML_SEQUENCE_FIXED:
+		if (schema->sequence.min != schema->sequence.max) {
+			return CYAML_ERR_SEQUENCE_FIXED_COUNT;
+		}
+		/* Fall through. */
+	case CYAML_SEQUENCE:
 		err = cyaml__stack_push(ctx, CYAML_STATE_IN_SEQUENCE,
 				schema, data);
 		if (err == CYAML_OK) {
@@ -943,10 +947,6 @@ static cyaml_err_t cyaml__write_mapping(
 			"Sequence entry count: %u\n", seq_count);
 
 		} else if (field->value.type == CYAML_SEQUENCE_FIXED) {
-			if (field->value.sequence.min !=
-			    field->value.sequence.max) {
-				return CYAML_ERR_SEQUENCE_FIXED_COUNT;
-			}
 			seq_count = field->value.sequence.min;
 		}
 
@@ -983,9 +983,6 @@ static cyaml_err_t cyaml__write_sequence(
 			return CYAML_ERR_SEQUENCE_IN_SEQUENCE;
 
 		} else if (value->type == CYAML_SEQUENCE_FIXED) {
-			if (value->sequence.min != value->sequence.max) {
-				return CYAML_ERR_SEQUENCE_FIXED_COUNT;
-			}
 			seq_count = value->sequence.max;
 		}
 
