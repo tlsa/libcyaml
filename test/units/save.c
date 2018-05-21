@@ -33,7 +33,7 @@ typedef struct test_data {
 } test_data_t;
 
 /**
- * Common clean up function to free data alloacted by tests.
+ * Common clean up function to free data allocated by tests.
  *
  * \param[in]  data  The unit test context data.
  */
@@ -93,8 +93,8 @@ static bool test_save_mapping_entry_uint(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -149,8 +149,8 @@ static bool test_save_mapping_entry_float(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -205,8 +205,8 @@ static bool test_save_mapping_entry_double(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -261,8 +261,8 @@ static bool test_save_mapping_entry_string(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -317,8 +317,8 @@ static bool test_save_mapping_entry_int_pos(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -373,8 +373,8 @@ static bool test_save_mapping_entry_int_neg(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -429,8 +429,8 @@ static bool test_save_mapping_entry_int_64(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -485,8 +485,8 @@ static bool test_save_mapping_entry_bool_true(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -541,8 +541,8 @@ static bool test_save_mapping_entry_bool_false(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -598,8 +598,8 @@ static bool test_save_mapping_entry_string_ptr(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -663,8 +663,8 @@ static bool test_save_mapping_entry_enum_strict(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -725,8 +725,8 @@ static bool test_save_mapping_entry_enum_number(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -796,8 +796,8 @@ static bool test_save_mapping_entry_mapping(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -867,8 +867,8 @@ static bool test_save_mapping_entry_mapping_ptr(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -935,8 +935,8 @@ static bool test_save_mapping_entry_flags_strict(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -1004,8 +1004,8 @@ static bool test_save_mapping_entry_flags_number(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -1072,8 +1072,8 @@ static bool test_save_mapping_entry_sequence_int(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -1140,8 +1140,8 @@ static bool test_save_mapping_entry_sequence_uint(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -1217,8 +1217,8 @@ static bool test_save_mapping_entry_sequence_enum(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -1287,8 +1287,8 @@ static bool test_save_mapping_entry_sequence_bool(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -1377,8 +1377,8 @@ static bool test_save_mapping_entry_sequence_flags(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -1449,8 +1449,8 @@ static bool test_save_mapping_entry_sequence_string(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -1522,8 +1522,8 @@ static bool test_save_mapping_entry_sequence_string_ptr(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -1603,8 +1603,8 @@ static bool test_save_mapping_entry_sequence_mapping(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -1688,8 +1688,8 @@ static bool test_save_mapping_entry_sequence_mapping_ptr(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -1772,8 +1772,8 @@ static bool test_save_mapping_entry_sequence_sequence_fixed_int(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -1862,8 +1862,8 @@ static bool test_save_mapping_entry_sequence_sequence_fixed_ptr_int(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -1961,8 +1961,8 @@ static bool test_save_mapping_entry_sequence_sequence_fixed_flat_int(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -2030,8 +2030,8 @@ static bool test_save_mapping_entry_sequence_ptr_int(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -2099,8 +2099,8 @@ static bool test_save_mapping_entry_sequence_ptr_uint(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -2181,8 +2181,8 @@ static bool test_save_mapping_entry_sequence_ptr_enum(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -2255,8 +2255,8 @@ static bool test_save_mapping_entry_sequence_ptr_bool(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -2347,8 +2347,8 @@ static bool test_save_mapping_entry_sequence_ptr_flags(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -2421,8 +2421,8 @@ static bool test_save_mapping_entry_sequence_ptr_string(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -2496,8 +2496,8 @@ static bool test_save_mapping_entry_sequence_ptr_string_ptr(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -2579,8 +2579,8 @@ static bool test_save_mapping_entry_sequence_ptr_mapping(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -2666,8 +2666,8 @@ static bool test_save_mapping_entry_sequence_ptr_mapping_ptr(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -2751,8 +2751,8 @@ static bool test_save_mapping_entry_sequence_ptr_sequence_fixed_int(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -2842,8 +2842,8 @@ static bool test_save_mapping_entry_sequence_ptr_sequence_fixed_ptr_int(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -2942,8 +2942,8 @@ static bool test_save_mapping_entry_sequence_ptr_sequence_fixed_flat_int(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -2999,8 +2999,8 @@ static bool test_save_mapping_entry_ignored(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
@@ -3050,8 +3050,8 @@ static bool test_save_schema_top_level_sequence_fixed(
 
 	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
 		return ttest_fail(&tc, "Bad data:\n"
-				"EXPECTED (%zu):\n\n%*s\n\n"
-				"GOT (%zu):\n\n%*s\n",
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
 				YAML_LEN(ref), YAML_LEN(ref), ref,
 				len, len, buffer);
 	}
