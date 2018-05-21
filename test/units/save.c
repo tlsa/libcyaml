@@ -3060,6 +3060,240 @@ static bool test_save_schema_top_level_sequence_fixed(
 }
 
 /**
+ * Test saving a sequence with flow style configured.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_sequence_config_flow_style(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char ref[] =
+		"--- [7, 6, 5]\n"
+		"...\n";
+	int data[3] = { 7, 6, 5 };
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, int)
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_SEQUENCE(CYAML_FLAG_POINTER, int,
+				&entry_schema, 0, 3),
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	cyaml_config_t cfg = *config;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = &cfg,
+	};
+	cyaml_err_t err;
+
+	cfg.flags |= CYAML_CFG_STYLE_FLOW;
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, &cfg, &top_schema, data, 3);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving a sequence with block style configured.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_sequence_config_block_style(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char ref[] =
+		"---\n"
+		"- 7\n"
+		"- 6\n"
+		"- 5\n"
+		"...\n";
+	int data[3] = { 7, 6, 5 };
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, int)
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_SEQUENCE(CYAML_FLAG_POINTER, int,
+				&entry_schema, 0, 3),
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	cyaml_config_t cfg = *config;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = &cfg,
+	};
+	cyaml_err_t err;
+
+	cfg.flags |= CYAML_CFG_STYLE_BLOCK;
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, &cfg, &top_schema, data, 3);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving a mapping with flow style value.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_mapping_value_flow_style(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const char ref[] =
+		"--- {a: 555, b: 99, c: 7}\n"
+		"...\n";
+	static const struct target_struct {
+		unsigned a;
+		unsigned b;
+		unsigned c;
+	} data = {
+		.a = 555,
+		.b = 99,
+		.c = 7,
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("a", CYAML_FLAG_DEFAULT,
+				struct target_struct, a),
+		CYAML_FIELD_UINT("b", CYAML_FLAG_DEFAULT,
+				struct target_struct, b),
+		CYAML_FIELD_UINT("c", CYAML_FLAG_DEFAULT,
+				struct target_struct, c),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER | CYAML_FLAG_FLOW,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	cyaml_config_t cfg = *config;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = &cfg,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving a mapping with block style value.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_mapping_value_block_style(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char ref[] =
+		"---\n"
+		"a: 555\n"
+		"b: 99\n"
+		"c: 7\n"
+		"...\n";
+	static const struct target_struct {
+		unsigned a;
+		unsigned b;
+		unsigned c;
+	} data = {
+		.a = 555,
+		.b = 99,
+		.c = 7,
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("a", CYAML_FLAG_DEFAULT,
+				struct target_struct, a),
+		CYAML_FIELD_UINT("b", CYAML_FLAG_DEFAULT,
+				struct target_struct, b),
+		CYAML_FIELD_UINT("c", CYAML_FLAG_DEFAULT,
+				struct target_struct, c),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER | CYAML_FLAG_BLOCK,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	cyaml_config_t cfg = *config;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = &cfg,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Run the YAML saving unit tests.
  *
  * \param[in]  rc         The ttest report context.
@@ -3135,6 +3369,10 @@ bool save_tests(
 	ttest_heading(rc, "Save tests: various");
 
 	pass &= test_save_mapping_entry_ignored(rc, &config);
+	pass &= test_save_mapping_value_flow_style(rc, &config);
+	pass &= test_save_mapping_value_block_style(rc, &config);
+	pass &= test_save_sequence_config_flow_style(rc, &config);
+	pass &= test_save_sequence_config_block_style(rc, &config);
 	pass &= test_save_schema_top_level_sequence_fixed(rc, &config);
 
 	return pass;
