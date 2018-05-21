@@ -152,16 +152,95 @@ static cyaml_err_t cyaml__emit_event_helper(
 	return CYAML_OK;
 }
 
+/** The style to use when emitting mappings and sequences. */
+enum cyaml_emit_style {
+	CYAML_EMIT_STYLE_DEFAULT,
+	CYAML_EMIT_STYLE_BLOCK,
+	CYAML_EMIT_STYLE_FLOW,
+};
+
+/**
+ * Get the style to use for mappings/sequences from value flags and config.
+ *
+ * As described in the API, schema flags take priority over config flags, and
+ * block has precedence over flow, if both flags are set at the same level.
+ *
+ * \param[in]  ctx     The CYAML saving context.
+ * \param[in]  schema  The CYAML schema for the value expected in state.
+ * \return The generic style to emit the value with.
+ */
+static inline enum cyaml_emit_style cyaml__get_emit_style(
+		const cyaml_ctx_t *ctx,
+		const cyaml_schema_value_t *schema)
+{
+	if (schema->flags & CYAML_FLAG_BLOCK) {
+		return CYAML_EMIT_STYLE_BLOCK;
+
+	} else if (schema->flags & CYAML_FLAG_FLOW) {
+		return CYAML_EMIT_STYLE_FLOW;
+
+	} else if (ctx->config->flags & CYAML_CFG_STYLE_BLOCK) {
+		return CYAML_EMIT_STYLE_BLOCK;
+
+	} else if (ctx->config->flags & CYAML_CFG_STYLE_FLOW) {
+		return CYAML_EMIT_STYLE_FLOW;
+	}
+
+	return CYAML_EMIT_STYLE_DEFAULT;
+}
+
+/**
+ * Get the style to use for sequences from value flags and config.
+ *
+ * \param[in]  ctx     The CYAML saving context.
+ * \param[in]  schema  The CYAML schema for the value expected in state.
+ * \return The libyaml sequence style to emit the value with.
+ */
+static inline yaml_sequence_style_t cyaml__get_emit_style_seq(
+		const cyaml_ctx_t *ctx,
+		const cyaml_schema_value_t *schema)
+{
+	switch (cyaml__get_emit_style(ctx, schema)) {
+	case CYAML_EMIT_STYLE_BLOCK: return YAML_BLOCK_SEQUENCE_STYLE;
+	case CYAML_EMIT_STYLE_FLOW:  return YAML_FLOW_SEQUENCE_STYLE;
+	default: break;
+	}
+
+	return YAML_ANY_SEQUENCE_STYLE;
+}
+
+/**
+ * Get the style to use for mappings from value flags and config.
+ *
+ * \param[in]  ctx     The CYAML saving context.
+ * \param[in]  schema  The CYAML schema for the value expected in state.
+ * \return The libyaml mapping style to emit the value with.
+ */
+static inline yaml_mapping_style_t cyaml__get_emit_style_map(
+		const cyaml_ctx_t *ctx,
+		const cyaml_schema_value_t *schema)
+{
+	switch (cyaml__get_emit_style(ctx, schema)) {
+	case CYAML_EMIT_STYLE_BLOCK: return YAML_BLOCK_MAPPING_STYLE;
+	case CYAML_EMIT_STYLE_FLOW:  return YAML_FLOW_MAPPING_STYLE;
+	default: break;
+	}
+
+	return YAML_ANY_MAPPING_STYLE;
+}
+
 /**
  * Emit a YAML start event for the state being pushed to the stack.
  *
  * \param[in]  ctx     The CYAML saving context.
  * \param[in]  state   The CYAML load state we're pushing a stack entry for.
+ * \param[in]  schema  The CYAML schema for the value expected in state.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
 static cyaml_err_t cyaml__stack_push_write_event(
 		const cyaml_ctx_t *ctx,
-		enum cyaml_state_e state)
+		enum cyaml_state_e state,
+		const cyaml_schema_value_t *schema)
 {
 	yaml_event_t event;
 	int ret;
@@ -181,12 +260,12 @@ static cyaml_err_t cyaml__stack_push_write_event(
 	case CYAML_STATE_IN_MAP_KEY:
 		ret = yaml_mapping_start_event_initialize(&event, NULL,
 				(yaml_char_t *)YAML_MAP_TAG, 1,
-				YAML_ANY_MAPPING_STYLE);
+				cyaml__get_emit_style_map(ctx, schema));
 		break;
 	case CYAML_STATE_IN_SEQUENCE:
 		ret = yaml_sequence_start_event_initialize(&event, NULL,
 				(yaml_char_t *)YAML_SEQ_TAG, 1,
-				YAML_ANY_SEQUENCE_STYLE);
+				cyaml__get_emit_style_seq(ctx, schema));
 		break;
 	default:
 		return CYAML_ERR_INTERNAL_ERROR;
@@ -217,7 +296,7 @@ static cyaml_err_t cyaml__stack_push(
 		.schema = schema,
 	};
 
-	err = cyaml__stack_push_write_event(ctx, state);
+	err = cyaml__stack_push_write_event(ctx, state, schema);
 	if (err != CYAML_OK) {
 		return err;
 	}

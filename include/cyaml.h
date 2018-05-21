@@ -119,6 +119,40 @@ typedef enum cyaml_flag {
 	 *   The numerical values are treated as unsigned,
 	 */
 	CYAML_FLAG_STRICT   = (1 << 2),
+	/**
+	 * When saving, emit mapping / sequence value in block style.
+	 *
+	 * This can be used to override, for this value, any default style set
+	 * in the \ref cyaml_cfg_flags CYAML behavioural configuration flags.
+	 *
+	 * \note This is ignored unless the value's type is \ref CYAML_MAPPING,
+	 *       \ref CYAML_SEQUENCE, or \ref CYAML_SEQUENCE_FIXED.
+	 *
+	 * \note If both \ref CYAML_FLAG_BLOCK and \ref CYAML_FLAG_FLOW are set,
+	 *       then block style takes precedence.
+	 *
+	 * \note If neither block nor flow style set either here, or in the
+	 *       \ref cyaml_cfg_flags CYAML behavioural configuration flags,
+	 *       then libyaml's default behaviour is used.
+	 */
+	CYAML_FLAG_BLOCK    = (1 << 3),
+	/**
+	 * When saving, emit mapping / sequence value in flow style.
+	 *
+	 * This can be used to override, for this value, any default style set
+	 * in the \ref cyaml_cfg_flags CYAML behavioural configuration flags.
+	 *
+	 * \note This is ignored unless the value's type is \ref CYAML_MAPPING,
+	 *       \ref CYAML_SEQUENCE, or \ref CYAML_SEQUENCE_FIXED.
+	 *
+	 * \note If both \ref CYAML_FLAG_BLOCK and \ref CYAML_FLAG_FLOW are set,
+	 *       then block style takes precedence.
+	 *
+	 * \note If neither block nor flow style set either here, or in the
+	 *       \ref cyaml_cfg_flags CYAML behavioural configuration flags,
+	 *       then libyaml's default behaviour is used.
+	 */
+	CYAML_FLAG_FLOW     = (1 << 4),
 } cyaml_flag_e;
 
 /**
@@ -271,6 +305,34 @@ typedef enum cyaml_cfg_flags {
 	 * with the error \ref CYAML_ERR_INVALID_KEY.
 	 */
 	CYAML_CFG_IGNORE_UNKNOWN_KEYS = (1 << 0),
+	/**
+	 * When saving, emit mapping / sequence values in block style.
+	 *
+	 * This setting can be overridden for specific values using schema
+	 * value flags (\ref cyaml_flag).
+	 *
+	 * \note This only applies to values of type \ref CYAML_MAPPING,
+	 *       \ref CYAML_SEQUENCE, or \ref CYAML_SEQUENCE_FIXED.
+	 *
+	 * \note If both \ref CYAML_CFG_STYLE_BLOCK and
+	 *       \ref CYAML_CFG_STYLE_FLOW are set, then block style takes
+	 *       precedence.
+	 */
+	CYAML_CFG_STYLE_BLOCK         = (1 << 1),
+	/**
+	 * When saving, emit mapping / sequence values in flow style.
+	 *
+	 * This setting can be overridden for specific values using schema
+	 * value flags (\ref cyaml_flag).
+	 *
+	 * \note This only applies to values of type \ref CYAML_MAPPING,
+	 *       \ref CYAML_SEQUENCE, or \ref CYAML_SEQUENCE_FIXED.
+	 *
+	 * \note If both \ref CYAML_CFG_STYLE_BLOCK and
+	 *       \ref CYAML_CFG_STYLE_FLOW are set, then block style takes
+	 *       precedence.
+	 */
+	CYAML_CFG_STYLE_FLOW          = (1 << 2),
 } cyaml_cfg_flags_t;
 
 /**
