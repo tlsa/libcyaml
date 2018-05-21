@@ -162,6 +162,9 @@ enum cyaml_emit_style {
 /**
  * Get the style to use for mappings/sequences from value flags and config.
  *
+ * As described in the API, schema flags take priority over config flags, and
+ * block has precedence over flow, if both flags are set at the same level.
+ *
  * \param[in]  ctx     The CYAML saving context.
  * \param[in]  schema  The CYAML schema for the value expected in state.
  * \return The generic style to emit the value with.
