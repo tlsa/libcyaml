@@ -410,10 +410,10 @@ static bool test_load_mapping_entry_enum(
 		TEST_ENUM_THIRD,
 		TEST_ENUM__COUNT,
 	} value = TEST_ENUM_SECOND;
-	static const char * const strings[TEST_ENUM__COUNT] = {
-		[TEST_ENUM_FIRST]  = "first",
-		[TEST_ENUM_SECOND] = "second",
-		[TEST_ENUM_THIRD]  = "third",
+	static const cyaml_strval_t strings[TEST_ENUM__COUNT] = {
+		[TEST_ENUM_FIRST]  = { "first",  0 },
+		[TEST_ENUM_SECOND] = { "second", 1 },
+		[TEST_ENUM_THIRD]  = { "third",  2 },
 	};
 	static const unsigned char yaml[] =
 		"test_enum: second\n";
@@ -676,13 +676,13 @@ static bool test_load_mapping_entry_flags(
 		TEST_FLAGS_SIXTH  = (1 << 5),
 	} value = TEST_FLAGS_SECOND | TEST_FLAGS_FIFTH | 1024;
 	#define TEST_FLAGS__COUNT 6
-	static const char * const strings[TEST_FLAGS__COUNT] = {
-		"first",
-		"second",
-		"third",
-		"fourth",
-		"fifth",
-		"sixth",
+	static const cyaml_strval_t strings[TEST_FLAGS__COUNT] = {
+		{ "first",  (1 << 0) },
+		{ "second", (1 << 1) },
+		{ "third",  (1 << 2) },
+		{ "fourth", (1 << 3) },
+		{ "fifth",  (1 << 4) },
+		{ "sixth",  (1 << 5) },
 	};
 	static const unsigned char yaml[] =
 		"test_flags:\n"
@@ -747,13 +747,13 @@ static bool test_load_mapping_entry_flags_empty(
 		TEST_FLAGS_SIXTH  = (1 << 5),
 	} value = TEST_FLAGS_NONE;
 	#define TEST_FLAGS__COUNT 6
-	static const char * const strings[TEST_FLAGS__COUNT] = {
-		"first",
-		"second",
-		"third",
-		"fourth",
-		"fifth",
-		"sixth",
+	static const cyaml_strval_t strings[TEST_FLAGS__COUNT] = {
+		{ "first",  (1 << 0) },
+		{ "second", (1 << 1) },
+		{ "third",  (1 << 2) },
+		{ "fourth", (1 << 3) },
+		{ "fifth",  (1 << 4) },
+		{ "sixth",  (1 << 5) },
 	};
 	static const unsigned char yaml[] =
 		"test_flags: []\n";
@@ -1004,10 +1004,10 @@ static bool test_load_mapping_entry_sequence_enum(
 		TEST_ENUM_THIRD,
 		TEST_ENUM__COUNT,
 	} ref[] = { TEST_ENUM_FIRST, TEST_ENUM_SECOND, TEST_ENUM_THIRD };
-	static const char * const strings[TEST_ENUM__COUNT] = {
-		[TEST_ENUM_FIRST]  = "first",
-		[TEST_ENUM_SECOND] = "second",
-		[TEST_ENUM_THIRD]  = "third",
+	static const cyaml_strval_t strings[TEST_ENUM__COUNT] = {
+		[TEST_ENUM_FIRST]  = { "first",  0 },
+		[TEST_ENUM_SECOND] = { "second", 1 },
+		[TEST_ENUM_THIRD]  = { "third",  2 },
 	};
 	static const unsigned char yaml[] =
 		"sequence:\n"
@@ -1223,13 +1223,13 @@ static bool test_load_mapping_entry_sequence_flags(
 		TEST_FLAGS_FOURTH | TEST_FLAGS_SIXTH
 	};
 	#define TEST_FLAGS__COUNT 6
-	static const char * const strings[TEST_FLAGS__COUNT] = {
-		"first",
-		"second",
-		"third",
-		"fourth",
-		"fifth",
-		"sixth",
+	static const cyaml_strval_t strings[TEST_FLAGS__COUNT] = {
+		{ "first",  (1 << 0) },
+		{ "second", (1 << 1) },
+		{ "third",  (1 << 2) },
+		{ "fourth", (1 << 3) },
+		{ "fifth",  (1 << 4) },
+		{ "sixth",  (1 << 5) },
 	};
 	static const unsigned char yaml[] =
 		"sequence:\n"
@@ -1932,10 +1932,10 @@ static bool test_load_mapping_entry_sequence_ptr_enum(
 		TEST_ENUM_THIRD,
 		TEST_ENUM__COUNT,
 	} ref[] = { TEST_ENUM_FIRST, TEST_ENUM_SECOND, TEST_ENUM_THIRD };
-	static const char * const strings[TEST_ENUM__COUNT] = {
-		[TEST_ENUM_FIRST]  = "first",
-		[TEST_ENUM_SECOND] = "second",
-		[TEST_ENUM_THIRD]  = "third",
+	static const cyaml_strval_t strings[TEST_ENUM__COUNT] = {
+		[TEST_ENUM_FIRST]  = { "first",  0 },
+		[TEST_ENUM_SECOND] = { "second", 1 },
+		[TEST_ENUM_THIRD]  = { "third",  2 },
 	};
 	static const unsigned char yaml[] =
 		"sequence:\n"
@@ -2151,13 +2151,13 @@ static bool test_load_mapping_entry_sequence_ptr_flags(
 		TEST_FLAGS_FOURTH | TEST_FLAGS_SIXTH
 	};
 	#define TEST_FLAGS__COUNT 6
-	static const char * const strings[TEST_FLAGS__COUNT] = {
-		"first",
-		"second",
-		"third",
-		"fourth",
-		"fifth",
-		"sixth",
+	static const cyaml_strval_t strings[TEST_FLAGS__COUNT] = {
+		{ "first",  (1 << 0) },
+		{ "second", (1 << 1) },
+		{ "third",  (1 << 2) },
+		{ "fourth", (1 << 3) },
+		{ "fifth",  (1 << 4) },
+		{ "sixth",  (1 << 5) },
 	};
 	static const unsigned char yaml[] =
 		"sequence:\n"

@@ -621,11 +621,11 @@ static bool test_save_mapping_entry_enum_strict(
 	enum test_e {
 		FIRST, SECOND, THIRD, FOURTH, COUNT
 	};
-	static const char *strings[COUNT] = {
-		[FIRST]  = "first",
-		[SECOND] = "second",
-		[THIRD]  = "third",
-		[FOURTH] = "fourth"
+	static const cyaml_strval_t strings[COUNT] = {
+		{ "first",  0 },
+		{ "second", 1 },
+		{ "third",  2 },
+		{ "fourth", 3 },
 	};
 	static const unsigned char ref[] =
 		"---\n"
@@ -686,8 +686,11 @@ static bool test_save_mapping_entry_enum_number(
 	enum test_e {
 		FIRST, SECOND, THIRD, FOURTH
 	};
-	static const char *strings[] = {
-		"first", "second", "third", "fourth"
+	static const cyaml_strval_t strings[] = {
+		{ "first",  0 },
+		{ "second", 1 },
+		{ "third",  2 },
+		{ "fourth", 3 },
 	};
 	static const unsigned char ref[] =
 		"---\n"
@@ -894,8 +897,11 @@ static bool test_save_mapping_entry_flags_strict(
 		THIRD  = (1 << 2),
 		FOURTH = (1 << 3),
 	};
-	static const char * const strings[] = {
-		"first", "second", "third", "fourth"
+	static const cyaml_strval_t strings[] = {
+		{ "first",  (1 << 0) },
+		{ "second", (1 << 1) },
+		{ "third",  (1 << 2) },
+		{ "fourth", (1 << 3) },
 	};
 	static const unsigned char ref[] =
 		"---\n"
@@ -962,8 +968,11 @@ static bool test_save_mapping_entry_flags_number(
 		THIRD  = (1 << 2),
 		FOURTH = (1 << 3),
 	};
-	static const char *strings[] = {
-		"first", "second", "third", "fourth"
+	static const cyaml_strval_t strings[] = {
+		{ "first",  (1 << 0) },
+		{ "second", (1 << 1) },
+		{ "third",  (1 << 2) },
+		{ "fourth", (1 << 3) },
 	};
 	static const unsigned char ref[] =
 		"---\n"
@@ -1166,10 +1175,10 @@ static bool test_save_mapping_entry_sequence_enum(
 		TEST_ENUM_THIRD,
 		TEST_ENUM__COUNT,
 	};
-	static const char * const strings[TEST_ENUM__COUNT] = {
-		[TEST_ENUM_FIRST]  = "first",
-		[TEST_ENUM_SECOND] = "second",
-		[TEST_ENUM_THIRD]  = "third",
+	static const cyaml_strval_t strings[TEST_ENUM__COUNT] = {
+		[TEST_ENUM_FIRST]  = { "first",  0 },
+		[TEST_ENUM_SECOND] = { "second", 1 },
+		[TEST_ENUM_THIRD]  = { "third",  2 },
 	};
 	static const unsigned char ref[] =
 		"---\n"
@@ -1316,14 +1325,14 @@ static bool test_save_mapping_entry_sequence_flags(
 		TEST_FLAGS_FIFTH  = (1 << 4),
 		TEST_FLAGS_SIXTH  = (1 << 5),
 	};
-	#define TEST_FLAGS__COUNT 6
-	static const char * const strings[TEST_FLAGS__COUNT] = {
-		"first",
-		"second",
-		"third",
-		"fourth",
-		"fifth",
-		"sixth",
+	static const cyaml_strval_t strings[] = {
+		{ "none",   TEST_FLAGS_NONE },
+		{ "first",  TEST_FLAGS_FIRST },
+		{ "second", TEST_FLAGS_SECOND },
+		{ "third",  TEST_FLAGS_THIRD },
+		{ "fourth", TEST_FLAGS_FOURTH },
+		{ "fifth",  TEST_FLAGS_FIFTH },
+		{ "sixth",  TEST_FLAGS_SIXTH },
 	};
 	static const unsigned char ref[] =
 		"---\n"
@@ -1347,7 +1356,7 @@ static bool test_save_mapping_entry_sequence_flags(
 	};
 	static const struct cyaml_schema_value entry_schema = {
 		CYAML_VALUE_FLAGS(CYAML_FLAG_DEFAULT, *(data.seq),
-				strings, TEST_FLAGS__COUNT),
+				strings, CYAML_ARRAY_LEN(strings)),
 	};
 	static const struct cyaml_schema_field mapping_schema[] = {
 		CYAML_FIELD_SEQUENCE("sequence", CYAML_FLAG_DEFAULT,
@@ -2125,10 +2134,10 @@ static bool test_save_mapping_entry_sequence_ptr_enum(
 		TEST_ENUM_THIRD,
 		TEST_ENUM__COUNT,
 	};
-	static const char * const strings[TEST_ENUM__COUNT] = {
-		[TEST_ENUM_FIRST]  = "first",
-		[TEST_ENUM_SECOND] = "second",
-		[TEST_ENUM_THIRD]  = "third",
+	static const cyaml_strval_t strings[TEST_ENUM__COUNT] = {
+		[TEST_ENUM_FIRST]  = { "first",  0 },
+		[TEST_ENUM_SECOND] = { "second", 1 },
+		[TEST_ENUM_THIRD]  = { "third",  2 },
 	};
 	static const unsigned char ref[] =
 		"---\n"
@@ -2284,14 +2293,14 @@ static bool test_save_mapping_entry_sequence_ptr_flags(
 		TEST_FLAGS_FIFTH  = (1 << 4),
 		TEST_FLAGS_SIXTH  = (1 << 5),
 	};
-	#define TEST_FLAGS__COUNT 6
-	static const char * const strings[TEST_FLAGS__COUNT] = {
-		"first",
-		"second",
-		"third",
-		"fourth",
-		"fifth",
-		"sixth",
+	static const cyaml_strval_t strings[] = {
+		{ "none",   TEST_FLAGS_NONE },
+		{ "first",  TEST_FLAGS_FIRST },
+		{ "second", TEST_FLAGS_SECOND },
+		{ "third",  TEST_FLAGS_THIRD },
+		{ "fourth", TEST_FLAGS_FOURTH },
+		{ "fifth",  TEST_FLAGS_FIFTH },
+		{ "sixth",  TEST_FLAGS_SIXTH },
 	};
 	static const unsigned char ref[] =
 		"---\n"
@@ -2317,7 +2326,7 @@ static bool test_save_mapping_entry_sequence_ptr_flags(
 	};
 	static const struct cyaml_schema_value entry_schema = {
 		CYAML_VALUE_FLAGS(CYAML_FLAG_DEFAULT, *(data.seq),
-				strings, TEST_FLAGS__COUNT),
+				strings, CYAML_ARRAY_LEN(strings)),
 	};
 	static const struct cyaml_schema_field mapping_schema[] = {
 		CYAML_FIELD_SEQUENCE("sequence", CYAML_FLAG_POINTER,
@@ -3267,10 +3276,9 @@ static bool test_save_mapping_value_block_style(
 	};
 	char *buffer = NULL;
 	size_t len = 0;
-	cyaml_config_t cfg = *config;
 	test_data_t td = {
 		.buffer = &buffer,
-		.config = &cfg,
+		.config = config,
 	};
 	cyaml_err_t err;
 
