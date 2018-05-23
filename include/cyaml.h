@@ -42,15 +42,16 @@ typedef enum cyaml_type {
 	CYAML_UINT,     /**< Value is an unsigned signed integer. */
 	CYAML_BOOL,     /**< Value is a boolean. */
 	/**
-	 * Value is an enum.  Values of this type require a string list in
-	 * the schema entry, to define the list of valid enum values.
+	 * Value is an enum.  Values of this type require a string / value
+	 * mapping array in the schema entry, to define the list of valid
+	 * enum values.
 	 */
 	CYAML_ENUM,
 	/**
-	 * Value is a flags bit field.  Values of this type require a string
-	 * list in the schema entry, to define the list of valid flag values.
-	 * In the YAML, a \ref CYAML_FLAGS value must be presented as a
-	 * sequence of strings.
+	 * Value is a flags bit field.  Values of this type require a string /
+	 * value list in the schema entry, to define the list of valid flag
+	 * values.  In the YAML, a \ref CYAML_FLAGS value must be presented as
+	 * a sequence of strings.
 	 */
 	CYAML_FLAGS,
 	CYAML_FLOAT,    /**< Value is floating point. */
@@ -156,6 +157,16 @@ typedef enum cyaml_flag {
 } cyaml_flag_e;
 
 /**
+ * Mapping between a string and a signed value.
+ *
+ * Used for \ref CYAML_ENUM and \ref CYAML_FLAGS types.
+ */
+typedef struct cyaml_strval {
+	const char *str; /**< String representing enum or flag value. */
+	int64_t val;     /**< Value of given string. */
+} cyaml_strval_t;
+
+/**
  * Schema definition for a value.
  *
  * There are convenience macros for each of the types to assist in
@@ -242,8 +253,8 @@ typedef struct cyaml_schema_value {
 		 * data.
 		 */
 		struct {
-			/** Array of strings defining enum or flags values. */
-			const char * const *strings;
+			/** Array of string / value mappings defining enum. */
+			const cyaml_strval_t *strings;
 			/** Entry count for strings array. */
 			uint32_t count;
 		} enumeration;

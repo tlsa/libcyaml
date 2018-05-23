@@ -871,11 +871,11 @@ static bool test_err_load_schema_bad_data_size_3(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
-	static const char * const strings[] = {
-		"foo",
-		"bar",
-		"baz",
-		"bat",
+	static const cyaml_strval_t strings[] = {
+		{ "foo", 0 },
+		{ "bar", 1 },
+		{ "baz", 2 },
+		{ "bat", 3 },
 	};
 	static const unsigned char yaml[] =
 		"key:\n"
@@ -1363,11 +1363,11 @@ static bool test_err_save_schema_bad_data_size_4(
 	enum test_e {
 		FIRST, SECOND, THIRD, FOURTH, COUNT
 	};
-	static const char *strings[COUNT] = {
-		[FIRST]  = "first",
-		[SECOND] = "second",
-		[THIRD]  = "third",
-		[FOURTH] = "fourth"
+	static const cyaml_strval_t strings[COUNT] = {
+		[FIRST]  = { "first",  0 },
+		[SECOND] = { "second", 1 },
+		[THIRD]  = { "third",  2 },
+		[FOURTH] = { "fourth", 3 },
 	};
 	static const struct target_struct {
 		enum test_e value;
@@ -1488,8 +1488,11 @@ static bool test_err_save_schema_bad_data_size_6(
 		THIRD  = (1 << 2),
 		FOURTH = (1 << 3),
 	};
-	static const char * const strings[] = {
-		"first", "second", "third", "fourth"
+	static const cyaml_strval_t strings[] = {
+		{ "first",  (1 << 0) },
+		{ "second", (1 << 1) },
+		{ "third",  (1 << 2) },
+		{ "fourth", (1 << 3) },
 	};
 	static const struct target_struct {
 		enum test_f value;
@@ -1950,13 +1953,13 @@ static bool test_err_load_schema_invalid_value_flags_1(
 		TEST_FLAGS_FIFTH  = (1 << 4),
 		TEST_FLAGS_SIXTH  = (1 << 5),
 	};
-	static const char * const strings[] = {
-		"first",
-		"second",
-		"third",
-		"fourth",
-		"fifth",
-		"sixth",
+	static const cyaml_strval_t strings[] = {
+		{ "first",  (1 << 0) },
+		{ "second", (1 << 1) },
+		{ "third",  (1 << 2) },
+		{ "fourth", (1 << 3) },
+		{ "fifth",  (1 << 4) },
+		{ "sixth",  (1 << 5) },
 	};
 	static const unsigned char yaml[] =
 		"key:\n"
@@ -2017,13 +2020,13 @@ static bool test_err_load_schema_invalid_value_flags_2(
 		TEST_FLAGS_FIFTH  = (1 << 4),
 		TEST_FLAGS_SIXTH  = (1 << 5),
 	};
-	static const char * const strings[] = {
-		"first",
-		"second",
-		"third",
-		"fourth",
-		"fifth",
-		"sixth",
+	static const cyaml_strval_t strings[] = {
+		{ "first",  (1 << 0) },
+		{ "second", (1 << 1) },
+		{ "third",  (1 << 2) },
+		{ "fourth", (1 << 3) },
+		{ "fifth",  (1 << 4) },
+		{ "sixth",  (1 << 5) },
 	};
 	static const unsigned char yaml[] =
 		"key:\n"
@@ -2084,13 +2087,13 @@ static bool test_err_load_schema_invalid_value_flags_3(
 		TEST_FLAGS_FIFTH  = (1 << 4),
 		TEST_FLAGS_SIXTH  = (1 << 5),
 	};
-	static const char * const strings[] = {
-		"first",
-		"second",
-		"third",
-		"fourth",
-		"fifth",
-		"sixth",
+	static const cyaml_strval_t strings[] = {
+		{ "first",  (1 << 0) },
+		{ "second", (1 << 1) },
+		{ "third",  (1 << 2) },
+		{ "fourth", (1 << 3) },
+		{ "fifth",  (1 << 4) },
+		{ "sixth",  (1 << 5) },
 	};
 	static const unsigned char yaml[] =
 		"key:\n"
@@ -3109,13 +3112,13 @@ static bool test_err_load_schema_flags_mapping(
 		TEST_FLAGS_FIFTH  = (1 << 4),
 		TEST_FLAGS_SIXTH  = (1 << 5),
 	};
-	static const char * const strings[] = {
-		"first",
-		"second",
-		"third",
-		"fourth",
-		"fifth",
-		"sixth",
+	static const cyaml_strval_t strings[] = {
+		{ "first",  (1 << 0) },
+		{ "second", (1 << 1) },
+		{ "third",  (1 << 2) },
+		{ "fourth", (1 << 3) },
+		{ "fifth",  (1 << 4) },
+		{ "sixth",  (1 << 5) },
 	};
 	static const unsigned char yaml[] =
 		"key:\n"
@@ -3175,10 +3178,10 @@ static bool test_err_load_schema_enum_bad_string(
 		TEST_ENUM_THIRD,
 		TEST_ENUM__COUNT,
 	};
-	static const char * const strings[TEST_ENUM__COUNT] = {
-		[TEST_ENUM_FIRST]  = "first",
-		[TEST_ENUM_SECOND] = "second",
-		[TEST_ENUM_THIRD]  = "third",
+	static const cyaml_strval_t strings[TEST_ENUM__COUNT] = {
+		[TEST_ENUM_FIRST]  = { "first",  0 },
+		[TEST_ENUM_SECOND] = { "second", 1 },
+		[TEST_ENUM_THIRD]  = { "third",  2 },
 	};
 	static const unsigned char yaml[] =
 		"key: fourth\n";
@@ -3237,13 +3240,13 @@ static bool test_err_load_schema_flags_bad_string(
 		TEST_FLAGS_FIFTH  = (1 << 4),
 		TEST_FLAGS_SIXTH  = (1 << 5),
 	};
-	static const char * const strings[] = {
-		"first",
-		"second",
-		"third",
-		"fourth",
-		"fifth",
-		"sixth",
+	static const cyaml_strval_t strings[] = {
+		{ "first",  (1 << 0) },
+		{ "second", (1 << 1) },
+		{ "third",  (1 << 2) },
+		{ "fourth", (1 << 3) },
+		{ "fifth",  (1 << 4) },
+		{ "sixth",  (1 << 5) },
 	};
 	static const unsigned char yaml[] =
 		"key:\n"
@@ -3301,10 +3304,10 @@ static bool test_err_save_schema_strict_enum_bad_value(
 		TEST_ENUM_THIRD,
 		TEST_ENUM__COUNT,
 	};
-	static const char * const strings[TEST_ENUM__COUNT] = {
-		[TEST_ENUM_FIRST]  = "first",
-		[TEST_ENUM_SECOND] = "second",
-		[TEST_ENUM_THIRD]  = "third",
+	static const cyaml_strval_t strings[TEST_ENUM__COUNT] = {
+		[TEST_ENUM_FIRST]  = { "first",  0 },
+		[TEST_ENUM_SECOND] = { "second", 1 },
+		[TEST_ENUM_THIRD]  = { "third",  2 },
 	};
 	struct target_struct {
 		enum test_enum a;
@@ -3361,10 +3364,10 @@ static bool test_err_load_schema_strict_enum_bad_string(
 		TEST_ENUM_THIRD,
 		TEST_ENUM__COUNT,
 	};
-	static const char * const strings[TEST_ENUM__COUNT] = {
-		[TEST_ENUM_FIRST]  = "first",
-		[TEST_ENUM_SECOND] = "second",
-		[TEST_ENUM_THIRD]  = "third",
+	static const cyaml_strval_t strings[TEST_ENUM__COUNT] = {
+		[TEST_ENUM_FIRST]  = { "first",  0 },
+		[TEST_ENUM_SECOND] = { "second", 1 },
+		[TEST_ENUM_THIRD]  = { "third",  2 },
 	};
 	static const unsigned char yaml[] =
 		"key: fourth\n";
@@ -3423,13 +3426,13 @@ static bool test_err_save_schema_strict_flags_bad_value(
 		TEST_FLAGS_FIFTH  = (1 << 4),
 		TEST_FLAGS_SIXTH  = (1 << 5),
 	};
-	static const char * const strings[] = {
-		"first",
-		"second",
-		"third",
-		"fourth",
-		"fifth",
-		"sixth",
+	static const cyaml_strval_t strings[] = {
+		{ "first",  (1 << 0) },
+		{ "second", (1 << 1) },
+		{ "third",  (1 << 2) },
+		{ "fourth", (1 << 3) },
+		{ "fifth",  (1 << 4) },
+		{ "sixth",  (1 << 5) },
 	};
 	struct target_struct {
 		enum test_flags a;
@@ -3489,13 +3492,13 @@ static bool test_err_load_schema_strict_flags_bad_string(
 		TEST_FLAGS_FIFTH  = (1 << 4),
 		TEST_FLAGS_SIXTH  = (1 << 5),
 	};
-	static const char * const strings[] = {
-		"first",
-		"second",
-		"third",
-		"fourth",
-		"fifth",
-		"sixth",
+	static const cyaml_strval_t strings[] = {
+		{ "first",  (1 << 0) },
+		{ "second", (1 << 1) },
+		{ "third",  (1 << 2) },
+		{ "fourth", (1 << 3) },
+		{ "fifth",  (1 << 4) },
+		{ "sixth",  (1 << 5) },
 	};
 	static const unsigned char yaml[] =
 		"key:\n"
@@ -3690,13 +3693,13 @@ static bool test_err_load_schema_expect_flags_read_scalar(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
-	static const char * const strings[] = {
-		"first",
-		"second",
-		"third",
-		"fourth",
-		"fifth",
-		"sixth",
+	static const cyaml_strval_t strings[] = {
+		{ "first",  (1 << 0) },
+		{ "second", (1 << 1) },
+		{ "third",  (1 << 2) },
+		{ "fourth", (1 << 3) },
+		{ "fifth",  (1 << 4) },
+		{ "sixth",  (1 << 5) },
 	};
 	static const unsigned char yaml[] =
 		"key: first\n";
@@ -4048,8 +4051,11 @@ static bool test_err_load_alloc_oom_2(
 		THIRD  = (1 << 2),
 		FOURTH = (1 << 3),
 	};
-	static const char * const strings[] = {
-		"first", "second", "third", "fourth"
+	static const cyaml_strval_t strings[] = {
+		{ "first",  (1 << 0) },
+		{ "second", (1 << 1) },
+		{ "third",  (1 << 2) },
+		{ "fourth", (1 << 3) },
 	};
 	cyaml_config_t cfg = *config;
 	static const unsigned char yaml[] =
@@ -4306,8 +4312,11 @@ static bool test_err_save_alloc_oom_2(
 		THIRD  = (1 << 2),
 		FOURTH = (1 << 3),
 	};
-	static const char * const strings[] = {
-		"first", "second", "third", "fourth"
+	static const cyaml_strval_t strings[] = {
+		{ "first",  (1 << 0) },
+		{ "second", (1 << 1) },
+		{ "third",  (1 << 2) },
+		{ "fourth", (1 << 3) },
 	};
 	cyaml_config_t cfg = *config;
 	static const unsigned char yaml[] =
@@ -4450,8 +4459,12 @@ static bool test_err_load_flag_value_alias(
 		unsigned a;
 		unsigned b;
 	};
-	static const char *str[] = {
-		"one", "two", "three", "four", "five"
+	static const cyaml_strval_t str[] = {
+		{ "one",   (1 << 0) },
+		{ "two",   (1 << 1) },
+		{ "three", (1 << 2) },
+		{ "four",  (1 << 3) },
+		{ "five",  (1 << 4) },
 	};
 	static const unsigned char yaml[] =
 		"a: \n"

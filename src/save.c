@@ -692,10 +692,13 @@ static cyaml_err_t cyaml__write_enum(
 
 	number = cyaml_data_read(schema->data_size, data, &err);
 	if (err == CYAML_OK) {
-		const char * const *strings = schema->enumeration.strings;
+		const cyaml_strval_t *strings = schema->enumeration.strings;
 		const char *string = NULL;
-		if (number < schema->enumeration.count) {
-			string = strings[number];
+		for (uint32_t i = 0; i < schema->enumeration.count; i++) {
+			if (number == strings[i].val) {
+				string = strings[i].str;
+				break;
+			}
 		}
 		if (string == NULL) {
 			if (schema->flags & CYAML_FLAG_STRICT) {
@@ -808,7 +811,7 @@ static cyaml_err_t cyaml__emit_flags_sequence(
 		const cyaml_schema_value_t *schema,
 		uint64_t number)
 {
-	const char * const *strings = schema->enumeration.strings;
+	const cyaml_strval_t *strings = schema->enumeration.strings;
 	yaml_event_t event;
 	cyaml_err_t err;
 	int ret;
@@ -824,9 +827,9 @@ static cyaml_err_t cyaml__emit_flags_sequence(
 
 	for (uint32_t i = 0; i < schema->enumeration.count; i++) {
 		cyaml_err_t err;
-		uint64_t flag = ((int64_t)1) << i;
+		uint64_t flag = strings->val;
 		if (number & flag) {
-			err = cyaml__emit_scalar(ctx, schema, *strings,
+			err = cyaml__emit_scalar(ctx, schema, strings->str,
 					YAML_STR_TAG);
 			if (err != CYAML_OK) {
 				return err;
