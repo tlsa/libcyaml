@@ -333,6 +333,13 @@ typedef enum cyaml_cfg_flags {
 	 *       precedence.
 	 */
 	CYAML_CFG_STYLE_FLOW          = (1 << 2),
+	/**
+	 * When saving, emit "---" at document start and "..." at document end.
+	 *
+	 * If this flag isn't set, these document delimiting marks will not
+	 * be emitted.
+	 */
+	CYAML_CFG_DOCUMENT_DELIM      = (1 << 3),
 } cyaml_cfg_flags_t;
 
 /**

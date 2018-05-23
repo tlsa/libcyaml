@@ -3294,6 +3294,61 @@ static bool test_save_mapping_value_block_style(
 }
 
 /**
+ * Test saving without document delimiters.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_no_document_delimiters(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char ref[] =
+		"test_uint: 555\n";
+	static const struct target_struct {
+		unsigned test_uint;
+	} data = {
+		.test_uint = 555,
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("test_uint", CYAML_FLAG_DEFAULT,
+				struct target_struct, test_uint),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	cyaml_config_t cfg = *config;
+	char *buffer;
+	size_t len;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = &cfg,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	cfg.flags &= ~CYAML_CFG_DOCUMENT_DELIM;
+	err = cyaml_save_data(&buffer, &len, &cfg, &top_schema, &data, 0);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Run the YAML saving unit tests.
  *
  * \param[in]  rc         The ttest report context.
@@ -3311,7 +3366,7 @@ bool save_tests(
 		.log_fn = log_fn,
 		.mem_fn = cyaml_mem,
 		.log_level = log_level,
-		.flags = CYAML_CFG_DEFAULT,
+		.flags = CYAML_CFG_DOCUMENT_DELIM,
 	};
 
 	ttest_heading(rc, "Save single entry mapping tests: simple types");
@@ -3369,6 +3424,7 @@ bool save_tests(
 	ttest_heading(rc, "Save tests: various");
 
 	pass &= test_save_mapping_entry_ignored(rc, &config);
+	pass &= test_save_no_document_delimiters(rc, &config);
 	pass &= test_save_mapping_value_flow_style(rc, &config);
 	pass &= test_save_mapping_value_block_style(rc, &config);
 	pass &= test_save_sequence_config_flow_style(rc, &config);
