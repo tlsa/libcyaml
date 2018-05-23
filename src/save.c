@@ -230,6 +230,20 @@ static inline yaml_mapping_style_t cyaml__get_emit_style_map(
 }
 
 /**
+ * Helper to discern whether to emit document delimiting marks.
+ *
+ * These are "---" for document start, and "..." for document end.
+ *
+ * \param[in]  ctx     The CYAML saving context.
+ * \return true if delimiters should be emitted, false otherwise.
+ */
+static inline bool cyaml__emit_doc_delim(
+		const cyaml_ctx_t *ctx)
+{
+	return ctx->config->flags & CYAML_CFG_DOCUMENT_DELIM;
+}
+
+/**
  * Emit a YAML start event for the state being pushed to the stack.
  *
  * \param[in]  ctx     The CYAML saving context.
@@ -253,7 +267,7 @@ static cyaml_err_t cyaml__stack_push_write_event(
 		break;
 	case CYAML_STATE_IN_STREAM:
 		ret = yaml_document_start_event_initialize(&event,
-				NULL, NULL, NULL, 0);
+				NULL, NULL, NULL, !cyaml__emit_doc_delim(ctx));
 		break;
 	case CYAML_STATE_IN_DOC:
 		return CYAML_OK;
@@ -350,7 +364,8 @@ static cyaml_err_t cyaml__stack_pop_write_event(
 		ret = yaml_stream_end_event_initialize(&event);
 		break;
 	case CYAML_STATE_IN_DOC:
-		ret = yaml_document_end_event_initialize(&event, 0);
+		ret = yaml_document_end_event_initialize(&event,
+				!cyaml__emit_doc_delim(ctx));
 		break;
 	case CYAML_STATE_IN_MAP_KEY:
 		ret = yaml_mapping_end_event_initialize(&event);
