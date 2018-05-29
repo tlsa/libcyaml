@@ -323,7 +323,7 @@ static cyaml_err_t cyaml__stack_push(
 	switch (state) {
 	case CYAML_STATE_IN_MAP_KEY:
 		assert(schema->type == CYAML_MAPPING);
-		s.mapping.field = schema->mapping.schema;
+		s.mapping.field = schema->mapping.fields;
 		break;
 	default:
 		break;
@@ -1072,7 +1072,7 @@ static cyaml_err_t cyaml__write_sequence(
 
 	if (ctx->state->sequence.entry < ctx->state->sequence.count) {
 		const cyaml_schema_value_t *schema = ctx->state->schema;
-		const cyaml_schema_value_t *value = schema->sequence.schema;
+		const cyaml_schema_value_t *value = schema->sequence.entry;
 		unsigned seq_count = 0;
 		size_t data_size;
 		size_t offset;

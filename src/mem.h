@@ -12,7 +12,7 @@
 #ifndef CYAML_MEM_H
 #define CYAML_MEM_H
 
-#include "cyaml.h"
+#include "cyaml/cyaml.h"
 
 /**
  * Helper for freeing using the client's choice of allocator routine.

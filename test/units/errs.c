@@ -13,7 +13,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include <cyaml.h>
+#include <cyaml/cyaml.h>
 
 #include "ttest.h"
 
@@ -958,7 +958,7 @@ static bool test_err_load_schema_bad_data_size_4(
 				.sequence = {
 					.min = 0,
 					.max = CYAML_UNLIMITED,
-					.schema = &entry_schema,
+					.entry = &entry_schema,
 				},
 			},
 			.data_offset = offsetof(struct target_struct, value),
@@ -1027,7 +1027,7 @@ static bool test_err_load_schema_bad_data_size_5(
 				.sequence = {
 					.min = 0,
 					.max = CYAML_UNLIMITED,
-					.schema = &entry_schema,
+					.entry = &entry_schema,
 				},
 			},
 			.data_offset = offsetof(struct target_struct, value),
@@ -1096,7 +1096,7 @@ static bool test_err_load_schema_bad_data_size_6(
 				.sequence = {
 					.min = 0,
 					.max = 4,
-					.schema = &entry_schema,
+					.entry = &entry_schema,
 				},
 			},
 			.data_offset = offsetof(struct target_struct, value),
@@ -1569,7 +1569,7 @@ static bool test_err_save_schema_bad_data_size_7(
 				.flags = CYAML_FLAG_POINTER,
 				.data_size = sizeof(*(data.seq)),
 				.sequence = {
-					.schema = &entry_schema,
+					.entry = &entry_schema,
 					.min = 0,
 					.max = 10,
 
@@ -1636,7 +1636,7 @@ static bool test_err_load_schema_sequence_min_max(
 				.flags = CYAML_FLAG_POINTER,
 				.data_size = sizeof(*(data_tgt->seq)),
 				.sequence = {
-					.schema = &entry_schema,
+					.entry = &entry_schema,
 					.min = 0,
 					.max = CYAML_UNLIMITED,
 
@@ -1701,7 +1701,7 @@ static bool test_err_save_schema_sequence_min_max(
 				.flags = CYAML_FLAG_POINTER,
 				.data_size = sizeof(*(data.seq)),
 				.sequence = {
-					.schema = &entry_schema,
+					.entry = &entry_schema,
 					.min = 0,
 					.max = CYAML_UNLIMITED,
 

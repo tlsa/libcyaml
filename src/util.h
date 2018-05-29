@@ -12,7 +12,7 @@
 #ifndef CYAML_UTIL_H
 #define CYAML_UTIL_H
 
-#include "cyaml.h"
+#include "cyaml/cyaml.h"
 
 /** Macro to squash unused variable compiler warnings. */
 #define CYAML_UNUSED(_x) ((void)(_x))

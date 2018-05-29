@@ -49,6 +49,9 @@ To build a release version:
 
     make VARIANT=release
 
+Testing
+-------
+
 To run the tests, run any of the following, which generate various
 levels of output verbosity (optionally setting `VARIANT=release`):
 
@@ -68,7 +71,14 @@ To generate a test coverage report, `gcovr` is required:
 
     make coverage
 
+Documentation
+-------------
+
 To generate both public API documentation, and documentation of CYAML's
 internals, `doxygen` is required:
 
     make docs
+
+Alternatively, the read the API documentation directly from the
+[cyaml.h](https://github.com/tlsa/libcyaml/blob/master/include/cyaml/cyaml.h)
+header file.

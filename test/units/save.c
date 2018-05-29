@@ -13,7 +13,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#include <cyaml.h>
+#include <cyaml/cyaml.h>
 
 #include "../../src/data.h"
 #include "ttest.h"
@@ -738,6 +738,77 @@ static bool test_save_mapping_entry_enum_number(
 }
 
 /**
+ * Test saving a sparse, unordered enum.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_mapping_entry_enum_sparse(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	enum test_e {
+		FIRST  = -33,
+		SECOND = 1,
+		THIRD  = 256,
+		FOURTH = 3,
+		FIFTH  = 999,
+	};
+	static const cyaml_strval_t strings[] = {
+		{ "first",  FIRST },
+		{ "second", SECOND },
+		{ "third",  THIRD },
+		{ "fourth", FOURTH },
+		{ "fifth",  FIFTH },
+	};
+	static const unsigned char ref[] =
+		"---\n"
+		"test_enum: third\n"
+		"...\n";
+	static const struct target_struct {
+		enum test_e test_enum;
+	} data = {
+		.test_enum = THIRD,
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_ENUM("test_enum", CYAML_FLAG_STRICT,
+				struct target_struct, test_enum,
+				strings, CYAML_ARRAY_LEN(strings)),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer;
+	size_t len;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test saving a mapping.
  *
  * \param[in]  report  The test report context.
@@ -989,6 +1060,79 @@ static bool test_save_mapping_entry_flags_number(
 	static const struct cyaml_schema_field mapping_schema[] = {
 		CYAML_FIELD_FLAGS("test_flags", CYAML_FLAG_DEFAULT,
 				struct target_struct, test_flags, strings, 4),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer;
+	size_t len;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving a sparse flags value.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_mapping_entry_flags_sparse(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	enum test_f {
+		NONE   = 0,
+		FIRST  = (1 <<  3),
+		SECOND = (1 <<  9),
+		THIRD  = (1 << 10),
+		FOURTH = (1 << 21),
+	};
+	static const cyaml_strval_t strings[] = {
+		{ "none",   NONE   },
+		{ "first",  FIRST  },
+		{ "second", SECOND },
+		{ "third",  THIRD  },
+		{ "fourth", FOURTH },
+	};
+	static const unsigned char ref[] =
+		"---\n"
+		"test_flags:\n"
+		"- first\n"
+		"- fourth\n"
+		"...\n";
+	static const struct target_struct {
+		enum test_f test_flags;
+	} data = {
+		.test_flags = FIRST | FOURTH,
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_FLAGS("test_flags", CYAML_FLAG_DEFAULT,
+				struct target_struct, test_flags,
+				strings, CYAML_ARRAY_LEN(strings)),
 		CYAML_FIELD_END
 	};
 	static const struct cyaml_schema_value top_schema = {
@@ -1937,7 +2081,7 @@ static bool test_save_mapping_entry_sequence_sequence_fixed_flat_int(
 				.flags = CYAML_FLAG_DEFAULT,
 				.data_size = sizeof(int[3]),
 				.sequence = {
-					.schema = &entry_schema,
+					.entry = &entry_schema,
 					.min = 0,
 					.max = CYAML_UNLIMITED,
 				}
@@ -2918,7 +3062,7 @@ static bool test_save_mapping_entry_sequence_ptr_sequence_fixed_flat_int(
 				.flags = CYAML_FLAG_POINTER,
 				.data_size = sizeof(int[3]),
 				.sequence = {
-					.schema = &entry_schema,
+					.entry = &entry_schema,
 					.min = 0,
 					.max = CYAML_UNLIMITED,
 				}
@@ -3391,6 +3535,7 @@ bool save_tests(
 	pass &= test_save_mapping_entry_string_ptr(rc, &config);
 	pass &= test_save_mapping_entry_enum_strict(rc, &config);
 	pass &= test_save_mapping_entry_enum_number(rc, &config);
+	pass &= test_save_mapping_entry_enum_sparse(rc, &config);
 
 	ttest_heading(rc, "Save single entry mapping tests: complex types");
 
@@ -3398,6 +3543,7 @@ bool save_tests(
 	pass &= test_save_mapping_entry_mapping_ptr(rc, &config);
 	pass &= test_save_mapping_entry_flags_strict(rc, &config);
 	pass &= test_save_mapping_entry_flags_number(rc, &config);
+	pass &= test_save_mapping_entry_flags_sparse(rc, &config);
 
 	ttest_heading(rc, "Save single entry mapping tests: sequences");
 
