@@ -406,7 +406,7 @@ static cyaml_err_t cyaml__stack_push(
 	switch (state) {
 	case CYAML_STATE_IN_MAP_KEY:
 		assert(schema->type == CYAML_MAPPING);
-		s.mapping.schema = schema->mapping.schema;
+		s.mapping.schema = schema->mapping.fields;
 		err = cyaml__mapping_bitfieid_create(ctx, &s);
 		if (err != CYAML_OK) {
 			return err;
@@ -1418,7 +1418,7 @@ static cyaml_err_t cyaml__seq_entry(
 	}
 
 	/* Read the actual value */
-	err = cyaml__read_value(ctx, schema->sequence.schema,
+	err = cyaml__read_value(ctx, schema->sequence.entry,
 			value_data, event);
 	if (err != CYAML_OK) {
 		return err;

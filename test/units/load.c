@@ -1924,7 +1924,7 @@ static bool test_load_mapping_entry_sequence_sequence_fixed_flat_int(
 				.flags = CYAML_FLAG_DEFAULT,
 				.data_size = sizeof(int[3]),
 				.sequence = {
-					.schema = &entry_schema,
+					.entry = &entry_schema,
 					.min = 0,
 					.max = CYAML_UNLIMITED,
 				}
@@ -2858,7 +2858,7 @@ static bool test_load_mapping_entry_sequence_ptr_sequence_fixed_flat_int(
 				.flags = CYAML_FLAG_POINTER,
 				.data_size = sizeof(int[3]),
 				.sequence = {
-					.schema = &entry_schema,
+					.entry = &entry_schema,
 					.min = 0,
 					.max = CYAML_UNLIMITED,
 				}

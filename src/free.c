@@ -63,7 +63,7 @@ static void cyaml__free_sequence(
 		uint8_t * const data,
 		unsigned count)
 {
-	const cyaml_schema_value_t *schema = sequence_schema->sequence.schema;
+	const cyaml_schema_value_t *schema = sequence_schema->sequence.entry;
 	uint32_t data_size = schema->data_size;
 
 	if (schema->flags & CYAML_FLAG_POINTER) {
@@ -88,7 +88,7 @@ static void cyaml__free_mapping(
 		const cyaml_schema_value_t *mapping_schema,
 		uint8_t * const data)
 {
-	const cyaml_schema_field_t *schema = mapping_schema->mapping.schema;
+	const cyaml_schema_field_t *schema = mapping_schema->mapping.fields;
 
 	while (schema->key != NULL) {
 		unsigned count = 0;

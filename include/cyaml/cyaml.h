@@ -233,7 +233,7 @@ typedef struct cyaml_schema_value {
 			 * NULL key.  See \ref cyaml_schema_field_t
 			 * and \ref CYAML_FIELD_END for more info.
 			 */
-			const struct cyaml_schema_field *schema;
+			const struct cyaml_schema_field *fields;
 		} mapping;
 		/**
 		 * \ref CYAML_SEQUENCE and \ref CYAML_SEQUENCE_FIXED
@@ -250,7 +250,7 @@ typedef struct cyaml_schema_value {
 			 * CYAML_SEQUENCE_FIXED is allowed).  That is, you
 			 * can't have a sequence of variable-length sequences.
 			 */
-			const struct cyaml_schema_value *schema;
+			const struct cyaml_schema_value *entry;
 			/**
 			 * Minimum number of sequence entries.
 			 *
@@ -696,15 +696,15 @@ typedef enum cyaml_err {
  *
  * \param[in]  _flags         Any behavioural flags relevant to this value.
  * \param[in]  _type          The C type of structure corresponding to mapping.
- * \param[in]  _schema        Pointer to mapping schema array.
+ * \param[in]  _fields        Pointer to mapping fields schema array.
  */
 #define CYAML_VALUE_MAPPING( \
-		_flags, _type, _schema) \
+		_flags, _type, _fields) \
 	.type = CYAML_MAPPING, \
 	.flags = (_flags), \
 	.data_size = sizeof(_type), \
 	.mapping = { \
-		.schema = _schema, \
+		.fields = _fields, \
 	}
 
 /**
@@ -716,15 +716,15 @@ typedef enum cyaml_err {
  * \param[in]  _flags      Any behavioural flags relevant to this value.
  * \param[in]  _structure  The structure corresponding to the containing mapping.
  * \param[in]  _member     The member in _structure for this mapping value.
- * \param[in]  _schema     Pointer to mapping schema array.
+ * \param[in]  _fields     Pointer to mapping fields schema array.
  */
 #define CYAML_FIELD_MAPPING( \
-		_key, _flags, _structure, _member, _schema) \
+		_key, _flags, _structure, _member, _fields) \
 { \
 	.key = _key, \
 	.value = { \
 		CYAML_VALUE_MAPPING(((_flags) & (~CYAML_FLAG_POINTER)), \
-				(((_structure *)NULL)->_member), _schema), \
+				(((_structure *)NULL)->_member), _fields), \
 	}, \
 	.data_offset = offsetof(_structure, _member) \
 }
@@ -738,15 +738,15 @@ typedef enum cyaml_err {
  * \param[in]  _flags      Any behavioural flags relevant to this value.
  * \param[in]  _structure  The structure corresponding to the containing mapping.
  * \param[in]  _member     The member in _structure for this mapping value.
- * \param[in]  _schema     Pointer to mapping schema array.
+ * \param[in]  _fields     Pointer to mapping fields schema array.
  */
 #define CYAML_FIELD_MAPPING_PTR( \
-		_key, _flags, _structure, _member, _schema) \
+		_key, _flags, _structure, _member, _fields) \
 { \
 	.key = _key, \
 	.value = { \
 		CYAML_VALUE_MAPPING(((_flags) | CYAML_FLAG_POINTER), \
-				(*(((_structure *)NULL)->_member)), _schema), \
+				(*(((_structure *)NULL)->_member)), _fields), \
 	}, \
 	.data_offset = offsetof(_structure, _member) \
 }
@@ -756,17 +756,17 @@ typedef enum cyaml_err {
  *
  * \param[in]  _flags      Any behavioural flags relevant to this value.
  * \param[in]  _type       The C type of sequence **entries**.
- * \param[in]  _schema     Pointer to schema for the **entries** in sequence.
+ * \param[in]  _entry      Pointer to schema for the **entries** in sequence.
  * \param[in]  _min        Minimum number of sequence entries required.
  * \param[in]  _max        Maximum number of sequence entries required.
  */
 #define CYAML_VALUE_SEQUENCE( \
-		_flags, _type, _schema, _min, _max) \
+		_flags, _type, _entry, _min, _max) \
 	.type = CYAML_SEQUENCE, \
 	.flags = (_flags), \
 	.data_size = sizeof(_type), \
 	.sequence = { \
-		.schema = _schema, \
+		.entry = _entry, \
 		.min = _min, \
 		.max = _max, \
 	}
@@ -778,18 +778,18 @@ typedef enum cyaml_err {
  * \param[in]  _flags      Any behavioural flags relevant to this value.
  * \param[in]  _structure  The structure corresponding to the mapping.
  * \param[in]  _member     The member in _structure for this mapping value.
- * \param[in]  _schema     Pointer to schema for the **entries** in sequence.
+ * \param[in]  _entry      Pointer to schema for the **entries** in sequence.
  * \param[in]  _min        Minimum number of sequence entries required.
  * \param[in]  _max        Maximum number of sequence entries required.
  */
 #define CYAML_FIELD_SEQUENCE( \
-		_key, _flags, _structure, _member, _schema, _min, _max) \
+		_key, _flags, _structure, _member, _entry, _min, _max) \
 { \
 	.key = _key, \
 	.value = { \
 		CYAML_VALUE_SEQUENCE((_flags), \
 				(*(((_structure *)NULL)->_member)), \
-				_schema, _min, _max), \
+				_entry, _min, _max), \
 	}, \
 	.data_offset = offsetof(_structure, _member), \
 	.count_size = sizeof(((_structure *)NULL)->_member ## _count), \
@@ -801,16 +801,16 @@ typedef enum cyaml_err {
  *
  * \param[in]  _flags      Any behavioural flags relevant to this value.
  * \param[in]  _type       The C type of sequence **entries**.
- * \param[in]  _schema     Pointer to schema for the **entries** in sequence.
+ * \param[in]  _entry      Pointer to schema for the **entries** in sequence.
  * \param[in]  _count      Number of sequence entries required.
  */
 #define CYAML_VALUE_SEQUENCE_FIXED( \
-		_flags, _type, _schema, _count) \
+		_flags, _type, _entry, _count) \
 	.type = CYAML_SEQUENCE_FIXED, \
 	.flags = (_flags), \
 	.data_size = sizeof(_type), \
 	.sequence = { \
-		.schema = _schema, \
+		.entry = _entry, \
 		.min = _count, \
 		.max = _count, \
 	}
@@ -822,17 +822,17 @@ typedef enum cyaml_err {
  * \param[in]  _flags      Any behavioural flags relevant to this value.
  * \param[in]  _structure  The structure corresponding to the mapping.
  * \param[in]  _member     The member in _structure for this mapping value.
- * \param[in]  _schema     Pointer to schema for the **entries** in sequence.
+ * \param[in]  _entry      Pointer to schema for the **entries** in sequence.
  * \param[in]  _count      Number of sequence entries required.
  */
 #define CYAML_FIELD_SEQUENCE_FIXED( \
-		_key, _flags, _structure, _member, _schema, _count) \
+		_key, _flags, _structure, _member, _entry, _count) \
 { \
 	.key = _key, \
 	.value = { \
 		CYAML_VALUE_SEQUENCE_FIXED((_flags), \
 				(*(((_structure *)NULL)->_member)), \
-				_schema, _count), \
+				_entry, _count), \
 	}, \
 	.data_offset = offsetof(_structure, _member) \
 }
