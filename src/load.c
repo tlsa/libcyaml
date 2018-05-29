@@ -734,10 +734,11 @@ static cyaml_err_t cyaml__read_enum(
 		const char *value,
 		uint8_t *data)
 {
+	const cyaml_strval_t *strings = schema->enumeration.strings;
+
 	for (uint32_t i = 0; i < schema->enumeration.count; i++) {
-		if (strcmp(value, schema->enumeration.strings[i].str) == 0) {
-			return cyaml_data_write(
-					schema->enumeration.strings[i].val,
+		if (strcmp(value, strings[i].str) == 0) {
+			return cyaml_data_write(strings[i].val,
 					schema->data_size, data);
 		}
 	}
@@ -957,9 +958,11 @@ static cyaml_err_t cyaml__set_flag(
 		const char *value,
 		uint64_t *flags_out)
 {
+	const cyaml_strval_t *strings = schema->enumeration.strings;
+
 	for (uint32_t i = 0; i < schema->enumeration.count; i++) {
-		if (strcmp(value, schema->enumeration.strings[i].str) == 0) {
-			*flags_out |= schema->enumeration.strings[i].val;
+		if (strcmp(value, strings[i].str) == 0) {
+			*flags_out |= strings[i].val;
 			return CYAML_OK;
 		}
 	}
