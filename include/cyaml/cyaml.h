@@ -36,6 +36,10 @@ extern const uint32_t cyaml_version;
 
 /**
  * CYAML value types.
+ *
+ * These are the funamental data types that apply to "values" in CYAML.
+ *
+ * CYAML "values" are represented in by \ref cyaml_schema_value.
  */
 typedef enum cyaml_type {
 	CYAML_INT,      /**< Value is a signed integer. */
@@ -169,8 +173,22 @@ typedef struct cyaml_strval {
 /**
  * Schema definition for a value.
  *
- * There are convenience macros for each of the types to assist in
- * building a CYAML schema data structure for your YAML documents.
+ * \note There are convenience macros for each of the types to assist in
+ *       building a CYAML schema data structure for your YAML documents.
+ *
+ * This is the fundmental building block of CYAML schemas.  The load, save and
+ * free functions take parameters of this type to explain what the top-level
+ * type of the YAML document should be.
+ *
+ * Values of type \ref CYAML_SEQUENCE and \ref CYAML_SEQUENCE_FIXED
+ * contain a reference to another \ref cyaml_schema_value representing
+ * the type of the entries of the sequence.  For example, if you want
+ * a sequence of integers, you'd have a \ref cyaml_schema_value for the
+ * for the sequence value type, and another for the integer value type.
+ *
+ * Values of type \ref CYAML_MAPPING contain an array of \ref cyaml_schema_field
+ * entries, defining the YAML keys allowed by the mapping.  Each field contains
+ * a \ref cyaml_schema_value representing the schema for the value.
  */
 typedef struct cyaml_schema_value {
 	/**
@@ -265,7 +283,8 @@ typedef struct cyaml_schema_value {
  * Schema definition entry for mapping fields.
  *
  * YAML mappings are key:value pairs.  CYAML only supports scalar mapping keys,
- * that is, keys that are a string.
+ * i.e. the keys must be strings.  Each mapping field schema contains a
+ * \ref cyaml_schema_value to define field's value.
  *
  * The schema for mappings is composed of an array of entries of this
  * data structure.  It specifies the name of the key, and the type of
@@ -275,7 +294,7 @@ typedef struct cyaml_schema_value {
 typedef struct cyaml_schema_field {
 	/**
 	 * String for YAML mapping key that his schema entry describes,
-	 * or NULL to indicated the end of an array of cyaml_schema_field_t
+	 * or NULL to indicated the end of an array of \ref cyaml_schema_field
 	 * entries.
 	 */
 	const char *key;
