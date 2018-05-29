@@ -13,7 +13,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#include <cyaml.h>
+#include <cyaml/cyaml.h>
 
 #include "../../src/data.h"
 #include "ttest.h"

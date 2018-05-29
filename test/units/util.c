@@ -12,7 +12,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#include <cyaml.h>
+#include <cyaml/cyaml.h>
 
 #include "../../src/mem.h"
 #include "../../src/util.h"

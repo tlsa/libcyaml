@@ -12,7 +12,7 @@
 #ifndef CYAML_DATA_H
 #define CYAML_DATA_H
 
-#include "cyaml.h"
+#include "cyaml/cyaml.h"
 
 /**
  * Write a value of up to eight bytes to data_target.
