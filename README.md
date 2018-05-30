@@ -49,6 +49,16 @@ To build a release version:
 
     make VARIANT=release
 
+Installation
+------------
+
+To install a release version of the library, run:
+
+    make install VARIANT=release
+
+It will install to the PREFIX `/usr/local` by default, and it will use
+DESTDIR and PREFIX from the environement if set.
+
 Testing
 -------
 
