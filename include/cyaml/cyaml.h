@@ -774,6 +774,28 @@ typedef enum cyaml_err {
 /**
  * Mapping schema helper macro for keys with \ref CYAML_SEQUENCE type.
  *
+ * To use this, there must be a member in {_structure} called "{_member}_count",
+ * for storing the number of entries in the sequence.
+ *
+ * For example, for the following structure:
+ *
+ * ```
+ * struct my_structure {
+ *         unsigned *my_sequence;
+ *         unsigned  my_sequence_count;
+ * };
+ * ```
+ *
+ * Pass the following as parameters:
+ *
+ * | Parameter  | Value                 |
+ * | ---------- | --------------------- |
+ * | _structure | `struct my_structure` |
+ * | _member    | `my_sequence`         |
+ *
+ * If you want to call the structure member for storing the sequence entry
+ * count something else, then use \ref CYAML_FIELD_SEQUENCE_COUNT instead.
+ *
  * \param[in]  _key        String defining the YAML mapping key for this value.
  * \param[in]  _flags      Any behavioural flags relevant to this value.
  * \param[in]  _structure  The structure corresponding to the mapping.
