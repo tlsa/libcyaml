@@ -21,9 +21,14 @@ VERSION_STR = $(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH)
 
 .IMPLICIT =
 
+PREFIX ?= /usr/local
+LIBDIR ?= lib
+INCLUDEDIR ?= include
+
 CC ?= gcc
 AR ?= ar
 MKDIR =	mkdir -p
+INSTALL ?= install -c
 VALGRIND = valgrind --leak-check=full --track-origins=yes
 
 VERSION_FLAGS = -DVERSION_MAJOR=$(VERSION_MAJOR) \
@@ -129,9 +134,18 @@ docs:
 clean:
 	rm -rf build/
 
+install: $(BUILDDIR)/$(LIB_SH_VER) $(BUILDDIR)/$(LIB_STATIC) $(BUILDDIR)/$(LIB_PKGCON)
+	$(INSTALL) $(BUILDDIR)/$(LIB_SH_VER) $(DESTDIR)$(PREFIX)/$(LIBDIR)/$(LIB_SH_VER)
+	(cd $(DESTDIR)$(PREFIX)/$(LIBDIR) && { ln -s -f $(LIB_SH_VER) $(LIB_SHARED).0 || { rm -f $(LIB_SHARED).0 && ln -s $(LIB_SH_VER) $(LIB_SHARED).0; }; })
+	(cd $(DESTDIR)$(PREFIX)/$(LIBDIR) && { ln -s -f $(LIB_SH_VER) $(LIB_SHARED)   || { rm -f $(LIB_SHARED)   && ln -s $(LIB_SH_VER) $(LIB_SHARED);   }; })
+	$(INSTALL) $(BUILDDIR)/$(LIB_STATIC) $(DESTDIR)$(PREFIX)/$(LIBDIR)/$(LIB_STATIC)
+	chmod 644 $(DESTDIR)$(PREFIX)/$(LIBDIR)/$(LIB_STATIC)
+	$(INSTALL) -d $(DESTDIR)$(PREFIX)/$(INCLUDEDIR)/cyaml
+	$(INSTALL) -m 644 include/cyaml/* -t $(DESTDIR)$(PREFIX)/$(INCLUDEDIR)/cyaml
+
 .PHONY: all test test-quiet test-verbose test-debug \
 		valgrind valgrind-quiet valgrind-verbose valgrind-debug \
-		clean coverage docs
+		clean coverage docs install
 
 $(BUILDDIR)/test/units/cyaml-static: $(TEST_OBJ) $(BUILDDIR)/$(LIB_STATIC)
 	$(CC) $(LDFLAGS_COV) -o $@ $^ $(LDFLAGS)
