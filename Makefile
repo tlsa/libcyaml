@@ -17,13 +17,18 @@ VERSION_MAJOR = 0
 VERSION_MINOR = 0
 VERSION_PATCH = 0
 VERSION_DEVEL = 1 # Zero or one only.
+VERSION_STR = $(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH)
 
 .IMPLICIT =
 
-CC = gcc
-AR = $(CC)
-LD = $(CC)
+PREFIX ?= /usr/local
+LIBDIR ?= lib
+INCLUDEDIR ?= include
+
+CC ?= gcc
+AR ?= ar
 MKDIR =	mkdir -p
+INSTALL ?= install -c
 VALGRIND = valgrind --leak-check=full --track-origins=yes
 
 VERSION_FLAGS = -DVERSION_MAJOR=$(VERSION_MAJOR) \
@@ -32,39 +37,50 @@ VERSION_FLAGS = -DVERSION_MAJOR=$(VERSION_MAJOR) \
                 -DVERSION_DEVEL=$(VERSION_DEVEL)
 
 INCLUDE = -I include -I src
-CCFLAGS += $(INCLUDE) $(VERSION_FLAGS)
-CCFLAGS += -std=c11 -Wall -Wextra -pedantic
+CFLAGS += $(INCLUDE) $(VERSION_FLAGS)
+CFLAGS += -std=c11 -Wall -Wextra -pedantic
 LDFLAGS = -lyaml
-ARFLAGS = -shared
 
 ifeq ($(VARIANT), debug)
-	CCFLAGS += -O0 -g
+	CFLAGS += -O0 -g
 else
-	CCFLAGS += -O2 -DNDEBUG
+	CFLAGS += -O2 -DNDEBUG
 endif
 
 ifneq ($(filter coverage,$(MAKECMDGOALS)),)
 	BUILDDIR = build/coverage/$(VARIANT)
-	CCFLAGS_COV = --coverage -DNDEBUG
+	CFLAGS_COV = --coverage -DNDEBUG
 	LDFLAGS_COV = --coverage
 else
 	BUILDDIR = build/$(VARIANT)
-	CCFLAGS_COV =
+	CFLAGS_COV =
 	LDFLAGS_COV =
 endif
+
+BUILDDIR_SHARED = $(BUILDDIR)/shared
+BUILDDIR_STATIC = $(BUILDDIR)/static
 
 LIB_SRC_FILES = mem.c free.c load.c save.c util.c
 LIB_SRC := $(addprefix src/,$(LIB_SRC_FILES))
 LIB_OBJ = $(patsubst %.c,%.o, $(addprefix $(BUILDDIR)/,$(LIB_SRC)))
+LIB_OBJ_SHARED = $(patsubst $(BUILDDIR)%,$(BUILDDIR_SHARED)%,$(LIB_OBJ))
+LIB_OBJ_STATIC = $(patsubst $(BUILDDIR)%,$(BUILDDIR_STATIC)%,$(LIB_OBJ))
+
+LIB_PKGCON = libcyaml.pc
+LIB_STATIC = libcyaml.a
+LIB_SHARED = libcyaml.so
+LIB_SH_VER = $(LIB_SHARED).$(VERSION_STR)
 
 TEST_SRC_FILES = units/free.c units/load.c units/test.c units/util.c \
 		units/errs.c units/file.c units/save.c
 TEST_SRC := $(addprefix test/,$(TEST_SRC_FILES))
 TEST_OBJ = $(patsubst %.c,%.o, $(addprefix $(BUILDDIR)/,$(TEST_SRC)))
 
-TEST_BINS = $(BUILDDIR)/test/units/libcyaml
+TEST_BINS = \
+		$(BUILDDIR)/test/units/cyaml-shared \
+		$(BUILDDIR)/test/units/cyaml-static
 
-all: $(BUILDDIR)/libcyaml.so
+all: $(BUILDDIR)/$(LIB_SH_VER) $(BUILDDIR)/$(LIB_STATIC)
 
 coverage: test-verbose
 	@$(MKDIR) $(BUILDDIR)
@@ -96,12 +112,27 @@ valgrind-verbose: $(TEST_BINS)
 valgrind-debug: $(TEST_BINS)
 	@for i in $(^); do $(VALGRIND) $$i -d || exit; done
 
-$(BUILDDIR)/libcyaml.so: $(LIB_OBJ)
-	$(AR) $(ARFLAGS) $(LDFLAGS_COV) -o $@ $^
+$(BUILDDIR)/$(LIB_PKGCON): $(LIB_PKGCON).in
+	sed \
+		-e 's#PREFIX#$(PREFIX)#' \
+		-e 's#LIBDIR#$(LIBDIR)#' \
+		-e 's#INCLUDEDIR#$(INCLUDEDIR)#' \
+		-e 's#VERSION#$(VERSION_STR)#' \
+		$(LIB_PKGCON).in >$(BUILDDIR)/$(LIB_PKGCON)
 
-$(LIB_OBJ): $(BUILDDIR)/%.o : %.c
-	$(MKDIR) $(BUILDDIR)/src
-	$(CC) $(CCFLAGS) -fPIC $(CCFLAGS_COV) -c -o $@ $<
+$(BUILDDIR)/$(LIB_STATIC): $(LIB_OBJ_STATIC)
+	$(AR) -rcs -o $@ $^
+
+$(BUILDDIR)/$(LIB_SH_VER): $(LIB_OBJ_SHARED)
+	$(CC) -shared $(LDFLAGS_COV) -o $@ $^
+
+$(LIB_OBJ_STATIC): $(BUILDDIR_STATIC)/%.o : %.c
+	@$(MKDIR) $(BUILDDIR_STATIC)/src
+	$(CC) $(CFLAGS) $(CFLAGS_COV) -c -o $@ $<
+
+$(LIB_OBJ_SHARED): $(BUILDDIR_SHARED)/%.o : %.c
+	@$(MKDIR) $(BUILDDIR_SHARED)/src
+	$(CC) $(CFLAGS) -fPIC $(CFLAGS_COV) -c -o $@ $<
 
 docs:
 	$(MKDIR) build/docs/api
@@ -112,15 +143,26 @@ docs:
 clean:
 	rm -rf build/
 
+install: $(BUILDDIR)/$(LIB_SH_VER) $(BUILDDIR)/$(LIB_STATIC) $(BUILDDIR)/$(LIB_PKGCON)
+	$(INSTALL) $(BUILDDIR)/$(LIB_SH_VER) $(DESTDIR)$(PREFIX)/$(LIBDIR)/$(LIB_SH_VER)
+	(cd $(DESTDIR)$(PREFIX)/$(LIBDIR) && { ln -s -f $(LIB_SH_VER) $(LIB_SHARED).0 || { rm -f $(LIB_SHARED).0 && ln -s $(LIB_SH_VER) $(LIB_SHARED).0; }; })
+	(cd $(DESTDIR)$(PREFIX)/$(LIBDIR) && { ln -s -f $(LIB_SH_VER) $(LIB_SHARED)   || { rm -f $(LIB_SHARED)   && ln -s $(LIB_SH_VER) $(LIB_SHARED);   }; })
+	$(INSTALL) $(BUILDDIR)/$(LIB_STATIC) $(DESTDIR)$(PREFIX)/$(LIBDIR)/$(LIB_STATIC)
+	chmod 644 $(DESTDIR)$(PREFIX)/$(LIBDIR)/$(LIB_STATIC)
+	$(INSTALL) -d $(DESTDIR)$(PREFIX)/$(INCLUDEDIR)/cyaml
+	$(INSTALL) -m 644 include/cyaml/* -t $(DESTDIR)$(PREFIX)/$(INCLUDEDIR)/cyaml
+	$(INSTALL) -m 644 $(BUILDDIR)/$(LIB_PKGCON) $(DESTDIR)$(PREFIX)/$(LIBDIR)/pkgconfig/$(LIB_PKGCON)
+
 .PHONY: all test test-quiet test-verbose test-debug \
 		valgrind valgrind-quiet valgrind-verbose valgrind-debug \
-		clean coverage docs
+		clean coverage docs install
 
-TEST_DEPS = $(BUILDDIR)/libcyaml.so
+$(BUILDDIR)/test/units/cyaml-static: $(TEST_OBJ) $(BUILDDIR)/$(LIB_STATIC)
+	$(CC) $(LDFLAGS_COV) -o $@ $^ $(LDFLAGS)
 
-$(BUILDDIR)/test/units/libcyaml: $(TEST_OBJ) $(TEST_DEPS)
-	$(LD) $(LDFLAGS_COV) -o $@ $^ $(LDFLAGS)
+$(BUILDDIR)/test/units/cyaml-shared: $(TEST_OBJ) $(BUILDDIR)/$(LIB_SH_VER)
+	$(CC) $(LDFLAGS_COV) -o $@ $^ $(LDFLAGS)
 
 $(TEST_OBJ): $(BUILDDIR)/%.o : %.c
 	@$(MKDIR) $(BUILDDIR)/test/units
-	$(CC) $(CCFLAGS) $(CCFLAGS_COV) -c -o $@ $<
+	$(CC) $(CFLAGS) $(CFLAGS_COV) -c -o $@ $<
