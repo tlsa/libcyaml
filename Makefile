@@ -66,6 +66,7 @@ LIB_OBJ = $(patsubst %.c,%.o, $(addprefix $(BUILDDIR)/,$(LIB_SRC)))
 LIB_OBJ_SHARED = $(patsubst $(BUILDDIR)%,$(BUILDDIR_SHARED)%,$(LIB_OBJ))
 LIB_OBJ_STATIC = $(patsubst $(BUILDDIR)%,$(BUILDDIR_STATIC)%,$(LIB_OBJ))
 
+LIB_PKGCON = libcyaml.pc
 LIB_STATIC = libcyaml.a
 LIB_SHARED = libcyaml.so
 LIB_SH_VER = $(LIB_SHARED).$(VERSION_STR)
@@ -111,6 +112,14 @@ valgrind-verbose: $(TEST_BINS)
 valgrind-debug: $(TEST_BINS)
 	@for i in $(^); do $(VALGRIND) $$i -d || exit; done
 
+$(BUILDDIR)/$(LIB_PKGCON): $(LIB_PKGCON).in
+	sed \
+		-e 's#PREFIX#$(PREFIX)#' \
+		-e 's#LIBDIR#$(LIBDIR)#' \
+		-e 's#INCLUDEDIR#$(INCLUDEDIR)#' \
+		-e 's#VERSION#$(VERSION_STR)#' \
+		$(LIB_PKGCON).in >$(BUILDDIR)/$(LIB_PKGCON)
+
 $(BUILDDIR)/$(LIB_STATIC): $(LIB_OBJ_STATIC)
 	$(AR) -rcs -o $@ $^
 
@@ -142,6 +151,7 @@ install: $(BUILDDIR)/$(LIB_SH_VER) $(BUILDDIR)/$(LIB_STATIC) $(BUILDDIR)/$(LIB_P
 	chmod 644 $(DESTDIR)$(PREFIX)/$(LIBDIR)/$(LIB_STATIC)
 	$(INSTALL) -d $(DESTDIR)$(PREFIX)/$(INCLUDEDIR)/cyaml
 	$(INSTALL) -m 644 include/cyaml/* -t $(DESTDIR)$(PREFIX)/$(INCLUDEDIR)/cyaml
+	$(INSTALL) -m 644 $(BUILDDIR)/$(LIB_PKGCON) $(DESTDIR)$(PREFIX)/$(LIBDIR)/pkgconfig/$(LIB_PKGCON)
 
 .PHONY: all test test-quiet test-verbose test-debug \
 		valgrind valgrind-quiet valgrind-verbose valgrind-debug \
