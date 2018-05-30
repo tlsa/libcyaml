@@ -31,7 +31,8 @@ arranged in memory.
 * Enumerations and flag words.
 * YAML backtraces make it simple for users to fix their YAML to
   conform to your schema.
-* Uses standard `libyaml` library for low-level YAML read / write.
+* Uses standard [`libyaml`](https://github.com/yaml/libyaml) library for
+  low-level YAML read / write.
 
 Status
 ------
