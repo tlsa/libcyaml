@@ -37,7 +37,7 @@ extern const uint32_t cyaml_version;
 /**
  * CYAML value types.
  *
- * These are the funamental data types that apply to "values" in CYAML.
+ * These are the fundamental data types that apply to "values" in CYAML.
  *
  * CYAML "values" are represented in by \ref cyaml_schema_value.
  */
@@ -176,7 +176,7 @@ typedef struct cyaml_strval {
  * \note There are convenience macros for each of the types to assist in
  *       building a CYAML schema data structure for your YAML documents.
  *
- * This is the fundmental building block of CYAML schemas.  The load, save and
+ * This is the fundamental building block of CYAML schemas.  The load, save and
  * free functions take parameters of this type to explain what the top-level
  * type of the YAML document should be.
  *
@@ -1004,7 +1004,7 @@ extern void cyaml_log(
  *                   this frees `ptr`.
  * \return If `size == 0`, returns NULL.  If `size > 0`, returns NULL on failure,
  *         and any existing allocation is left untouched, or return non-NULL as
- *         the new alloctation on success, and the original pointer becomes
+ *         the new allocation on success, and the original pointer becomes
  *         invalid.
  */
 extern void * cyaml_mem(
