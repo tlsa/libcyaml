@@ -4161,6 +4161,73 @@ static bool test_load_no_log(
 }
 
 /**
+ * Test loading a sequence with arbitrary C struct member name for entry count.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_schema_sequence_entry_count_member(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	unsigned ref[] = { 99999, 99998, 99997, 99996, 99995, 99994 };
+	static const unsigned char yaml[] =
+		"sequence:\n"
+		"    - 99999\n"
+		"    - 99998\n"
+		"    - 99997\n"
+		"    - 99996\n"
+		"    - 99995\n"
+		"    - 99994\n";
+	struct target_struct {
+		unsigned *entries;
+		uint32_t n_entries;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_UINT(CYAML_FLAG_DEFAULT, *(data_tgt->entries)),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_SEQUENCE_COUNT("sequence", CYAML_FLAG_POINTER,
+				struct target_struct, entries, n_entries,
+				&entry_schema, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (CYAML_ARRAY_LEN(ref) != data_tgt->n_entries) {
+		return ttest_fail(&tc, "Incorrect sequence count");
+	}
+
+	for (unsigned i = 0; i < CYAML_ARRAY_LEN(ref); i++) {
+		if (data_tgt->entries[i] != ref[i]) {
+			return ttest_fail(&tc, "Incorrect value (i=%u): "
+					"got: %i, expected: %i", i,
+					data_tgt->entries[i], ref[i]);
+		}
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Run the YAML loading unit tests.
  *
  * \param[in]  rc         The ttest report context.
@@ -4258,6 +4325,7 @@ bool load_tests(
 	pass &= test_load_mapping_ignored_unknown_keys(rc, &config);
 	pass &= test_load_sequence_without_max_entries(rc, &config);
 	pass &= test_load_schema_top_level_sequence_fixed(rc, &config);
+	pass &= test_load_schema_sequence_entry_count_member(rc, &config);
 
 	return pass;
 }

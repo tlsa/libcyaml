@@ -37,7 +37,7 @@ extern const uint32_t cyaml_version;
 /**
  * CYAML value types.
  *
- * These are the funamental data types that apply to "values" in CYAML.
+ * These are the fundamental data types that apply to "values" in CYAML.
  *
  * CYAML "values" are represented in by \ref cyaml_schema_value.
  */
@@ -176,7 +176,7 @@ typedef struct cyaml_strval {
  * \note There are convenience macros for each of the types to assist in
  *       building a CYAML schema data structure for your YAML documents.
  *
- * This is the fundmental building block of CYAML schemas.  The load, save and
+ * This is the fundamental building block of CYAML schemas.  The load, save and
  * free functions take parameters of this type to explain what the top-level
  * type of the YAML document should be.
  *
@@ -774,6 +774,28 @@ typedef enum cyaml_err {
 /**
  * Mapping schema helper macro for keys with \ref CYAML_SEQUENCE type.
  *
+ * To use this, there must be a member in {_structure} called "{_member}_count",
+ * for storing the number of entries in the sequence.
+ *
+ * For example, for the following structure:
+ *
+ * ```
+ * struct my_structure {
+ *         unsigned *my_sequence;
+ *         unsigned  my_sequence_count;
+ * };
+ * ```
+ *
+ * Pass the following as parameters:
+ *
+ * | Parameter  | Value                 |
+ * | ---------- | --------------------- |
+ * | _structure | `struct my_structure` |
+ * | _member    | `my_sequence`         |
+ *
+ * If you want to call the structure member for storing the sequence entry
+ * count something else, then use \ref CYAML_FIELD_SEQUENCE_COUNT instead.
+ *
  * \param[in]  _key        String defining the YAML mapping key for this value.
  * \param[in]  _flags      Any behavioural flags relevant to this value.
  * \param[in]  _structure  The structure corresponding to the mapping.
@@ -794,6 +816,54 @@ typedef enum cyaml_err {
 	.data_offset = offsetof(_structure, _member), \
 	.count_size = sizeof(((_structure *)NULL)->_member ## _count), \
 	.count_offset = offsetof(_structure, _member ## _count), \
+}
+
+/**
+ * Mapping schema helper macro for keys with \ref CYAML_SEQUENCE type.
+ *
+ * Compared to .\ref CYAML_FIELD_SEQUENCE, this macro takes an extra `_count`
+ * parameter, allowing the structure member name for the sequence entry count
+ * to be provided explicitly.
+ *
+ * For example, for the following structure:
+ *
+ * ```
+ * struct my_structure {
+ *         unsigned *things;
+ *         unsigned  n_things;
+ * };
+ * ```
+ *
+ * Pass the following as parameters:
+ *
+ * | Parameter  | Value                 |
+ * | ---------- | --------------------- |
+ * | _structure | `struct my_structure` |
+ * | _member    | `things`              |
+ * | _count     | `n_things`            |
+ *
+ * \param[in]  _key        String defining the YAML mapping key for this value.
+ * \param[in]  _flags      Any behavioural flags relevant to this value.
+ * \param[in]  _structure  The structure corresponding to the mapping.
+ * \param[in]  _member     The member in _structure for this mapping value.
+ * \param[in]  _count      The member in _structure for this sequence's
+ *                         entry count.
+ * \param[in]  _entry      Pointer to schema for the **entries** in sequence.
+ * \param[in]  _min        Minimum number of sequence entries required.
+ * \param[in]  _max        Maximum number of sequence entries required.
+ */
+#define CYAML_FIELD_SEQUENCE_COUNT( \
+		_key, _flags, _structure, _member, _count, _entry, _min, _max) \
+{ \
+	.key = _key, \
+	.value = { \
+		CYAML_VALUE_SEQUENCE((_flags), \
+				(*(((_structure *)NULL)->_member)), \
+				_entry, _min, _max), \
+	}, \
+	.data_offset = offsetof(_structure, _member), \
+	.count_size = sizeof(((_structure *)NULL)->_count), \
+	.count_offset = offsetof(_structure, _count), \
 }
 
 /**
@@ -1004,7 +1074,7 @@ extern void cyaml_log(
  *                   this frees `ptr`.
  * \return If `size == 0`, returns NULL.  If `size > 0`, returns NULL on failure,
  *         and any existing allocation is left untouched, or return non-NULL as
- *         the new alloctation on success, and the original pointer becomes
+ *         the new allocation on success, and the original pointer becomes
  *         invalid.
  */
 extern void * cyaml_mem(
