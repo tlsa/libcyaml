@@ -42,7 +42,7 @@ static void cyaml_cleanup(void *data)
 	struct test_data *td = data;
 
 	if (td->config->mem_fn != NULL && td->buffer != NULL) {
-		td->config->mem_fn(*(td->buffer), 0);
+		td->config->mem_fn(td->config->mem_ctx, *(td->buffer), 0);
 	}
 }
 
