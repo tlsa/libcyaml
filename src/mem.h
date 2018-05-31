@@ -24,7 +24,7 @@ static inline void cyaml__free(
 		const cyaml_config_t *config,
 		void *ptr)
 {
-	config->mem_fn(ptr, 0);
+	config->mem_fn(config->mem_ctx, ptr, 0);
 }
 
 /**
@@ -50,7 +50,7 @@ static inline void * cyaml__realloc(
 		size_t new_size,
 		bool clean)
 {
-	uint8_t *temp = config->mem_fn(ptr, new_size);
+	uint8_t *temp = config->mem_fn(config->mem_ctx, ptr, new_size);
 	if (temp == NULL) {
 		return NULL;
 	}

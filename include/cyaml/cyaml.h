@@ -982,6 +982,7 @@ typedef void (*cyaml_log_fn_t)(
  *
  * Clients may implement this to handle memory allocation / freeing.
  *
+ * \param[in] ctx    Client's private allocation context.
  * \param[in] ptr    Existing allocation to resize, or NULL.
  * \param[in] size   The new size for the allocation.  \note setting 0 must
  *                   be treated as free().
@@ -991,6 +992,7 @@ typedef void (*cyaml_log_fn_t)(
  *         invalid.
  */
 typedef void * (*cyaml_mem_fn_t)(
+		void *ctx,
 		void *ptr,
 		size_t size);
 
@@ -1027,6 +1029,16 @@ typedef struct cyaml_config {
 	 *       is freed using \ref cyaml_mem too.
 	 */
 	cyaml_mem_fn_t mem_fn;
+	/**
+	 * Client memory function context pointer.
+	 *
+	 * Clients using their own custom allocation function can pass their
+	 * context here, which will be passed through to their mem_fn.
+	 *
+	 * The default allocation function, \ref cyaml_mem doesn't require an
+	 * allocation context, so pass NULL for the mem_ctx if using that.
+	 */
+	void *mem_ctx;
 	/**
 	 * Minimum logging priority level to be issued.
 	 *
@@ -1069,6 +1081,7 @@ extern void cyaml_log(
  * to allocate/free memory when they have not provided their own allocation
  * function.
  *
+ * \param[in] ctx    Allocation context, unused.
  * \param[in] ptr    Existing allocation to resize, or NULL.
  * \param[in] size   The new size for the allocation.  \note When `size == 0`
  *                   this frees `ptr`.
@@ -1078,6 +1091,7 @@ extern void cyaml_log(
  *         invalid.
  */
 extern void * cyaml_mem(
+		void *ctx,
 		void *ptr,
 		size_t size);
 
@@ -1168,7 +1182,7 @@ extern cyaml_err_t cyaml_save_file(
  *         // Use `yaml`:
  *         printf("%*s\n", len, yaml);
  *         // Free `yaml`:
- *         config.mem_fn(yaml, 0);
+ *         config.mem_fn(config.mem_ctx, yaml, 0);
  * }
  * ```
  *

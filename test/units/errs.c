@@ -49,7 +49,7 @@ static void cyaml_cleanup(void *data)
 	}
 
 	if (td->config->mem_fn != NULL && td->buffer != NULL) {
-		td->config->mem_fn(*(td->buffer), 0);
+		td->config->mem_fn(td->config->mem_ctx, *(td->buffer), 0);
 	}
 
 	if (td->data != NULL) {
@@ -3860,37 +3860,41 @@ static bool test_err_free_null(
 
 	UNUSED(config);
 
-	cyaml_mem(NULL, 0);
+	cyaml_mem(NULL, NULL, 0);
 
 	return ttest_pass(&tc);
 }
 
 /** Context for allocation failure tests. */
-static struct test_cyaml_mem_ctx_s {
+struct test_cyaml_mem_ctx {
 	unsigned required;
 	unsigned fail;
 	unsigned current;
-} test_cyaml_mem_ctx;
+};
 
 /*
  * Allocation counter.
  *
  * Used to count all allocations made when loading an input.
  *
+ * \param[in]  ctx   Allocation context.
  * \param[in]  ptr   Pointer to allocation to resize or NULL.
  * \param[in]  size  Size to set allocation to.
  * \return Pointer to new allocation, or NULL on failure.
  */
 static void * test_cyaml_mem_count_allocs(
+		void *ctx,
 		void *ptr,
 		size_t size)
 {
+	struct test_cyaml_mem_ctx *mem_ctx = ctx;
+
 	if (size == 0) {
 		free(ptr);
 		return NULL;
 	}
 
-	test_cyaml_mem_ctx.required++;
+	mem_ctx->required++;
 
 	return realloc(ptr, size);
 }
@@ -3900,24 +3904,28 @@ static void * test_cyaml_mem_count_allocs(
  *
  * Used to make specific allocation fail.
  *
+ * \param[in]  ctx   Allocation context.
  * \param[in]  ptr   Pointer to allocation to resize or NULL.
  * \param[in]  size  Size to set allocation to.
  * \return Pointer to new allocation, or NULL on failure.
  */
 static void * test_cyaml_mem_fail(
+		void *ctx,
 		void *ptr,
 		size_t size)
 {
+	struct test_cyaml_mem_ctx *mem_ctx = ctx;
+
 	if (size == 0) {
 		free(ptr);
 		return NULL;
 	}
 
-	if (test_cyaml_mem_ctx.current == test_cyaml_mem_ctx.fail) {
+	if (mem_ctx->current == mem_ctx->fail) {
 		return NULL;
 	}
 
-	test_cyaml_mem_ctx.current++;
+	mem_ctx->current++;
 
 	return realloc(ptr, size);
 }
@@ -3984,6 +3992,9 @@ static bool test_err_load_alloc_oom_1(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	struct test_cyaml_mem_ctx mem_ctx = {
+		.required = 0,
+	};
 
 	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
 
@@ -3993,7 +4004,7 @@ static bool test_err_load_alloc_oom_1(
 	 * This is deterministic.
 	 */
 	cfg.mem_fn = test_cyaml_mem_count_allocs;
-	test_cyaml_mem_ctx.required = 0;
+	cfg.mem_ctx = &mem_ctx;
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -4001,7 +4012,7 @@ static bool test_err_load_alloc_oom_1(
 		return ttest_fail(&tc, cyaml_strerror(err));
 	}
 
-	if (test_cyaml_mem_ctx.required == 0) {
+	if (mem_ctx.required == 0) {
 		return ttest_fail(&tc, "There were no allocations.");
 	}
 
@@ -4015,10 +4026,9 @@ static bool test_err_load_alloc_oom_1(
 	 */
 	cfg.mem_fn = test_cyaml_mem_fail;
 
-	for (test_cyaml_mem_ctx.fail = 0;
-			test_cyaml_mem_ctx.fail < test_cyaml_mem_ctx.required;
-			test_cyaml_mem_ctx.fail++) {
-		test_cyaml_mem_ctx.current = 0;
+	for (mem_ctx.fail = 0; mem_ctx.fail < mem_ctx.required;
+			mem_ctx.fail++) {
+		mem_ctx.current = 0;
 		err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
 				(cyaml_data_t **) &data_tgt, NULL);
 		if (err != CYAML_ERR_OOM) {
@@ -4117,6 +4127,9 @@ static bool test_err_load_alloc_oom_2(
 		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
+	struct test_cyaml_mem_ctx mem_ctx = {
+		.required = 0,
+	};
 	test_data_t td = {
 		.data = (cyaml_data_t **) &data_tgt,
 		.config = &cfg,
@@ -4132,7 +4145,7 @@ static bool test_err_load_alloc_oom_2(
 	 * This is deterministic.
 	 */
 	cfg.mem_fn = test_cyaml_mem_count_allocs;
-	test_cyaml_mem_ctx.required = 0;
+	cfg.mem_ctx = &mem_ctx;
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -4140,7 +4153,7 @@ static bool test_err_load_alloc_oom_2(
 		return ttest_fail(&tc, cyaml_strerror(err));
 	}
 
-	if (test_cyaml_mem_ctx.required == 0) {
+	if (mem_ctx.required == 0) {
 		return ttest_fail(&tc, "There were no allocations.");
 	}
 
@@ -4154,10 +4167,9 @@ static bool test_err_load_alloc_oom_2(
 	 */
 	cfg.mem_fn = test_cyaml_mem_fail;
 
-	for (test_cyaml_mem_ctx.fail = 0;
-			test_cyaml_mem_ctx.fail < test_cyaml_mem_ctx.required;
-			test_cyaml_mem_ctx.fail++) {
-		test_cyaml_mem_ctx.current = 0;
+	for (mem_ctx.fail = 0; mem_ctx.fail < mem_ctx.required;
+			mem_ctx.fail++) {
+		mem_ctx.current = 0;
 		err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
 				(cyaml_data_t **) &data_tgt, NULL);
 		if (err != CYAML_ERR_OOM) {
@@ -4228,6 +4240,9 @@ static bool test_err_save_alloc_oom_1(
 		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
+	struct test_cyaml_mem_ctx mem_ctx = {
+		.required = 0,
+	};
 	char *buffer = NULL;
 	size_t len = 0;
 	test_data_t td = {
@@ -4253,19 +4268,19 @@ static bool test_err_save_alloc_oom_1(
 	 * This is deterministic.
 	 */
 	cfg.mem_fn = test_cyaml_mem_count_allocs;
-	test_cyaml_mem_ctx.required = 0;
+	cfg.mem_ctx = &mem_ctx;
 
 	err = cyaml_save_data(&buffer, &len, &cfg, &top_schema, data_tgt, 0);
 	if (err != CYAML_OK) {
 		return ttest_fail(&tc, cyaml_strerror(err));
 	}
 
-	if (test_cyaml_mem_ctx.required == 0) {
+	if (mem_ctx.required == 0) {
 		return ttest_fail(&tc, "There were no allocations.");
 	}
 
 	/* Now free what was loaded. */
-	cyaml_mem(buffer, 0);
+	cyaml_mem(&mem_ctx, buffer, 0);
 	buffer = NULL;
 	len = 0;
 
@@ -4275,10 +4290,9 @@ static bool test_err_save_alloc_oom_1(
 	 */
 	cfg.mem_fn = test_cyaml_mem_fail;
 
-	for (test_cyaml_mem_ctx.fail = 0;
-			test_cyaml_mem_ctx.fail < test_cyaml_mem_ctx.required;
-			test_cyaml_mem_ctx.fail++) {
-		test_cyaml_mem_ctx.current = 0;
+	for (mem_ctx.fail = 0; mem_ctx.fail < mem_ctx.required;
+			mem_ctx.fail++) {
+		mem_ctx.current = 0;
 		err = cyaml_save_data(&buffer, &len, &cfg, &top_schema,
 				data_tgt, 0);
 		if (err != CYAML_ERR_OOM) {
@@ -4286,7 +4300,7 @@ static bool test_err_save_alloc_oom_1(
 		}
 
 		/* Now free what was loaded. */
-		cyaml_mem(buffer, 0);
+		cyaml_mem(&mem_ctx, buffer, 0);
 		buffer = NULL;
 		len = 0;
 	}
@@ -4378,6 +4392,9 @@ static bool test_err_save_alloc_oom_2(
 		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
+	struct test_cyaml_mem_ctx mem_ctx = {
+		.required = 0,
+	};
 	char *buffer = NULL;
 	size_t len = 0;
 	test_data_t td = {
@@ -4403,19 +4420,19 @@ static bool test_err_save_alloc_oom_2(
 	 * This is deterministic.
 	 */
 	cfg.mem_fn = test_cyaml_mem_count_allocs;
-	test_cyaml_mem_ctx.required = 0;
+	cfg.mem_ctx = &mem_ctx;
 
 	err = cyaml_save_data(&buffer, &len, &cfg, &top_schema, data_tgt, 0);
 	if (err != CYAML_OK) {
 		return ttest_fail(&tc, cyaml_strerror(err));
 	}
 
-	if (test_cyaml_mem_ctx.required == 0) {
+	if (mem_ctx.required == 0) {
 		return ttest_fail(&tc, "There were no allocations.");
 	}
 
 	/* Now free what was loaded. */
-	cyaml_mem(buffer, 0);
+	cyaml_mem(&mem_ctx, buffer, 0);
 	buffer = NULL;
 	len = 0;
 
@@ -4425,10 +4442,9 @@ static bool test_err_save_alloc_oom_2(
 	 */
 	cfg.mem_fn = test_cyaml_mem_fail;
 
-	for (test_cyaml_mem_ctx.fail = 0;
-			test_cyaml_mem_ctx.fail < test_cyaml_mem_ctx.required;
-			test_cyaml_mem_ctx.fail++) {
-		test_cyaml_mem_ctx.current = 0;
+	for (mem_ctx.fail = 0; mem_ctx.fail < mem_ctx.required;
+			mem_ctx.fail++) {
+		mem_ctx.current = 0;
 		err = cyaml_save_data(&buffer, &len, &cfg, &top_schema,
 				data_tgt, 0);
 		if (err != CYAML_ERR_OOM) {
@@ -4436,7 +4452,7 @@ static bool test_err_save_alloc_oom_2(
 		}
 
 		/* Now free what was loaded. */
-		cyaml_mem(buffer, 0);
+		cyaml_mem(&mem_ctx, buffer, 0);
 		buffer = NULL;
 		len = 0;
 	}
