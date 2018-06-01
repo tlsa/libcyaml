@@ -1404,9 +1404,7 @@ static cyaml_err_t cyaml__seq_entry(
 				state->sequence.count_data);
 		if (err != CYAML_OK) {
 			cyaml__log(ctx->config, CYAML_LOG_ERROR,
-					"Failed writing sequence count\n",
-					state->sequence.count,
-					schema->data_size);
+					"Failed writing sequence count\n");
 			if (schema->flags & CYAML_FLAG_POINTER) {
 				cyaml__log(ctx->config, CYAML_LOG_DEBUG,
 						"Freeing %p\n",

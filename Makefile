@@ -36,7 +36,7 @@ VERSION_FLAGS = -DVERSION_MAJOR=$(VERSION_MAJOR) \
                 -DVERSION_PATCH=$(VERSION_PATCH) \
                 -DVERSION_DEVEL=$(VERSION_DEVEL)
 
-INCLUDE = -I include -I src
+INCLUDE = -I include
 CFLAGS += $(INCLUDE) $(VERSION_FLAGS)
 CFLAGS += -std=c11 -Wall -Wextra -pedantic
 LDFLAGS = -lyaml
@@ -80,7 +80,7 @@ TEST_BINS = \
 		$(BUILDDIR)/test/units/cyaml-shared \
 		$(BUILDDIR)/test/units/cyaml-static
 
-all: $(BUILDDIR)/$(LIB_SH_VER) $(BUILDDIR)/$(LIB_STATIC)
+all: $(BUILDDIR)/$(LIB_SH_VER) $(BUILDDIR)/$(LIB_STATIC) examples
 
 coverage: test-verbose
 	@$(MKDIR) $(BUILDDIR)
@@ -153,9 +153,14 @@ install: $(BUILDDIR)/$(LIB_SH_VER) $(BUILDDIR)/$(LIB_STATIC) $(BUILDDIR)/$(LIB_P
 	$(INSTALL) -m 644 include/cyaml/* -t $(DESTDIR)$(PREFIX)/$(INCLUDEDIR)/cyaml
 	$(INSTALL) -m 644 $(BUILDDIR)/$(LIB_PKGCON) $(DESTDIR)$(PREFIX)/$(LIBDIR)/pkgconfig/$(LIB_PKGCON)
 
+examples: $(BUILDDIR)/planner
+
+$(BUILDDIR)/planner: examples/planner/main.c $(BUILDDIR)/$(LIB_STATIC)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 .PHONY: all test test-quiet test-verbose test-debug \
 		valgrind valgrind-quiet valgrind-verbose valgrind-debug \
-		clean coverage docs install
+		clean coverage docs install examples
 
 $(BUILDDIR)/test/units/cyaml-static: $(TEST_OBJ) $(BUILDDIR)/$(LIB_STATIC)
 	$(CC) $(LDFLAGS_COV) -o $@ $^ $(LDFLAGS)
