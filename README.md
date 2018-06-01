@@ -94,6 +94,8 @@ Alternatively, the read the API documentation directly from the
 [cyaml.h](https://github.com/tlsa/libcyaml/blob/master/include/cyaml/cyaml.h)
 header file.
 
+There is also a [tutorial](docs/guide.md).
+
 Examples
 --------
 
