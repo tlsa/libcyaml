@@ -36,7 +36,7 @@ VERSION_FLAGS = -DVERSION_MAJOR=$(VERSION_MAJOR) \
                 -DVERSION_PATCH=$(VERSION_PATCH) \
                 -DVERSION_DEVEL=$(VERSION_DEVEL)
 
-INCLUDE = -I include -I src
+INCLUDE = -I include
 CFLAGS += $(INCLUDE) $(VERSION_FLAGS)
 CFLAGS += -std=c11 -Wall -Wextra -pedantic
 LDFLAGS = -lyaml
