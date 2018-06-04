@@ -207,9 +207,9 @@ static inline uint16_t cyaml__get_entry_from_mapping_schema(
  * \return Current mapping field's schema entry.
  */
 static inline const cyaml_schema_field_t * cyaml_mapping_schema_field(
-		cyaml_ctx_t *ctx)
+		const cyaml_ctx_t *ctx)
 {
-	cyaml_state_t *state = ctx->state;
+	const cyaml_state_t *state = ctx->state;
 
 	assert(state != NULL);
 	assert(state->state == CYAML_STATE_IN_MAP_KEY ||
