@@ -172,20 +172,22 @@ static cyaml_err_t cyaml_get_next_event(
 /**
  * Get the offset to a mapping field by key in a mapping schema array.
  *
- * \param[in]  mapping_schema  Array of mapping schema fields.
- * \param[in]  key             Key to search for in mapping schema.
- * \return index into `mapping_schema` for key, or \ref CYAML_SCHEMA_IDX_NONE
- *         if key is not present in `mapping_schema`.
+ * \param[in]  ctx  The CYAML loading context.
+ * \param[in]  key  Key to search for in mapping schema.
+ * \return index the mapping schema's mapping fields array for key, or
+ *         \ref CYAML_SCHEMA_IDX_NONE if key is not present in schema.
  */
 static inline uint16_t cyaml__get_entry_from_mapping_schema(
-		const cyaml_schema_field_t * mapping_schema,
+		const cyaml_ctx_t *ctx,
 		const char *key)
 {
+	const cyaml_schema_field_t *fields = ctx->state->mapping.schema;
+	const cyaml_schema_value_t *schema = ctx->state->schema;
 	uint16_t index = 0;
 
 	/* Step through each entry in the schema */
-	for (; mapping_schema->key != NULL; mapping_schema++) {
-		if (strcmp(mapping_schema->key, key) == 0) {
+	for (; fields->key != NULL; fields++) {
+		if (cyaml__strcmp(ctx->config, schema, fields->key, key) == 0) {
 			return index;
 		}
 		index++;
@@ -1285,8 +1287,8 @@ static cyaml_err_t cyaml__map_key(
 	cyaml_err_t err = CYAML_OK;
 
 	key = (const char *)event->data.scalar.value;
-	ctx->state->mapping.schema_idx = cyaml__get_entry_from_mapping_schema(
-			ctx->state->mapping.schema, key);
+	ctx->state->mapping.schema_idx =
+			cyaml__get_entry_from_mapping_schema(ctx, key);
 	cyaml__log(ctx->config, CYAML_LOG_INFO, "[%s]\n", key);
 
 	if (ctx->state->mapping.schema_idx == CYAML_SCHEMA_IDX_NONE) {
