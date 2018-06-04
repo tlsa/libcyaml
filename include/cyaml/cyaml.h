@@ -158,6 +158,42 @@ typedef enum cyaml_flag {
 	 *       then libyaml's default behaviour is used.
 	 */
 	CYAML_FLAG_FLOW     = (1 << 4),
+	/**
+	 * When comparing strings for this value, compare with case sensitivity.
+	 *
+	 * By default, strings are compared with case sensitivity.
+	 * If \ref CYAML_CFG_CASE_INSENSITIVE is set, this can override
+	 * the configured behaviour for this specific value.
+	 *
+	 * \note If both \ref CYAML_FLAG_CASE_SENSITIVE and
+	 *       \ref CYAML_FLAG_CASE_INSENSITIVE are set,
+	 *       then case insensitive takes precedence.
+	 *
+	 * \note This applies to values of types \ref CYAML_MAPPING,
+	 *       \ref CYAML_ENUM, and \ref CYAML_FLAGS.  For mappings,
+	 *       it applies to matching of the mappings' keys.  For
+	 *       enums and flags it applies to the comparison of
+	 *       \ref struct cyaml_strval strings.
+	 */
+	CYAML_FLAG_CASE_SENSITIVE   = (1 << 5),
+	/**
+	 * When comparing strings for this value, compare with case sensitivity.
+	 *
+	 * By default, strings are compared with case sensitivity.
+	 * If \ref CYAML_CFG_CASE_INSENSITIVE is set, this can override
+	 * the configured behaviour for this specific value.
+	 *
+	 * \note If both \ref CYAML_FLAG_CASE_SENSITIVE and
+	 *       \ref CYAML_FLAG_CASE_INSENSITIVE are set,
+	 *       then case insensitive takes precedence.
+	 *
+	 * \note This applies to values of types \ref CYAML_MAPPING,
+	 *       \ref CYAML_ENUM, and \ref CYAML_FLAGS.  For mappings,
+	 *       it applies to matching of the mappings' keys.  For
+	 *       enums and flags it applies to the comparison of
+	 *       \ref struct cyaml_strval strings.
+	 */
+	CYAML_FLAG_CASE_INSENSITIVE = (1 << 6),
 } cyaml_flag_e;
 
 /**
@@ -370,6 +406,12 @@ typedef enum cyaml_cfg_flags {
 	 * be emitted.
 	 */
 	CYAML_CFG_DOCUMENT_DELIM      = (1 << 3),
+	/**
+	 * When comparing strings, compare without case sensitivity.
+	 *
+	 * By default, strings are compared with case sensitivity.
+	 */
+	CYAML_CFG_CASE_INSENSITIVE    = (1 << 4),
 } cyaml_cfg_flags_t;
 
 /**
