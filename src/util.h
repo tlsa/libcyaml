@@ -13,6 +13,7 @@
 #define CYAML_UTIL_H
 
 #include "cyaml/cyaml.h"
+#include "utf8.h"
 
 /** Macro to squash unused variable compiler warnings. */
 #define CYAML_UNUSED(_x) ((void)(_x))
@@ -76,6 +77,58 @@ static inline void cyaml__log(
 		cfg->log_fn(level, fmt, args);
 		va_end(args);
 	}
+}
+
+/**
+ * Check if comparason should be case sensitive.
+ *
+ * As described in the API, schema flags take priority over config flags.
+ *
+ * \param[in]  config  Client's CYAML configuration structure.
+ * \param[in]  schema  The CYAML schema for the value to be compared.
+ * \return Whether to use case-sensitive comparason.
+ */
+static inline bool cyaml__is_case_sensitive(
+		const cyaml_config_t *config,
+		const cyaml_schema_value_t *schema)
+{
+	if (schema->flags & CYAML_FLAG_CASE_INSENSITIVE) {
+		return false;
+
+	} else if (schema->flags & CYAML_FLAG_CASE_SENSITIVE) {
+		return true;
+
+	} else if (config->flags & CYAML_CFG_CASE_INSENSITIVE) {
+		return false;
+
+	}
+
+	return true;
+}
+
+/**
+ * Compare two strings.
+ *
+ * Depending on the client's configuration, and the value's schema,
+ * this will do either a case-sensitive or case-insensitive comparason.
+ *
+ * \param[in]  config  Client's CYAML configuration structure.
+ * \param[in]  schema  The CYAML schema for the value to be compared.
+ * \param[in]  str1    First string to be compared.
+ * \param[in]  str2    Second string to be compared.
+ * \return 0 if and only if strings are equal.
+ */
+static inline int cyaml__strcmp(
+		const cyaml_config_t *config,
+		const cyaml_schema_value_t *schema,
+		const void * const str1,
+		const void * const str2)
+{
+	if (cyaml__is_case_sensitive(config, schema)) {
+		return strcmp(str1, str2);
+	}
+
+	return cyaml_utf8_casecmp(str1, str2);
 }
 
 #endif
