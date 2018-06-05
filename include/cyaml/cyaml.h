@@ -173,7 +173,7 @@ typedef enum cyaml_flag {
 	 *       \ref CYAML_ENUM, and \ref CYAML_FLAGS.  For mappings,
 	 *       it applies to matching of the mappings' keys.  For
 	 *       enums and flags it applies to the comparison of
-	 *       \ref struct cyaml_strval strings.
+	 *       \ref cyaml_strval strings.
 	 */
 	CYAML_FLAG_CASE_SENSITIVE   = (1 << 5),
 	/**
@@ -191,7 +191,7 @@ typedef enum cyaml_flag {
 	 *       \ref CYAML_ENUM, and \ref CYAML_FLAGS.  For mappings,
 	 *       it applies to matching of the mappings' keys.  For
 	 *       enums and flags it applies to the comparison of
-	 *       \ref struct cyaml_strval strings.
+	 *       \ref cyaml_strval strings.
 	 */
 	CYAML_FLAG_CASE_INSENSITIVE = (1 << 6),
 } cyaml_flag_e;
