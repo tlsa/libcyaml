@@ -4228,6 +4228,535 @@ static bool test_load_schema_sequence_entry_count_member(
 }
 
 /**
+ * Test loading an enum with case insensitive string matching configured.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_enum_insensitive(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	enum test_enum {
+		TEST_ENUM_FIRST,
+		TEST_ENUM_SECOND,
+		TEST_ENUM_THIRD,
+		TEST_ENUM__COUNT,
+	} ref = TEST_ENUM_SECOND;
+	static const cyaml_strval_t strings[TEST_ENUM__COUNT] = {
+		{ "first",  TEST_ENUM_FIRST  },
+		{ "second", TEST_ENUM_SECOND },
+		{ "third",  TEST_ENUM_THIRD  },
+	};
+	static const unsigned char yaml[] =
+		"SECOND\n";
+	enum test_enum *data_tgt = NULL;
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_ENUM(CYAML_FLAG_POINTER,
+				*data_tgt, strings, TEST_ENUM__COUNT),
+	};
+	cyaml_config_t cfg = *config;
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = &cfg,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	cfg.flags |= CYAML_CFG_CASE_INSENSITIVE;
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (*data_tgt != ref) {
+		return ttest_fail(&tc, "Incorrect value for enum");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a flags value with case insensitive string matching configured.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_flags_insensitive(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	enum test_enum {
+		TEST_FLAG_FIRST  = (1 << 1),
+		TEST_FLAG_SECOND = (1 << 3),
+		TEST_FLAG_THIRD  = (1 << 5),
+	} ref = TEST_FLAG_FIRST | TEST_FLAG_THIRD;
+	static const cyaml_strval_t strings[] = {
+		{ "first",  TEST_FLAG_FIRST  },
+		{ "second", TEST_FLAG_SECOND },
+		{ "third",  TEST_FLAG_THIRD  },
+	};
+	static const unsigned char yaml[] =
+		"- First\n"
+		"- Third\n";
+	enum test_enum *data_tgt = NULL;
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_FLAGS(CYAML_FLAG_POINTER,
+				*data_tgt, strings, CYAML_ARRAY_LEN(strings)),
+	};
+	cyaml_config_t cfg = *config;
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = &cfg,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	cfg.flags |= CYAML_CFG_CASE_INSENSITIVE;
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (*data_tgt != ref) {
+		return ttest_fail(&tc, "Incorrect value for enum");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a mapping with case insensitive string matching configured.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_fields_cfg_insensitive_1(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct target_struct {
+		signed char a;
+		short b;
+		int c;
+		long d;
+		long long e;
+	} data = {
+		.a = 9,
+		.b = 90,
+		.c = 900,
+		.d = 9000,
+		.e = 90000,
+	};
+	static const unsigned char yaml[] =
+		"Lollipop: 9\n"
+		"Squiggle: 90\n"
+		"Unicorns: 900\n"
+		"Cheerful: 9000\n"
+		"LibCYAML: 90000\n";
+	struct target_struct *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_INT("lollipop", CYAML_FLAG_DEFAULT,
+				struct target_struct, a),
+		CYAML_FIELD_INT("squiggle", CYAML_FLAG_DEFAULT,
+				struct target_struct, b),
+		CYAML_FIELD_INT("unicorns", CYAML_FLAG_DEFAULT,
+				struct target_struct, c),
+		CYAML_FIELD_INT("cheerful", CYAML_FLAG_DEFAULT,
+				struct target_struct, d),
+		CYAML_FIELD_INT("libcyaml", CYAML_FLAG_DEFAULT,
+				struct target_struct, e),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	cyaml_config_t cfg = *config;
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = &cfg,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	cfg.flags |= CYAML_CFG_CASE_INSENSITIVE;
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->a != data.a) {
+		return ttest_fail(&tc, "Incorrect value for entry a");
+	}
+	if (data_tgt->b != data.b) {
+		return ttest_fail(&tc, "Incorrect value for entry b");
+	}
+	if (data_tgt->c != data.c) {
+		return ttest_fail(&tc, "Incorrect value for entry c");
+	}
+	if (data_tgt->d != data.d) {
+		return ttest_fail(&tc, "Incorrect value for entry d");
+	}
+	if (data_tgt->e != data.e) {
+		return ttest_fail(&tc, "Incorrect value for entry e");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a mapping with case insensitive string matching configured.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_fields_cfg_insensitive_2(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct target_struct {
+		signed char a;
+		short b;
+		int c;
+		long d;
+		long long e;
+	} data = {
+		.a = 9,
+		.b = 90,
+		.c = 900,
+		.d = 9000,
+		.e = 90000,
+	};
+	static const unsigned char yaml[] =
+		"Plinth: 9\n"
+		"..Cusp?: 90\n"
+		"..Cusp!: 900\n"
+		"Bleat: 9000\n"
+		"Foo~-|Bar: 90000\n";
+	struct target_struct *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_INT("plinth", CYAML_FLAG_DEFAULT,
+				struct target_struct, a),
+		CYAML_FIELD_INT("..cusp?", CYAML_FLAG_DEFAULT,
+				struct target_struct, b),
+		CYAML_FIELD_INT("..cusp!", CYAML_FLAG_DEFAULT,
+				struct target_struct, c),
+		CYAML_FIELD_INT("bleat", CYAML_FLAG_DEFAULT,
+				struct target_struct, d),
+		CYAML_FIELD_INT("foO~-|baR", CYAML_FLAG_DEFAULT,
+				struct target_struct, e),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	cyaml_config_t cfg = *config;
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = &cfg,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	cfg.flags |= CYAML_CFG_CASE_INSENSITIVE;
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->a != data.a) {
+		return ttest_fail(&tc, "Incorrect value for entry a");
+	}
+	if (data_tgt->b != data.b) {
+		return ttest_fail(&tc, "Incorrect value for entry b");
+	}
+	if (data_tgt->c != data.c) {
+		return ttest_fail(&tc, "Incorrect value for entry c");
+	}
+	if (data_tgt->d != data.d) {
+		return ttest_fail(&tc, "Incorrect value for entry d");
+	}
+	if (data_tgt->e != data.e) {
+		return ttest_fail(&tc, "Incorrect value for entry e");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a mapping with case insensitive string matching configured.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_fields_cfg_insensitive_3(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct target_struct {
+		signed char a;
+		short b;
+		int c;
+		long d;
+		long long e;
+	} data = {
+		.a = 9,
+		.b = 90,
+		.c = 900,
+		.d = 9000,
+		.e = 90000,
+	};
+	static const unsigned char yaml[] =
+		"Pling: 9\n"
+		"Plin: 90\n"
+		"Pli: 900\n"
+		"Pl: 9000\n"
+		"P: 90000\n";
+	struct target_struct *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_INT("plin", CYAML_FLAG_DEFAULT,
+				struct target_struct, b),
+		CYAML_FIELD_INT("pli", CYAML_FLAG_DEFAULT,
+				struct target_struct, c),
+		CYAML_FIELD_INT("pl", CYAML_FLAG_DEFAULT,
+				struct target_struct, d),
+		CYAML_FIELD_INT("p", CYAML_FLAG_DEFAULT,
+				struct target_struct, e),
+		CYAML_FIELD_INT("pling", CYAML_FLAG_DEFAULT,
+				struct target_struct, a),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	cyaml_config_t cfg = *config;
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = &cfg,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	cfg.flags |= CYAML_CFG_CASE_INSENSITIVE;
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->a != data.a) {
+		return ttest_fail(&tc, "Incorrect value for entry a");
+	}
+	if (data_tgt->b != data.b) {
+		return ttest_fail(&tc, "Incorrect value for entry b");
+	}
+	if (data_tgt->c != data.c) {
+		return ttest_fail(&tc, "Incorrect value for entry c");
+	}
+	if (data_tgt->d != data.d) {
+		return ttest_fail(&tc, "Incorrect value for entry d");
+	}
+	if (data_tgt->e != data.e) {
+		return ttest_fail(&tc, "Incorrect value for entry e");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a mapping with case sensitive string matching for value.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_fields_value_sensitive_1(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct target_struct {
+		signed char a;
+		short b;
+		int c;
+		long d;
+		long long e;
+	} data = {
+		.a = 9,
+		.b = 90,
+		.c = 900,
+		.d = 9000,
+		.e = 90000,
+	};
+	static const unsigned char yaml[] =
+		"pling: 9\n"
+		"PLing: 90\n"
+		"PLINg: 900\n"
+		"pliNG: 9000\n"
+		"PLING: 90000\n";
+	struct target_struct *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_INT("pling", CYAML_FLAG_DEFAULT,
+				struct target_struct, a),
+		CYAML_FIELD_INT("PLing", CYAML_FLAG_DEFAULT,
+				struct target_struct, b),
+		CYAML_FIELD_INT("PLINg", CYAML_FLAG_DEFAULT,
+				struct target_struct, c),
+		CYAML_FIELD_INT("pliNG", CYAML_FLAG_DEFAULT,
+				struct target_struct, d),
+		CYAML_FIELD_INT("PLING", CYAML_FLAG_DEFAULT,
+				struct target_struct, e),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(
+				CYAML_FLAG_POINTER | CYAML_FLAG_CASE_SENSITIVE,
+				struct target_struct, mapping_schema),
+	};
+	cyaml_config_t cfg = *config;
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = &cfg,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	cfg.flags |= CYAML_CFG_CASE_INSENSITIVE;
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->a != data.a) {
+		return ttest_fail(&tc, "Incorrect value for entry a");
+	}
+	if (data_tgt->b != data.b) {
+		return ttest_fail(&tc, "Incorrect value for entry b");
+	}
+	if (data_tgt->c != data.c) {
+		return ttest_fail(&tc, "Incorrect value for entry c");
+	}
+	if (data_tgt->d != data.d) {
+		return ttest_fail(&tc, "Incorrect value for entry d");
+	}
+	if (data_tgt->e != data.e) {
+		return ttest_fail(&tc, "Incorrect value for entry e");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a mapping with case insensitive string matching for value.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_fields_value_insensitive_1(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct target_struct {
+		signed char a;
+		short b;
+		int c;
+		long d;
+		long long e;
+	} data = {
+		.a = 9,
+		.b = 90,
+		.c = 900,
+		.d = 9000,
+		.e = 90000,
+	};
+	static const unsigned char yaml[] =
+		"Pling: 9\n"
+		"Plin: 90\n"
+		"Pli: 900\n"
+		"Pl: 9000\n"
+		"P: 90000\n";
+	struct target_struct *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_INT("plin", CYAML_FLAG_DEFAULT,
+				struct target_struct, b),
+		CYAML_FIELD_INT("pli", CYAML_FLAG_DEFAULT,
+				struct target_struct, c),
+		CYAML_FIELD_INT("pl", CYAML_FLAG_DEFAULT,
+				struct target_struct, d),
+		CYAML_FIELD_INT("p", CYAML_FLAG_DEFAULT,
+				struct target_struct, e),
+		CYAML_FIELD_INT("pling", CYAML_FLAG_DEFAULT,
+				struct target_struct, a),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(
+				CYAML_FLAG_POINTER |
+				CYAML_FLAG_CASE_INSENSITIVE,
+				struct target_struct, mapping_schema),
+	};
+	cyaml_config_t cfg = *config;
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = &cfg,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	cfg.flags |= CYAML_CFG_CASE_INSENSITIVE;
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->a != data.a) {
+		return ttest_fail(&tc, "Incorrect value for entry a");
+	}
+	if (data_tgt->b != data.b) {
+		return ttest_fail(&tc, "Incorrect value for entry b");
+	}
+	if (data_tgt->c != data.c) {
+		return ttest_fail(&tc, "Incorrect value for entry c");
+	}
+	if (data_tgt->d != data.d) {
+		return ttest_fail(&tc, "Incorrect value for entry d");
+	}
+	if (data_tgt->e != data.e) {
+		return ttest_fail(&tc, "Incorrect value for entry e");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Run the YAML loading unit tests.
  *
  * \param[in]  rc         The ttest report context.
@@ -4326,6 +4855,16 @@ bool load_tests(
 	pass &= test_load_sequence_without_max_entries(rc, &config);
 	pass &= test_load_schema_top_level_sequence_fixed(rc, &config);
 	pass &= test_load_schema_sequence_entry_count_member(rc, &config);
+
+	ttest_heading(rc, "Load tests: case sensitivity");
+
+	pass &= test_load_enum_insensitive(rc, &config);
+	pass &= test_load_flags_insensitive(rc, &config);
+	pass &= test_load_mapping_fields_cfg_insensitive_1(rc, &config);
+	pass &= test_load_mapping_fields_cfg_insensitive_2(rc, &config);
+	pass &= test_load_mapping_fields_cfg_insensitive_3(rc, &config);
+	pass &= test_load_mapping_fields_value_sensitive_1(rc, &config);
+	pass &= test_load_mapping_fields_value_insensitive_1(rc, &config);
 
 	return pass;
 }
