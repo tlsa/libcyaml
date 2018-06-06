@@ -13,6 +13,23 @@
 #define CYAML_UTF8_H
 
 /**
+ * Get a codepoint from the input string.
+ *
+ * Caller must provide the expected length given the first input byte.
+ *
+ * If a multi-byte character contains an invalid continuation byte, the
+ * character length will be updated on exit to the number of bytes consumed,
+ * and the replacement character, U+FFFD will be returned.
+ *
+ * \param[in]      s    String to read first codepoint from.
+ * \param[in,out]  len  Expected length of first character, updated on exit.
+ * \return The codepoint or `0xfffd` if character is invalid.
+ */
+unsigned cyaml_utf8_get_codepoint(
+		const uint8_t *s,
+		unsigned *len);
+
+/**
  * Case insensitive comparason.
  *
  * \note This has some limitations and only performs case insensitive
