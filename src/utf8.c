@@ -24,7 +24,7 @@
  * \param[in]  b  First byte of UTF8 sequence.
  * \return the byte width of the character or 0 if invalid.
  */
-static inline int cyaml_utf8_char_len(uint8_t b)
+static inline unsigned cyaml_utf8_char_len(uint8_t b)
 {
 	if (!(b & 0x80)) {
 		return 1;
@@ -43,46 +43,65 @@ static inline int cyaml_utf8_char_len(uint8_t b)
 	return 0; /* Invalid */
 }
 
-/**
- * Get a codepoint from the input string.
- *
- * Caller must provide the expected length given the first input byte.
- *
- * \param[in]  s    String to read first codepoint from.
- * \param[in]  len  Expected length of first character.
- * \return The codepoint or `0xfffd` if character is invalid.
- */
-static unsigned cyaml_utf8_get_codepoint(
+/* Exported function, documented in utf8.h. */
+unsigned cyaml_utf8_get_codepoint(
 		const uint8_t *s,
-		int len)
+		unsigned *len)
 {
-	if (len > 1) {
-		assert(s[0] != 0);
-	}
-
-	switch (len) {
-	case 1:
+	if (*len == 1) {
 		return s[0];
-	case 2:
-		if (s[1] == 0) {
-			break;
+	} else {
+		unsigned c = 0;
+		bool sf;
+
+		/* Compose first byte into codepoint. */
+		c |= (s[0] & ((1 << (7 - *len)) - 1)) << ((*len - 1) * 6);
+
+		/* Handle continuation bytes. */
+		for (unsigned i = 1; i < *len; i++) {
+			/* Check continuation byte begins with 0b10xxxxxx. */
+			if ((s[i] & 0xc0) != 0x80) {
+				/* Need to shorten length so we don't consume
+				 * this byte with this invalid character. */
+				*len -= i;
+				goto invalid;
+			}
+
+			/* Compose continuation byte into codepoint. */
+			c |= (0x3f & s[i]) << ((*len - i - 1) * 6);
 		}
-		return ((0x1f & s[0]) <<  6) |  (0x3f & s[1]);
-	case 3:
-		if ((s[1] == 0) || (s[2] == 0)) {
-			break;
+
+		/* Non-shortest forms are forbidden.
+		 *
+		 * The following table shows the bits available for each
+		 * byte sequence length, as well as the bit-delta to the
+		 * shorter sequence.
+		 *
+		 * | Bytes | Bits | Bit delta | Data                    |
+		 * | ----- | ---- | --------- | ----------------------- |
+		 * | 1     |  7   | N/A       | 0xxxxxxx                |
+		 * | 2     |  11  | 4         | 110xxxxx + 10xxxxxx x 1 |
+		 * | 3     |  16  | 5         | 1110xxxx + 10xxxxxx x 2 |
+		 * | 4     |  21  | 5         | 11110xxx + 10xxxxxx x 3 |
+		 *
+		 * So here we check that the top "bit-delta" bits are not all
+		 * clear for the byte length,
+		 */
+		switch (*len) {
+		case 2: sf = (c & (((1 << 4) - 1) << (11 - 4))) != 0; break;
+		case 3: sf = (c & (((1 << 5) - 1) << (16 - 5))) != 0; break;
+		case 4: sf = (c & (((1 << 5) - 1) << (21 - 5))) != 0; break;
 		}
-		return ((0x0f & s[0]) << 12) | ((0x3f & s[1]) <<  6) |
-		        (0x3f & s[2]);
-	case 4:
-		if ((s[1] == 0) || (s[2] == 0) || (s[3] == 0)) {
-			break;
+
+		if (!sf) {
+			/* Codepoint representation was not shortest-form. */
+			goto invalid;
 		}
-		return ((0x07 & s[0]) << 18) | ((0x3f & s[1]) << 12) |
-		       ((0x3f & s[2]) <<  6) |  (0x3f & s[3]);
+
+		return c;
 	}
 
-	/* Invalid. */
+invalid:
 	return 0xfffd; /* REPLACEMENT CHARACTER */
 }
 
@@ -161,8 +180,8 @@ int cyaml_utf8_casecmp(
 	const uint8_t *s2 = str2;
 
 	while (true) {
-		int len1;
-		int len2;
+		unsigned len1;
+		unsigned len2;
 		int cmp1;
 		int cmp2;
 
@@ -194,13 +213,11 @@ int cyaml_utf8_casecmp(
 					return cmp1 - cmp2;
 				}
 			}
-		} else if ((len1 == 0) || (len2 == 0)) {
-			/* Invalid UTF8 sequence. */
-			return len1 - len2;
-		} else {
-			/* Otherwise convert to UCS4 for comparison. */
-			cmp1 = cyaml_utf8_get_codepoint(s1, len1);
-			cmp2 = cyaml_utf8_get_codepoint(s2, len2);
+		} else if ((len1 != 0) && (len2 != 0)) {
+			/* Neither string has invalid sequence;
+			 * convert to UCS4 for comparison. */
+			cmp1 = cyaml_utf8_get_codepoint(s1, &len1);
+			cmp2 = cyaml_utf8_get_codepoint(s2, &len2);
 
 			if (cmp1 != cmp2) {
 				/* They're different; need to lower case. */
@@ -210,16 +227,18 @@ int cyaml_utf8_casecmp(
 					return cmp1 - cmp2;
 				}
 			}
+		} else {
+			if (len1 | len2) {
+				/* One of the strings has invalid sequence. */
+				return ((int)len1) - ((int)len2);
+			} else {
+				/* Both strings have an invalid sequence. */
+				len1 = len2 = 1;
+			}
 		}
 
 		/* Advance each string by their current character length. */
-		while ((*s1 != 0) && len1) {
-			len1--;
-			s1++;
-		}
-		while ((*s2 != 0) && len2) {
-			len2--;
-			s2++;
-		}
+		s1 += len1;
+		s2 += len2;
 	}
 }

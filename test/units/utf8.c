@@ -21,6 +21,53 @@
 /** Helper macro to squash unused variable warnings. */
 #define UNUSED(_x) ((void)(_x))
 
+/** Helper macro to get the length of string string literals. */
+#define SLEN(_s) (CYAML_ARRAY_LEN(_s) - 1)
+
+/**
+ * Test utf-8 decoding.
+ *
+ * \param[in]  report  The test report context.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_utf8_get_codepoint(
+		ttest_report_ctx_t *report)
+{
+	static const struct tests {
+		unsigned c;
+		const char *s;
+		unsigned l;
+	} t[] = {
+		{ 0xfffd, "\ufffd", SLEN("\ufffd") },
+		{ 0xfffd, "\xC1\x9C", SLEN("\xC1\x9C") },
+		{ 0x1f638, u8"😸", SLEN(u8"😸") },
+	};
+	bool pass = true;
+
+	for (unsigned i = 0; i < CYAML_ARRAY_LEN(t); i++) {
+		unsigned l;
+		unsigned c;
+		ttest_ctx_t tc;
+		char name[sizeof(__func__) + 32];
+		sprintf(name, "%s_%u", __func__, i);
+
+		tc = ttest_start(report, name, NULL, NULL);
+
+		l = t[i].l;
+		c = cyaml_utf8_get_codepoint((uint8_t *)t[i].s, &l);
+		if (c != t[i].c) {
+			pass &= ttest_fail(&tc, "Incorrect codepoint for %s "
+					"(expecting %4.4x, got %4.4x)",
+					t[i].s, t[i].c, c);
+			continue;
+		}
+
+		pass &= ttest_pass(&tc);
+	}
+
+	return pass;
+}
+
 /**
  * Test comparing the same strings.
  *
@@ -74,7 +121,7 @@ static bool test_utf8_strcmp_same(
 static bool test_utf8_strcmp_matches(
 		ttest_report_ctx_t *report)
 {
-	struct string_pairs {
+	static const struct string_pairs {
 		const char *a;
 		const char *b;
 	} pairs[] = {
@@ -126,6 +173,9 @@ static bool test_utf8_strcmp_matches(
 		{ "\xE2\x9F\x9A", "\xE2\x9F\x9A" },
 		{ "\xE2\x00\x9A", "\xE2\x00\x9A" },
 		{ "\xE2\x9F\x00", "\xE2\x9F\x00" },
+		{ "A\xc2""C", "A\xc2""C" },
+		{ "A\xc2""C", u8"A\ufffdC" },
+		{ u8"A\ufffdC", "A\xc2""C" },
 	};
 	bool pass = true;
 
@@ -157,7 +207,7 @@ static bool test_utf8_strcmp_matches(
 static bool test_utf8_strcmp_mismatches(
 		ttest_report_ctx_t *report)
 {
-	struct string_pairs {
+	static const struct string_pairs {
 		const char *a;
 		const char *b;
 	} pairs[] = {
@@ -167,6 +217,8 @@ static bool test_utf8_strcmp_mismatches(
 		{ "1 cat", u8"😸" },
 		{ "[cat]", u8"😸" },
 		{ "Ü cat", u8"😸" },
+		{ "Ü cat", u8"😸" },
+		{ "\\", "\xC1\x9C" },
 	};
 	bool pass = true;
 
@@ -206,6 +258,10 @@ bool utf8_tests(
 
 	UNUSED(log_level);
 	UNUSED(log_fn);
+
+	ttest_heading(rc, "UTF-8 tests: Codepoint composition");
+
+	pass &= test_utf8_get_codepoint(rc);
 
 	ttest_heading(rc, "UTF-8 tests: String comparison");
 
