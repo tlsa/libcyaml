@@ -9,10 +9,7 @@
  * \brief Utility functions.
  */
 
-#include <inttypes.h>
 #include <stdbool.h>
-#include <stdarg.h>
-#include <stdint.h>
 #include <string.h>
 #include <stdio.h>
 

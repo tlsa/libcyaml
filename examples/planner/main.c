@@ -1,7 +1,9 @@
-#include <stdbool.h>
-#include <stdarg.h>
-#include <stddef.h>
-#include <stdint.h>
+/*
+ * SPDX-License-Identifier: ISC
+ *
+ * Copyright (C) 2018 Michael Drake <tlsa@netsurf-browser.org>
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 

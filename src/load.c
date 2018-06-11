@@ -15,16 +15,9 @@
 
 #include <inttypes.h>
 #include <stdbool.h>
-#include <strings.h>
 #include <assert.h>
 #include <limits.h>
-#include <stdarg.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
 #include <errno.h>
-#include <stdio.h>
 
 #include <yaml.h>
 
@@ -712,7 +705,7 @@ static cyaml_err_t cyaml__read_bool(
 	CYAML_UNUSED(ctx);
 
 	for (uint32_t i = 0; i < CYAML_ARRAY_LEN(false_strings); i++) {
-		if (strcasecmp(value, false_strings[i]) == 0) {
+		if (cyaml_utf8_casecmp(value, false_strings[i]) == 0) {
 			temp = false;
 			break;
 		}
