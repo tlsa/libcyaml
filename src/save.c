@@ -14,16 +14,8 @@
 
 #include <inttypes.h>
 #include <stdbool.h>
-#include <strings.h>
 #include <assert.h>
 #include <limits.h>
-#include <stdarg.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <stdio.h>
 
 #include <yaml.h>
 
