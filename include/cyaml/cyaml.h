@@ -14,6 +14,10 @@
 #ifndef CYAML_H
 #define CYAML_H
 
+#include <stdarg.h>
+#include <stdint.h>
+#include <stddef.h>
+
 /**
  * CYAML library version string.
  */
