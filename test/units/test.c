@@ -6,8 +6,6 @@
 
 #include <stdbool.h>
 #include <assert.h>
-#include <stdarg.h>
-#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
