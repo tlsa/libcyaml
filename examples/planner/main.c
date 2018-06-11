@@ -1,3 +1,9 @@
+/*
+ * SPDX-License-Identifier: ISC
+ *
+ * Copyright (C) 2018 Michael Drake <tlsa@netsurf-browser.org>
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 
