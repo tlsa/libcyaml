@@ -712,7 +712,7 @@ static cyaml_err_t cyaml__read_bool(
 	CYAML_UNUSED(ctx);
 
 	for (uint32_t i = 0; i < CYAML_ARRAY_LEN(false_strings); i++) {
-		if (strcasecmp(value, false_strings[i]) == 0) {
+		if (cyaml_utf8_casecmp(value, false_strings[i]) == 0) {
 			temp = false;
 			break;
 		}
