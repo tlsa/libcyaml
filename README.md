@@ -46,6 +46,11 @@ To build the library (debug mode), run:
 
     make
 
+Another debug build variant which is built with address sanitiser (incompatible
+with valgrind) can be built with:
+
+    make VARIANT=san
+
 To build a release version:
 
     make VARIANT=release
@@ -58,13 +63,14 @@ To install a release version of the library, run:
     make install VARIANT=release
 
 It will install to the PREFIX `/usr/local` by default, and it will use
-DESTDIR and PREFIX from the environement if set.
+DESTDIR and PREFIX from the environment if set.
 
 Testing
 -------
 
 To run the tests, run any of the following, which generate various
-levels of output verbosity (optionally setting `VARIANT=release`):
+levels of output verbosity (optionally setting `VARIANT=release`, or
+`VARIANT=san`):
 
     make test
     make test-quiet

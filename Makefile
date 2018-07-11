@@ -2,12 +2,14 @@
 #
 # Copyright (C) 2017-2018 Michael Drake <tlsa@netsurf-browser.org>
 
+# Unfortunately ASan is incompatible with valgrind, so we have a special
+# variant for running with sanitisers.
 VARIANT = debug
-VALID_VARIANTS := release debug
+VALID_VARIANTS := release debug san
 
 ifneq ($(filter $(VARIANT),$(VALID_VARIANTS)),)
 else
-$(error VARIANT must be 'debug' (default) or 'release')
+$(error VARIANT must be 'debug' (default), 'san', or 'release')
 endif
 
 # CYAML's versioning is <MAJOR>.<MINOR>.<PATCH>[-DEVEL]
@@ -39,10 +41,13 @@ VERSION_FLAGS = -DVERSION_MAJOR=$(VERSION_MAJOR) \
 INCLUDE = -I include
 CFLAGS += $(INCLUDE) $(VERSION_FLAGS)
 CFLAGS += -std=c11 -Wall -Wextra -pedantic
-LDFLAGS = -lyaml
+LDFLAGS += -lyaml
 
 ifeq ($(VARIANT), debug)
 	CFLAGS += -O0 -g
+else ifeq ($(VARIANT), san)
+	CFLAGS += -O0 -g -fsanitize=address -fsanitize=undefined
+	LDFLAGS += -fsanitize=address -fsanitize=undefined
 else
 	CFLAGS += -O2 -DNDEBUG
 endif
