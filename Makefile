@@ -39,7 +39,7 @@ VERSION_FLAGS = -DVERSION_MAJOR=$(VERSION_MAJOR) \
 INCLUDE = -I include
 CFLAGS += $(INCLUDE) $(VERSION_FLAGS)
 CFLAGS += -std=c11 -Wall -Wextra -pedantic
-LDFLAGS = -lyaml
+LDFLAGS += -lyaml
 
 ifeq ($(VARIANT), debug)
 	CFLAGS += -O0 -g
