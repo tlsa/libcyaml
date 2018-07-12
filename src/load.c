@@ -626,7 +626,7 @@ static cyaml_err_t cyaml__read_int(
 
 	CYAML_UNUSED(ctx);
 
-	if (schema->data_size == 0) {
+	if (schema->data_size == 0 || schema->data_size > sizeof(uint64_t)) {
 		return CYAML_ERR_INVALID_DATA_SIZE;
 	}
 
