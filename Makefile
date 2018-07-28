@@ -46,8 +46,8 @@ LDFLAGS += -lyaml
 ifeq ($(VARIANT), debug)
 	CFLAGS += -O0 -g
 else ifeq ($(VARIANT), san)
-	CFLAGS += -O0 -g -fsanitize=address -fsanitize=undefined
-	LDFLAGS += -fsanitize=address -fsanitize=undefined
+	CFLAGS += -O0 -g -fsanitize=address -fsanitize=undefined -fno-sanitize-recover
+	LDFLAGS += -fsanitize=address -fsanitize=undefined -fno-sanitize-recover
 else
 	CFLAGS += -O2 -DNDEBUG
 endif
