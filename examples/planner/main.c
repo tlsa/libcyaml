@@ -322,12 +322,12 @@ static const cyaml_schema_field_t plan_fields_schema[] = {
 	 * YAML key: "start".
 	 * C structure member for this key: "start".
 	 *
-	 * Its CYAML type is a mapping.
+	 * Its CYAML type is a mapping pointer.
 	 *
 	 * Since it's a mapping type, the schema for its mapping's fields must
 	 * be provided too.  In this case, it's `date_fields_schema`.
 	 */
-	CYAML_FIELD_MAPPING(
+	CYAML_FIELD_MAPPING_PTR(
 			"start", CYAML_FLAG_POINTER,
 			struct plan, start, date_fields_schema),
 
