@@ -24,10 +24,10 @@
 #include "util.h"
 
 /**
- * A CYAML load state machine stack entry.
+ * A CYAML save state machine stack entry.
  */
 typedef struct cyaml_state {
-	/** Current load state machine state. */
+	/** Current save state machine state. */
 	enum cyaml_state_e state;
 	/** Schema for the expected value in this state. */
 	const cyaml_schema_value_t *schema;
@@ -56,7 +56,7 @@ typedef struct cyaml_state {
 } cyaml_state_t;
 
 /**
- * Internal YAML loading context.
+ * Internal YAML saving context.
  */
 typedef struct cyaml_ctx {
 	const cyaml_config_t *config; /**< Settings provided by client. */
@@ -69,7 +69,7 @@ typedef struct cyaml_ctx {
 } cyaml_ctx_t;
 
 /**
- * Ensure that the CYAML load context has space for a new stack entry.
+ * Ensure that the CYAML save context has space for a new stack entry.
  *
  * \param[in]  ctx     The CYAML saving context.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
@@ -239,7 +239,7 @@ static inline bool cyaml__emit_doc_delim(
  * Emit a YAML start event for the state being pushed to the stack.
  *
  * \param[in]  ctx     The CYAML saving context.
- * \param[in]  state   The CYAML load state we're pushing a stack entry for.
+ * \param[in]  state   The CYAML save state we're pushing a stack entry for.
  * \param[in]  schema  The CYAML schema for the value expected in state.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
@@ -281,10 +281,10 @@ static cyaml_err_t cyaml__stack_push_write_event(
 }
 
 /**
- * Push a new entry onto the CYAML load context's stack.
+ * Push a new entry onto the CYAML save context's stack.
  *
  * \param[in]  ctx     The CYAML saving context.
- * \param[in]  state   The CYAML load state we're pushing a stack entry for.
+ * \param[in]  state   The CYAML save state we're pushing a stack entry for.
  * \param[in]  schema  The CYAML schema for the value expected in state.
  * \param[in]  data    Pointer to where value's data should be read from.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
@@ -338,7 +338,7 @@ static cyaml_err_t cyaml__stack_push(
  * This frees any resources owned by the stack entry.
  *
  * \param[in]  ctx     The CYAML saving context.
- * \param[in]  state   The CYAML load state we're popping from the stack.
+ * \param[in]  state   The CYAML save state we're popping from the stack.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
 static cyaml_err_t cyaml__stack_pop_write_event(
@@ -373,7 +373,7 @@ static cyaml_err_t cyaml__stack_pop_write_event(
 }
 
 /**
- * Pop the current entry on the CYAML load context's stack.
+ * Pop the current entry on the CYAML save context's stack.
  *
  * This frees any resources owned by the stack entry.
  *
@@ -409,12 +409,12 @@ static cyaml_err_t cyaml__stack_pop(
 }
 
 /**
- * Helper to make allocations for loaded YAML values.
+ * Helper to make allocations for saved YAML values.
  *
  * If the current state is sequence, this extends any existing allocation
  * for the sequence.
  *
- * The current CYAML loading context's state is updated with new allocation
+ * The current CYAML saving context's state is updated with new allocation
  * address, where necessary.
  *
  * \param[in]      ctx            The CYAML saving context.
@@ -949,7 +949,7 @@ static cyaml_err_t cyaml__write_start(
 }
 
 /**
- * YAML loading handler for the \ref CYAML_STATE_IN_STREAM state.
+ * YAML saving handler for the \ref CYAML_STATE_IN_STREAM state.
  *
  * \param[in]  ctx  The CYAML saving context.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
@@ -970,7 +970,7 @@ static cyaml_err_t cyaml__write_stream(
 }
 
 /**
- * YAML loading handler for the \ref CYAML_STATE_IN_DOC state.
+ * YAML saving handler for the \ref CYAML_STATE_IN_DOC state.
  *
  * \param[in]  ctx  The CYAML saving context.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
@@ -997,7 +997,7 @@ static cyaml_err_t cyaml__write_doc(
 }
 
 /**
- * YAML loading handler for the \ref CYAML_STATE_IN_MAP_KEY and \ref
+ * YAML saving handler for the \ref CYAML_STATE_IN_MAP_KEY and \ref
  * CYAML_STATE_IN_MAP_VALUE states.
  *
  * \param[in]  ctx  The CYAML saving context.
@@ -1053,7 +1053,7 @@ static cyaml_err_t cyaml__write_mapping(
 }
 
 /**
- * YAML loading handler for the \ref CYAML_STATE_IN_SEQUENCE state.
+ * YAML saving handler for the \ref CYAML_STATE_IN_SEQUENCE state.
  *
  * \param[in]  ctx  The CYAML saving context.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
