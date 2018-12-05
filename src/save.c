@@ -889,6 +889,11 @@ static cyaml_err_t cyaml__write_value(
 {
 	cyaml_err_t err;
 
+	cyaml__log(ctx->config, CYAML_LOG_DEBUG,
+			"Writing value of type '%s'%s\n",
+			cyaml__type_to_str(schema->type),
+			schema->flags & CYAML_FLAG_POINTER ? " (pointer)" : "");
+
 	err = cyaml__data_handle_pointer(ctx, schema, &data);
 	if (err != CYAML_OK) {
 		return err;
