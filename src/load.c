@@ -1123,6 +1123,11 @@ static cyaml_err_t cyaml__read_value(
 	cyaml_event_t cyaml_event = cyaml__get_event_type(event);
 	cyaml_err_t err = CYAML_OK;
 
+	cyaml__log(ctx->config, CYAML_LOG_DEBUG,
+			"Reading value of type '%s'%s\n",
+			cyaml__type_to_str(schema->type),
+			schema->flags & CYAML_FLAG_POINTER ? " (pointer)" : "");
+
 	if (!cyaml__is_sequence(schema)) {
 		/* Since sequences extend their allocation for each entry,
 		 * they're handled in the sequence-specific code.
