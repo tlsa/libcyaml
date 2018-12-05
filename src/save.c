@@ -33,11 +33,6 @@ typedef struct cyaml_state {
 	const cyaml_schema_value_t *schema;
 	/** Anonymous union for schema type specific state. */
 	union {
-		/** Additional state for \ref CYAML_STATE_IN_STREAM state. */
-		struct {
-			/** Number of documents read in stream. */
-			uint32_t doc_count;
-		} stream;
 		/**
 		 * Additional state for \ref CYAML_STATE_IN_MAP_KEY and
 		 *  \ref CYAML_STATE_IN_MAP_VALUE states.
