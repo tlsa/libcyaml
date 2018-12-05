@@ -59,6 +59,33 @@ static inline const char * cyaml__state_to_str(enum cyaml_state_e state)
 }
 
 /**
+ * Convert a CYAML type into a human readable string.
+ *
+ * \param[in]  state  The state to convert.
+ * \return String representing state.
+ */
+static inline const char * cyaml__type_to_str(cyaml_type_e type)
+{
+	static const char * const strings[CYAML__TYPE_COUNT] = {
+		[CYAML_INT]            = "INT",
+		[CYAML_UINT]           = "UINT",
+		[CYAML_BOOL]           = "BOOL",
+		[CYAML_ENUM]           = "ENUM",
+		[CYAML_FLAGS]          = "FLAGS",
+		[CYAML_FLOAT]          = "FLOAT",
+		[CYAML_STRING]         = "STRING",
+		[CYAML_MAPPING]        = "MAPPING",
+		[CYAML_SEQUENCE]       = "SEQUENCE",
+		[CYAML_SEQUENCE_FIXED] = "SEQUENCE_FIXED",
+		[CYAML_IGNORE]         = "IGNORE",
+	};
+	if ((unsigned)type >= CYAML__TYPE_COUNT) {
+		return "<invalid>";
+	}
+	return strings[type];
+}
+
+/**
  * Log to client's logging function, if provided.
  *
  * \param[in] cfg    CYAML client config structure.
