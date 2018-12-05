@@ -554,6 +554,8 @@ static cyaml_err_t cyaml__data_handle_pointer(
 			return err;
 		}
 
+		/* Update the caller's pointer so it can write the value to
+		 * the right place. */
 		*value_data_io = value_data;
 	}
 
