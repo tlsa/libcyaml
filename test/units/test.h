@@ -49,4 +49,10 @@ extern bool save_tests(
 		cyaml_log_t log_level,
 		cyaml_log_fn_t log_fn);
 
+/** In copy.c */
+extern bool copy_tests(
+		ttest_report_ctx_t *rc,
+		cyaml_log_t log_level,
+		cyaml_log_fn_t log_fn);
+
 #endif
