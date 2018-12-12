@@ -123,4 +123,35 @@ static inline uint8_t * cyaml_data_read_pointer(
 	return (void *)cyaml_data_read(sizeof(char *), data, &err);
 }
 
+/**
+ * Find address of actual value.
+ *
+ * If the value has the pointer flag, the pointer is read, otherwise the
+ * address is returned unchanged.
+ *
+ * \param[in]  config     The CYAML client configuration object.
+ * \param[in]  schema     CYAML schema for the expected value.
+ * \param[in]  data_in    The address to read from.
+ * \param[in]  prefix     String prefix to use in log messages.
+ * \return New address or for \ref CYAML_FLAG_POINTER, or data_in.
+ */
+static inline const uint8_t * cyaml_data_save_handle_pointer(
+		const cyaml_config_t *config,
+		const cyaml_schema_value_t *schema,
+		const uint8_t *data_in,
+		const char *prefix)
+{
+	if (schema->flags & CYAML_FLAG_POINTER) {
+		const uint8_t *data = cyaml_data_read_pointer(data_in);
+
+		cyaml__log(config, CYAML_LOG_DEBUG,
+				"%s: Handle pointer: %p --> %p\n",
+				prefix, data_in, data);
+
+		return data;
+	}
+
+	return data_in;
+}
+
 #endif
