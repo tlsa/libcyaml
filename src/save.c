@@ -33,11 +33,6 @@ typedef struct cyaml_state {
 	const cyaml_schema_value_t *schema;
 	/** Anonymous union for schema type specific state. */
 	union {
-		/** Additional state for \ref CYAML_STATE_IN_STREAM state. */
-		struct {
-			/** Number of documents read in stream. */
-			uint32_t doc_count;
-		} stream;
 		/**
 		 * Additional state for \ref CYAML_STATE_IN_MAP_KEY and
 		 *  \ref CYAML_STATE_IN_MAP_VALUE states.
@@ -893,6 +888,11 @@ static cyaml_err_t cyaml__write_value(
 		unsigned seq_count)
 {
 	cyaml_err_t err;
+
+	cyaml__log(ctx->config, CYAML_LOG_DEBUG,
+			"Writing value of type '%s'%s\n",
+			cyaml__type_to_str(schema->type),
+			schema->flags & CYAML_FLAG_POINTER ? " (pointer)" : "");
 
 	err = cyaml__data_handle_pointer(ctx, schema, &data);
 	if (err != CYAML_OK) {
