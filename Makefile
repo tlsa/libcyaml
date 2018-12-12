@@ -116,7 +116,8 @@ ifeq ($(UNAME_S),Darwin)
 endif
 
 TEST_SRC_FILES = units/free.c units/load.c units/test.c units/util.c \
-		units/errs.c units/file.c units/save.c units/utf8.c
+		units/errs.c units/file.c units/save.c units/copy.c \
+		units/utf8.c
 TEST_SRC := $(addprefix test/,$(TEST_SRC_FILES))
 TEST_OBJ = $(patsubst %.c,%.o, $(addprefix $(BUILDDIR)/,$(TEST_SRC)))
 TEST_DEP = $(patsubst %.c,%.d, $(addprefix $(BUILDDIR)/,$(TEST_SRC)))
