@@ -1762,6 +1762,36 @@ extern cyaml_err_t cyaml_save_data(
 		unsigned seq_count);
 
 /**
+ * Copy a loaded document.
+ *
+ * This performs a deep-clone, creating a new copy of everything in the
+ * document, including allocations.
+ *
+ * This is a convenience function, which is exposed here just in case it
+ * is useful to clients.  Clients would be better off writing their own copy
+ * function for the specific data once loaded.
+ *
+ * \note The input `data` parameter may be NULL if it is allowed by the schema.
+ *       For example, if there is a top level mapping, containing only optional
+ *       fields, and none of them are set, the provided data may be NULL.
+ *
+ * \param[in]  config     Client's CYAML configuration structure.
+ * \param[in]  schema     CYAML schema for the YAML to be copied.
+ * \param[in]  data       The caller-owned data to be copied.
+ * \param[in]  seq_count  If top level type is sequence, this should be the
+ *                        entry count, otherwise it is ignored.
+ * \param[out] data_out   Returns the caller-owned loaded data on success.
+ *                        Untouched on failure.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+extern cyaml_err_t cyaml_copy(
+		const cyaml_config_t *config,
+		const cyaml_schema_value_t *schema,
+		const cyaml_data_t *data,
+		unsigned seq_count,
+		cyaml_data_t **data_out);
+
+/**
  * Free data returned by a CYAML load function.
  *
  * This is a convenience function, which is here purely to minimise the
