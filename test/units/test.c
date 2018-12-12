@@ -56,6 +56,12 @@ extern bool save_tests(
 		cyaml_log_t log_level,
 		cyaml_log_fn_t log_fn);
 
+/** In copy.c */
+extern bool copy_tests(
+		ttest_report_ctx_t *rc,
+		cyaml_log_t log_level,
+		cyaml_log_fn_t log_fn);
+
 /**
  * Print program usage
  *
@@ -113,6 +119,7 @@ int main(int argc, char *argv[])
 	pass &= errs_tests(&rc, log_level, log_fn);
 	pass &= file_tests(&rc, log_level, log_fn);
 	pass &= save_tests(&rc, log_level, log_fn);
+	pass &= copy_tests(&rc, log_level, log_fn);
 
 	ttest_report(&rc);
 
