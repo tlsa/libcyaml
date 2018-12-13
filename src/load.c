@@ -150,8 +150,8 @@ static cyaml_err_t cyaml_get_next_event(
 		return CYAML_ERR_LIBYAML_PARSER;
 	}
 
-	if (event->type == YAML_ALIAS_EVENT) {
-		/** \todo Add support for alias? */
+	if (ctx->config->flags & CYAML_CFG_NO_ALIAS &&
+	    event->type == YAML_ALIAS_EVENT) {
 		yaml_event_delete(event);
 		return CYAML_ERR_ALIAS;
 	}
