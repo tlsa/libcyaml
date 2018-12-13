@@ -452,6 +452,12 @@ typedef enum cyaml_cfg_flags {
 	 * By default, strings are compared with case sensitivity.
 	 */
 	CYAML_CFG_CASE_INSENSITIVE    = (1 << 4),
+	/**
+	 * When loading, don't allow YAML aliases in the document.
+	 *
+	 * See the error code, \ref CYAML_ERR_ALIAS.
+	 */
+	CYAML_CFG_NO_ALIAS            = (1 << 5),
 } cyaml_cfg_flags_t;
 
 /**
@@ -463,7 +469,7 @@ typedef enum cyaml_cfg_flags {
 typedef enum cyaml_err {
 	CYAML_OK,                        /**< Success. */
 	CYAML_ERR_OOM,                   /**< Memory allocation failed. */
-	CYAML_ERR_ALIAS,                 /**< YAML alias is unsupported. */
+	CYAML_ERR_ALIAS,                 /**< See \ref CYAML_CFG_NO_ALIAS. */
 	CYAML_ERR_FILE_OPEN,             /**< Failed to open file. */
 	CYAML_ERR_INVALID_KEY,           /**< Mapping key rejected by schema. */
 	CYAML_ERR_INVALID_VALUE,         /**< Value rejected by schema. */
