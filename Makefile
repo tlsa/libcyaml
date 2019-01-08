@@ -126,10 +126,10 @@ $(BUILDDIR)/$(LIB_PKGCON): $(LIB_PKGCON).in
 		$(LIB_PKGCON).in >$(BUILDDIR)/$(LIB_PKGCON)
 
 $(BUILDDIR)/$(LIB_STATIC): $(LIB_OBJ_STATIC)
-	$(AR) -rcs -o $@ $^
+	$(AR) -rcs $@ $^
 
 $(BUILDDIR)/$(LIB_SH_VER): $(LIB_OBJ_SHARED)
-	$(CC) -shared $(LDFLAGS_COV) -o $@ $^
+	$(CC) $(LDFLAGS) $(LDFLAGS_COV) -shared -o $@ $^
 
 $(LIB_OBJ_STATIC): $(BUILDDIR_STATIC)/%.o : %.c
 	@$(MKDIR) $(BUILDDIR_STATIC)/src
@@ -155,7 +155,7 @@ install: $(BUILDDIR)/$(LIB_SH_VER) $(BUILDDIR)/$(LIB_STATIC) $(BUILDDIR)/$(LIB_P
 	$(INSTALL) $(BUILDDIR)/$(LIB_STATIC) $(DESTDIR)$(PREFIX)/$(LIBDIR)/$(LIB_STATIC)
 	chmod 644 $(DESTDIR)$(PREFIX)/$(LIBDIR)/$(LIB_STATIC)
 	$(INSTALL) -d $(DESTDIR)$(PREFIX)/$(INCLUDEDIR)/cyaml
-	$(INSTALL) -m 644 include/cyaml/* -t $(DESTDIR)$(PREFIX)/$(INCLUDEDIR)/cyaml
+	$(INSTALL) -m 644 include/cyaml/* $(DESTDIR)$(PREFIX)/$(INCLUDEDIR)/cyaml
 	$(INSTALL) -m 644 $(BUILDDIR)/$(LIB_PKGCON) $(DESTDIR)$(PREFIX)/$(LIBDIR)/pkgconfig/$(LIB_PKGCON)
 
 examples: $(BUILDDIR)/planner $(BUILDDIR)/numerical
