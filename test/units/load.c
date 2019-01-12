@@ -634,6 +634,102 @@ static bool test_load_mapping_entry_bool_false(
 }
 
 /**
+ * Test loading a pointer to a boolean value (true).
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_entry_bool_true_ptr(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	bool value = true;
+	static const unsigned char yaml[] =
+		"test_bool: true\n";
+	struct target_struct {
+		unsigned *test_value_bool;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_BOOL_PTR("test_bool", CYAML_FLAG_POINTER,
+				struct target_struct, test_value_bool),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (*data_tgt->test_value_bool != value) {
+		return ttest_fail(&tc, "Incorrect value");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a pointer to a boolean value (false).
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_entry_bool_false_ptr(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	bool value = false;
+	static const unsigned char yaml[] =
+		"test_bool: false\n";
+	struct target_struct {
+		unsigned *test_value_bool;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_BOOL_PTR("test_bool", CYAML_FLAG_POINTER,
+				struct target_struct, test_value_bool),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (*data_tgt->test_value_bool != value) {
+		return ttest_fail(&tc, "Incorrect value");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading an enumeration.
  *
  * \param[in]  report  The test report context.
@@ -5037,6 +5133,8 @@ bool load_tests(
 	pass &= test_load_mapping_entry_enum_sparse(rc, &config);
 	pass &= test_load_mapping_entry_ignore_deep(rc, &config);
 	pass &= test_load_mapping_entry_ignore_scalar(rc, &config);
+	pass &= test_load_mapping_entry_bool_true_ptr(rc, &config);
+	pass &= test_load_mapping_entry_bool_false_ptr(rc, &config);
 
 	ttest_heading(rc, "Load single entry mapping tests: complex types");
 
