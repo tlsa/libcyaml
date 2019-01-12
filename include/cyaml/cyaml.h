@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: ISC
  *
- * Copyright (c) 2017-2018 Michael Drake <tlsa@netsurf-browser.org>
+ * Copyright (c) 2017-2019 Michael Drake <tlsa@netsurf-browser.org>
  */
 
 /**
@@ -475,6 +475,8 @@ typedef enum cyaml_err {
 /**
  * Mapping schema helper macro for keys with \ref CYAML_INT type.
  *
+ * Use this for integers contained in structs.
+ *
  * \param[in]  _key        String defining the YAML mapping key for this value.
  * \param[in]  _flags      Any behavioural flags relevant to this value.
  * \param[in]  _structure  The structure corresponding to the mapping.
@@ -485,7 +487,29 @@ typedef enum cyaml_err {
 { \
 	.key = _key, \
 	.value = { \
-		CYAML_VALUE_INT((_flags), ((_structure *)NULL)->_member), \
+		CYAML_VALUE_INT(((_flags) & (~CYAML_FLAG_POINTER)), \
+				(((_structure *)NULL)->_member)), \
+	}, \
+	.data_offset = offsetof(_structure, _member) \
+}
+
+/**
+ * Mapping schema helper macro for keys with \ref CYAML_INT type.
+ *
+ * Use this for pointers to integers.
+ *
+ * \param[in]  _key        String defining the YAML mapping key for this value.
+ * \param[in]  _flags      Any behavioural flags relevant to this value.
+ * \param[in]  _structure  The structure corresponding to the mapping.
+ * \param[in]  _member     The member in _structure for this mapping value.
+ */
+#define CYAML_FIELD_INT_PTR( \
+		_key, _flags, _structure, _member) \
+{ \
+	.key = _key, \
+	.value = { \
+		CYAML_VALUE_INT(((_flags) | CYAML_FLAG_POINTER), \
+				(*(((_structure *)NULL)->_member))), \
 	}, \
 	.data_offset = offsetof(_structure, _member) \
 }
@@ -505,6 +529,8 @@ typedef enum cyaml_err {
 /**
  * Mapping schema helper macro for keys with \ref CYAML_UINT type.
  *
+ * Use this for unsigned integers contained in structs.
+ *
  * \param[in]  _key        String defining the YAML mapping key for this value.
  * \param[in]  _flags      Any behavioural flags relevant to this value.
  * \param[in]  _structure  The structure corresponding to the mapping.
@@ -515,7 +541,29 @@ typedef enum cyaml_err {
 { \
 	.key = _key, \
 	.value = { \
-		CYAML_VALUE_UINT((_flags), ((_structure *)NULL)->_member), \
+		CYAML_VALUE_UINT(((_flags) & (~CYAML_FLAG_POINTER)), \
+				(((_structure *)NULL)->_member)), \
+	}, \
+	.data_offset = offsetof(_structure, _member) \
+}
+
+/**
+ * Mapping schema helper macro for keys with \ref CYAML_UINT type.
+ *
+ * Use this for pointers to unsigned integers.
+ *
+ * \param[in]  _key        String defining the YAML mapping key for this value.
+ * \param[in]  _flags      Any behavioural flags relevant to this value.
+ * \param[in]  _structure  The structure corresponding to the mapping.
+ * \param[in]  _member     The member in _structure for this mapping value.
+ */
+#define CYAML_FIELD_UINT_PTR( \
+		_key, _flags, _structure, _member) \
+{ \
+	.key = _key, \
+	.value = { \
+		CYAML_VALUE_UINT(((_flags) | CYAML_FLAG_POINTER), \
+				(*(((_structure *)NULL)->_member))), \
 	}, \
 	.data_offset = offsetof(_structure, _member) \
 }
@@ -535,6 +583,8 @@ typedef enum cyaml_err {
 /**
  * Mapping schema helper macro for keys with \ref CYAML_BOOL type.
  *
+ * Use this for boolean types contained in structs.
+ *
  * \param[in]  _key        String defining the YAML mapping key for this value.
  * \param[in]  _flags      Any behavioural flags relevant to this value.
  * \param[in]  _structure  The structure corresponding to the mapping.
@@ -545,7 +595,29 @@ typedef enum cyaml_err {
 { \
 	.key = _key, \
 	.value = { \
-		CYAML_VALUE_BOOL((_flags), ((_structure *)NULL)->_member), \
+		CYAML_VALUE_BOOL(((_flags) & (~CYAML_FLAG_POINTER)), \
+				(((_structure *)NULL)->_member)), \
+	}, \
+	.data_offset = offsetof(_structure, _member) \
+}
+
+/**
+ * Mapping schema helper macro for keys with \ref CYAML_BOOL type.
+ *
+ * Use this for pointers to boolean types.
+ *
+ * \param[in]  _key        String defining the YAML mapping key for this value.
+ * \param[in]  _flags      Any behavioural flags relevant to this value.
+ * \param[in]  _structure  The structure corresponding to the mapping.
+ * \param[in]  _member     The member in _structure for this mapping value.
+ */
+#define CYAML_FIELD_BOOL_PTR( \
+		_key, _flags, _structure, _member) \
+{ \
+	.key = _key, \
+	.value = { \
+		CYAML_VALUE_BOOL(((_flags) | CYAML_FLAG_POINTER), \
+				(*(((_structure *)NULL)->_member))), \
 	}, \
 	.data_offset = offsetof(_structure, _member) \
 }
@@ -571,6 +643,8 @@ typedef enum cyaml_err {
 /**
  * Mapping schema helper macro for keys with \ref CYAML_ENUM type.
  *
+ * Use this for enumerated types contained in structs.
+ *
  * \param[in]  _key        String defining the YAML mapping key for this value.
  * \param[in]  _flags      Any behavioural flags relevant to this value.
  * \param[in]  _structure  The structure corresponding to the mapping.
@@ -583,7 +657,32 @@ typedef enum cyaml_err {
 { \
 	.key = _key, \
 	.value = { \
-		CYAML_VALUE_ENUM((_flags), ((_structure *)NULL)->_member, \
+		CYAML_VALUE_ENUM(((_flags) & (~CYAML_FLAG_POINTER)), \
+				(((_structure *)NULL)->_member), \
+				_strings, _strings_count), \
+	}, \
+	.data_offset = offsetof(_structure, _member) \
+}
+
+/**
+ * Mapping schema helper macro for keys with \ref CYAML_ENUM type.
+ *
+ * Use this for pointers to enumerated types.
+ *
+ * \param[in]  _key        String defining the YAML mapping key for this value.
+ * \param[in]  _flags      Any behavioural flags relevant to this value.
+ * \param[in]  _structure  The structure corresponding to the mapping.
+ * \param[in]  _member     The member in _structure for this mapping value.
+ * \param[in]  _strings       Array of string data for enumeration values.
+ * \param[in]  _strings_count Number of entries in _strings.
+ */
+#define CYAML_FIELD_ENUM_PTR( \
+		_key, _flags, _structure, _member, _strings, _strings_count) \
+{ \
+	.key = _key, \
+	.value = { \
+		CYAML_VALUE_ENUM(((_flags) | CYAML_FLAG_POINTER), \
+				(*(((_structure *)NULL)->_member)), \
 				_strings, _strings_count), \
 	}, \
 	.data_offset = offsetof(_structure, _member) \
@@ -610,6 +709,8 @@ typedef enum cyaml_err {
 /**
  * Mapping schema helper macro for keys with \ref CYAML_FLAGS type.
  *
+ * Use this for flag types contained in structs.
+ *
  * \param[in]  _key        String defining the YAML mapping key for this value.
  * \param[in]  _flags      Any behavioural flags relevant to this value.
  * \param[in]  _structure  The structure corresponding to the mapping.
@@ -622,7 +723,32 @@ typedef enum cyaml_err {
 { \
 	.key = _key, \
 	.value = { \
-		CYAML_VALUE_FLAGS((_flags), ((_structure *)NULL)->_member, \
+		CYAML_VALUE_FLAGS(((_flags) & (~CYAML_FLAG_POINTER)), \
+				(((_structure *)NULL)->_member), \
+				_strings, _strings_count), \
+	}, \
+	.data_offset = offsetof(_structure, _member) \
+}
+
+/**
+ * Mapping schema helper macro for keys with \ref CYAML_FLAGS type.
+ *
+ * Use this for pointers to flag types.
+ *
+ * \param[in]  _key        String defining the YAML mapping key for this value.
+ * \param[in]  _flags      Any behavioural flags relevant to this value.
+ * \param[in]  _structure  The structure corresponding to the mapping.
+ * \param[in]  _member     The member in _structure for this mapping value.
+ * \param[in]  _strings       Array of string data for flag values.
+ * \param[in]  _strings_count Number of entries in _strings.
+ */
+#define CYAML_FIELD_FLAGS_PTR( \
+		_key, _flags, _structure, _member, _strings, _strings_count) \
+{ \
+	.key = _key, \
+	.value = { \
+		CYAML_VALUE_FLAGS(((_flags) | CYAML_FLAG_POINTER), \
+				(*(((_structure *)NULL)->_member)), \
 				_strings, _strings_count), \
 	}, \
 	.data_offset = offsetof(_structure, _member) \
@@ -643,6 +769,8 @@ typedef enum cyaml_err {
 /**
  * Mapping schema helper macro for keys with \ref CYAML_FLOAT type.
  *
+ * Use this for floating point types contained in structs.
+ *
  * \param[in]  _key        String defining the YAML mapping key for this value.
  * \param[in]  _flags      Any behavioural flags relevant to this value.
  * \param[in]  _structure  The structure corresponding to the mapping.
@@ -653,7 +781,29 @@ typedef enum cyaml_err {
 { \
 	.key = _key, \
 	.value = { \
-		CYAML_VALUE_FLOAT((_flags), ((_structure *)NULL)->_member), \
+		CYAML_VALUE_FLOAT(((_flags) & (~CYAML_FLAG_POINTER)), \
+				(((_structure *)NULL)->_member)), \
+	}, \
+	.data_offset = offsetof(_structure, _member) \
+}
+
+/**
+ * Mapping schema helper macro for keys with \ref CYAML_FLOAT type.
+ *
+ * Use this for pointers to floating point types.
+ *
+ * \param[in]  _key        String defining the YAML mapping key for this value.
+ * \param[in]  _flags      Any behavioural flags relevant to this value.
+ * \param[in]  _structure  The structure corresponding to the mapping.
+ * \param[in]  _member     The member in _structure for this mapping value.
+ */
+#define CYAML_FIELD_FLOAT_PTR( \
+		_key, _flags, _structure, _member) \
+{ \
+	.key = _key, \
+	.value = { \
+		CYAML_VALUE_FLOAT(((_flags) | CYAML_FLAG_POINTER), \
+				(*(((_structure *)NULL)->_member))), \
 	}, \
 	.data_offset = offsetof(_structure, _member) \
 }
