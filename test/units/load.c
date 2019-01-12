@@ -1182,6 +1182,77 @@ static bool test_load_mapping_entry_flags(
 }
 
 /**
+ * Test loading a pointer to a flag word.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_entry_flags_ptr(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	enum test_flags {
+		TEST_FLAGS_NONE   = 0,
+		TEST_FLAGS_FIRST  = (1 << 0),
+		TEST_FLAGS_SECOND = (1 << 1),
+		TEST_FLAGS_THIRD  = (1 << 2),
+		TEST_FLAGS_FOURTH = (1 << 3),
+		TEST_FLAGS_FIFTH  = (1 << 4),
+		TEST_FLAGS_SIXTH  = (1 << 5),
+	} value = TEST_FLAGS_SECOND | TEST_FLAGS_FIFTH | 1024;
+	static const cyaml_strval_t strings[] = {
+		{ "none",   TEST_FLAGS_NONE },
+		{ "first",  TEST_FLAGS_FIRST },
+		{ "second", TEST_FLAGS_SECOND },
+		{ "third",  TEST_FLAGS_THIRD },
+		{ "fourth", TEST_FLAGS_FOURTH },
+		{ "fifth",  TEST_FLAGS_FIFTH },
+		{ "sixth",  TEST_FLAGS_SIXTH },
+	};
+	static const unsigned char yaml[] =
+		"test_flags:\n"
+		"    - second\n"
+		"    - fifth\n"
+		"    - 1024\n";
+	struct target_struct {
+		enum test_flags *test_value_flags;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_FLAGS_PTR("test_flags", CYAML_FLAG_POINTER,
+				struct target_struct, test_value_flags,
+				strings, CYAML_ARRAY_LEN(strings)),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (*data_tgt->test_value_flags != value) {
+		return ttest_fail(&tc, "Incorrect value: "
+				"expected: 0x%x, got: 0x%x\n",
+				value, data_tgt->test_value_flags);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading an empty flag word.
  *
  * \param[in]  report  The test report context.
@@ -5200,6 +5271,7 @@ bool load_tests(
 
 	pass &= test_load_mapping_entry_flags(rc, &config);
 	pass &= test_load_mapping_entry_mapping(rc, &config);
+	pass &= test_load_mapping_entry_flags_ptr(rc, &config);
 	pass &= test_load_mapping_entry_mapping_ptr(rc, &config);
 	pass &= test_load_mapping_entry_flags_empty(rc, &config);
 	pass &= test_load_mapping_entry_flags_sparse(rc, &config);
