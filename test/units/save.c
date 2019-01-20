@@ -3101,6 +3101,176 @@ static bool test_save_mapping_entry_sequence_ptr_sequence_fixed_flat_int(
 }
 
 /**
+ * Test saving optional mapping field.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_mapping_entry_optional_uint(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char ref[] =
+		"---\n"
+		"test_uint: 555\n"
+		"...\n";
+	static const struct target_struct {
+		unsigned test_uint;
+	} data = {
+		.test_uint = 555,
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("test_uint", CYAML_FLAG_OPTIONAL,
+				struct target_struct, test_uint),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving optional mapping field with pointer value.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_mapping_entry_optional_uint_ptr(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char ref[] =
+		"---\n"
+		"test_uint: 555\n"
+		"...\n";
+	static unsigned test_uint = 555;
+	static const struct target_struct {
+		unsigned *test_uint;
+	} data = {
+		.test_uint = &test_uint,
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT_PTR("test_uint",
+				CYAML_FLAG_OPTIONAL | CYAML_FLAG_POINTER,
+				struct target_struct, test_uint),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving optional mapping field with NULL pointer value.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_mapping_entry_optional_uint_ptr_null(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char ref[] =
+		"--- {}\n"
+		"...\n";
+	static const struct target_struct {
+		unsigned *test_uint;
+	} data = {
+		.test_uint = NULL,
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT_PTR("test_uint",
+				CYAML_FLAG_OPTIONAL | CYAML_FLAG_POINTER,
+				struct target_struct, test_uint),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test saving an unsigned integer.
  *
  * \param[in]  report  The test report context.
@@ -3570,6 +3740,12 @@ bool save_tests(
 	pass &= test_save_mapping_entry_sequence_ptr_sequence_fixed_int(rc, &config);
 	pass &= test_save_mapping_entry_sequence_ptr_sequence_fixed_ptr_int(rc, &config);
 	pass &= test_save_mapping_entry_sequence_ptr_sequence_fixed_flat_int(rc, &config);
+
+	ttest_heading(rc, "Save tests: optional mapping fields");
+
+	pass &= test_save_mapping_entry_optional_uint(rc, &config);
+	pass &= test_save_mapping_entry_optional_uint_ptr(rc, &config);
+	pass &= test_save_mapping_entry_optional_uint_ptr_null(rc, &config);
 
 	ttest_heading(rc, "Save tests: various");
 
