@@ -1002,6 +1002,16 @@ static cyaml_err_t cyaml__write_mapping(
 			return CYAML_OK;
 		}
 
+		if ((field->value.flags & CYAML_FLAG_OPTIONAL) &&
+		    (field->value.flags & CYAML_FLAG_POINTER)) {
+			const void *ptr = cyaml_data_read_pointer(
+					ctx->state->data + field->count_offset);
+			if (ptr == NULL) {
+				ctx->state->mapping.field++;
+				return CYAML_OK;
+			}
+		}
+
 		err = cyaml__emit_scalar(ctx, NULL, field->key,
 				YAML_STR_TAG);
 		if (err != CYAML_OK) {
