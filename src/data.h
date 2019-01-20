@@ -13,6 +13,7 @@
 #define CYAML_DATA_H
 
 #include "cyaml/cyaml.h"
+#include "util.h"
 
 /**
  * Write a value of up to eight bytes to data_target.
@@ -44,6 +45,29 @@ static inline cyaml_err_t cyaml_data_write(
 	}
 
 	return CYAML_OK;
+}
+
+/**
+ * Write a pointer to data.
+ *
+ * This is a wrapper for \ref cyaml_data_write that does a compile time
+ * assertion on the pointer size, so it can never return a runtime error.
+ *
+ * \param[in]  ptr         The pointer address to write.
+ * \param[in]  data        The address to write to.
+ */
+static inline void cyaml_data_write_pointer(
+		const void *ptr,
+		uint8_t *data_target)
+{
+	/* Refuse to build on platforms where sizeof pointer would
+	 * lead to \ref CYAML_ERR_INVALID_DATA_SIZE. */
+	cyaml_static_assert(sizeof(char *) >  0);
+	cyaml_static_assert(sizeof(char *) <= sizeof(uint64_t));
+
+	CYAML_UNUSED(cyaml_data_write((uint64_t)ptr, sizeof(ptr), data_target));
+
+	return;
 }
 
 /**
