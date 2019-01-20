@@ -501,7 +501,6 @@ static cyaml_err_t cyaml__data_handle_pointer(
 		const yaml_event_t *event,
 		uint8_t **value_data_io)
 {
-	cyaml_err_t err = CYAML_OK;
 	cyaml_state_t *state = ctx->state;
 
 	if (schema->flags & CYAML_FLAG_POINTER) {
@@ -548,18 +547,14 @@ static cyaml_err_t cyaml__data_handle_pointer(
 		}
 
 		/* Write the allocation pointer into the data structure. */
-		err = cyaml_data_write((uint64_t)value_data,
-				sizeof(value_data), *value_data_io);
-		if (err != CYAML_OK) {
-			return err;
-		}
+		cyaml_data_write_pointer(value_data, *value_data_io);
 
 		/* Update the caller's pointer so it can write the value to
 		 * the right place. */
 		*value_data_io = value_data;
 	}
 
-	return err;
+	return CYAML_OK;
 }
 
 /**
