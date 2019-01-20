@@ -749,6 +749,53 @@ static bool test_err_load_schema_string_min_max(
 }
 
 /**
+ * Only scalar mapping keys are allowed by libcyaml.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_non_scalar_mapping_key(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"{1}: value";
+	struct target_struct {
+		unsigned value;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("key", CYAML_FLAG_DEFAULT,
+				struct target_struct, value),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INTERNAL_ERROR) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading with schema with data size (0).
  *
  * \param[in]  report  The test report context.
@@ -4643,6 +4690,7 @@ bool errs_tests(
 
 	ttest_heading(rc, "YAML / schema mismatch: bad values");
 
+	pass &= test_err_load_non_scalar_mapping_key(rc, &config);
 	pass &= test_err_load_schema_invalid_value_uint(rc, &config);
 	pass &= test_err_load_schema_invalid_value_flags_1(rc, &config);
 	pass &= test_err_load_schema_invalid_value_flags_2(rc, &config);
