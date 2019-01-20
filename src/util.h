@@ -69,7 +69,7 @@ static inline const char * cyaml__state_to_str(enum cyaml_state_e state)
 /**
  * Convert a CYAML type into a human readable string.
  *
- * \param[in]  state  The state to convert.
+ * \param[in]  type  The state to convert.
  * \return String representing state.
  */
 static inline const char * cyaml__type_to_str(cyaml_type_e type)
