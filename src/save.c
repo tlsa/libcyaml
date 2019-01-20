@@ -1017,6 +1017,17 @@ static cyaml_err_t cyaml__write_mapping(
 			return CYAML_OK;
 		}
 
+		if ((field->value.flags & CYAML_FLAG_OPTIONAL) == CYAML_FLAG_OPTIONAL) {
+			if ((field->value.flags & CYAML_FLAG_POINTER) == CYAML_FLAG_POINTER) {
+				const void **p = (const void **)(ctx->state->data + field->data_offset);
+				if (*p == NULL) {
+					// Skip NULL pointer value if OPTIONAL:
+					ctx->state->mapping.field++;
+					return CYAML_OK;
+				}
+			}
+		}
+
 		err = cyaml__emit_scalar(ctx, NULL, field->key,
 				YAML_STR_TAG);
 		if (err != CYAML_OK) {
