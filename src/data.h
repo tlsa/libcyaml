@@ -108,4 +108,26 @@ static inline uint64_t cyaml_data_read(
 	return ret;
 }
 
+/**
+ * Read a pointer from data.
+ *
+ * This is a wrapper for \ref cyaml_data_read that does a compile time
+ * assertion on the pointer size, so it can never return a runtime error.
+ *
+ * \param[in]  data        The address to read from.
+ * \return Returns the value read from data.
+ */
+static inline uint8_t * cyaml_data_read_pointer(
+		const uint8_t *data)
+{
+	cyaml_err_t err;
+
+	/* Refuse to build on platforms where sizeof pointer would
+	 * lead to \ref CYAML_ERR_INVALID_DATA_SIZE. */
+	cyaml_static_assert(sizeof(char *) >  0);
+	cyaml_static_assert(sizeof(char *) <= sizeof(uint64_t));
+
+	return (void *)cyaml_data_read(sizeof(char *), data, &err);
+}
+
 #endif
