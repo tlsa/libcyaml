@@ -54,7 +54,7 @@ static inline cyaml_err_t cyaml_data_write(
  * assertion on the pointer size, so it can never return a runtime error.
  *
  * \param[in]  ptr         The pointer address to write.
- * \param[in]  data        The address to write to.
+ * \param[in]  data_target The address to write to.
  */
 static inline void cyaml_data_write_pointer(
 		const void *ptr,

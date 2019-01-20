@@ -409,7 +409,7 @@ static cyaml_err_t cyaml__stack_pop(
  * If the value has the pointer flag, the pointer is read, otherwise the
  * address is returned unchanged.
  *
- * \param[in]  ctx        The CYAML saving context.
+ * \param[in]  config     The CYAML client configuration object.
  * \param[in]  schema     CYAML schema for the expected value.
  * \param[in]  data_in    The address to read from.
  * \return New address or for \ref CYAML_FLAG_POINTER, or data_in.
