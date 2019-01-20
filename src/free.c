@@ -112,9 +112,8 @@ static void cyaml__free_value(
 		unsigned count)
 {
 	if (schema->flags & CYAML_FLAG_POINTER) {
-		cyaml_err_t err;
-		data = (void *)cyaml_data_read(sizeof(char *), data, &err);
-		if ((err != CYAML_OK) || (data == NULL)) {
+		data = cyaml_data_read_pointer(data);
+		if (data == NULL) {
 			return;
 		}
 	}

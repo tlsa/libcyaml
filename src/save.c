@@ -404,44 +404,32 @@ static cyaml_err_t cyaml__stack_pop(
 }
 
 /**
- * Helper to make allocations for saved YAML values.
+ * Find address of actual value.
  *
- * If the current state is sequence, this extends any existing allocation
- * for the sequence.
+ * If the value has the pointer flag, the pointer is read, otherwise the
+ * address is returned unchanged.
  *
- * The current CYAML saving context's state is updated with new allocation
- * address, where necessary.
- *
- * \param[in]      ctx            The CYAML saving context.
- * \param[in]      schema         The schema for value to get data pointer for.
- * \param[in,out]  value_data_io  Current address of value's data.  Updated to
- *                                new address if value is allocation requiring
- *                                an allocation.
- * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ * \param[in]  ctx        The CYAML saving context.
+ * \param[in]  schema     CYAML schema for the expected value.
+ * \param[in]  data_in    The address to read from.
+ * \return New address or for \ref CYAML_FLAG_POINTER, or data_in.
  */
-static cyaml_err_t cyaml__data_handle_pointer(
-		const cyaml_ctx_t *ctx,
+static const uint8_t * cyaml__data_handle_pointer(
+		const cyaml_config_t *config,
 		const cyaml_schema_value_t *schema,
-		const uint8_t **value_data_io)
+		const uint8_t *data_in)
 {
-	cyaml_err_t err = CYAML_OK;
-
 	if (schema->flags & CYAML_FLAG_POINTER) {
-		const uint8_t *data = *value_data_io;
+		const uint8_t *data = cyaml_data_read_pointer(data_in);
 
-		data = (void *)cyaml_data_read(sizeof(char *), data, &err);
-		if (err != CYAML_OK) {
-			return err;
-		}
-
-		cyaml__log(ctx->config, CYAML_LOG_DEBUG,
+		cyaml__log(config, CYAML_LOG_DEBUG,
 				"Handle pointer: %p --> %p\n",
-				*value_data_io, data);
+				data_in, data);
 
-		*value_data_io = data;
+		return data;
 	}
 
-	return err;
+	return data_in;
 }
 
 /**
@@ -894,10 +882,7 @@ static cyaml_err_t cyaml__write_value(
 			cyaml__type_to_str(schema->type),
 			schema->flags & CYAML_FLAG_POINTER ? " (pointer)" : "");
 
-	err = cyaml__data_handle_pointer(ctx, schema, &data);
-	if (err != CYAML_OK) {
-		return err;
-	}
+	data = cyaml__data_handle_pointer(ctx->config, schema, data);
 
 	switch (schema->type) {
 	case CYAML_INT:   /* Fall through. */
