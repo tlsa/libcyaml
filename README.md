@@ -37,7 +37,8 @@ arranged in memory.
 Status
 ------
 
-Until a release is made the API may change.  Feedback welcome.
+Until version 1.0.0 is released, the API and ABI are subject to change.
+Feedback welcome.
 
 Building
 --------
