@@ -30,7 +30,7 @@ INCLUDEDIR ?= include
 CC ?= gcc
 AR ?= ar
 MKDIR =	mkdir -p
-INSTALL ?= install -c
+INSTALL ?= install -c -D
 VALGRIND = valgrind --leak-check=full --track-origins=yes
 
 VERSION_FLAGS = -DVERSION_MAJOR=$(VERSION_MAJOR) \
