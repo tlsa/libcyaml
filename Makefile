@@ -71,9 +71,10 @@ LIB_OBJ = $(patsubst %.c,%.o, $(addprefix $(BUILDDIR)/,$(LIB_SRC)))
 LIB_OBJ_SHARED = $(patsubst $(BUILDDIR)%,$(BUILDDIR_SHARED)%,$(LIB_OBJ))
 LIB_OBJ_STATIC = $(patsubst $(BUILDDIR)%,$(BUILDDIR_STATIC)%,$(LIB_OBJ))
 
-LIB_PKGCON = libcyaml.pc
-LIB_STATIC = libcyaml.a
-LIB_SHARED = libcyaml.so
+LIB_NAME = libcyaml
+LIB_PKGCON = $(LIB_NAME).pc
+LIB_STATIC = $(LIB_NAME).a
+LIB_SHARED = $(LIB_NAME).so
 LIB_SH_VER = $(LIB_SHARED).$(VERSION_STR)
 
 TEST_SRC_FILES = units/free.c units/load.c units/test.c units/util.c \
