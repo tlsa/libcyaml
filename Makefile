@@ -25,6 +25,7 @@ LIB_NAME = libcyaml
 LIB_PKGCON = $(LIB_NAME).pc
 LIB_STATIC = $(LIB_NAME).a
 LIB_SHARED = $(LIB_NAME).so
+LIB_SH_MAJ = $(LIB_SHARED).$(VERSION_MAJOR)
 LIB_SH_VER = $(LIB_SHARED).$(VERSION_STR)
 
 .IMPLICIT =
@@ -86,7 +87,7 @@ TEST_BINS = \
 		$(BUILDDIR)/test/units/cyaml-shared \
 		$(BUILDDIR)/test/units/cyaml-static
 
-all: $(BUILDDIR)/$(LIB_SH_VER) $(BUILDDIR)/$(LIB_STATIC) examples
+all: $(BUILDDIR)/$(LIB_SH_MAJ) $(BUILDDIR)/$(LIB_STATIC) examples
 
 coverage: test-verbose
 	@$(MKDIR) $(BUILDDIR)
@@ -129,7 +130,7 @@ $(BUILDDIR)/$(LIB_PKGCON): $(LIB_PKGCON).in
 $(BUILDDIR)/$(LIB_STATIC): $(LIB_OBJ_STATIC)
 	$(AR) -rcs $@ $^
 
-$(BUILDDIR)/$(LIB_SH_VER): $(LIB_OBJ_SHARED)
+$(BUILDDIR)/$(LIB_SH_MAJ): $(LIB_OBJ_SHARED)
 	$(CC) $(LDFLAGS) $(LDFLAGS_COV) -shared -o $@ $^
 
 $(LIB_OBJ_STATIC): $(BUILDDIR_STATIC)/%.o : %.c
@@ -149,10 +150,10 @@ docs:
 clean:
 	rm -rf build/
 
-install: $(BUILDDIR)/$(LIB_SH_VER) $(BUILDDIR)/$(LIB_STATIC) $(BUILDDIR)/$(LIB_PKGCON)
-	$(INSTALL) $(BUILDDIR)/$(LIB_SH_VER) $(DESTDIR)$(PREFIX)/$(LIBDIR)/$(LIB_SH_VER)
-	(cd $(DESTDIR)$(PREFIX)/$(LIBDIR) && { ln -s -f $(LIB_SH_VER) $(LIB_SHARED).0 || { rm -f $(LIB_SHARED).0 && ln -s $(LIB_SH_VER) $(LIB_SHARED).0; }; })
-	(cd $(DESTDIR)$(PREFIX)/$(LIBDIR) && { ln -s -f $(LIB_SH_VER) $(LIB_SHARED)   || { rm -f $(LIB_SHARED)   && ln -s $(LIB_SH_VER) $(LIB_SHARED);   }; })
+install: $(BUILDDIR)/$(LIB_SH_MAJ) $(BUILDDIR)/$(LIB_STATIC) $(BUILDDIR)/$(LIB_PKGCON)
+	$(INSTALL) $(BUILDDIR)/$(LIB_SH_MAJ) $(DESTDIR)$(PREFIX)/$(LIBDIR)/$(LIB_SH_VER)
+	(cd $(DESTDIR)$(PREFIX)/$(LIBDIR) && { ln -s -f $(LIB_SH_VER) $(LIB_SH_MAJ) || { rm -f $(LIB_SH_MAJ) && ln -s $(LIB_SH_VER) $(LIB_SH_MAJ); }; })
+	(cd $(DESTDIR)$(PREFIX)/$(LIBDIR) && { ln -s -f $(LIB_SH_VER) $(LIB_SHARED) || { rm -f $(LIB_SHARED) && ln -s $(LIB_SH_VER) $(LIB_SHARED); }; })
 	$(INSTALL) $(BUILDDIR)/$(LIB_STATIC) $(DESTDIR)$(PREFIX)/$(LIBDIR)/$(LIB_STATIC)
 	chmod 644 $(DESTDIR)$(PREFIX)/$(LIBDIR)/$(LIB_STATIC)
 	$(INSTALL) -d $(DESTDIR)$(PREFIX)/$(INCLUDEDIR)/cyaml
@@ -174,7 +175,7 @@ $(BUILDDIR)/numerical: examples/numerical/main.c $(BUILDDIR)/$(LIB_STATIC)
 $(BUILDDIR)/test/units/cyaml-static: $(TEST_OBJ) $(BUILDDIR)/$(LIB_STATIC)
 	$(CC) $(LDFLAGS_COV) -o $@ $^ $(LDFLAGS)
 
-$(BUILDDIR)/test/units/cyaml-shared: $(TEST_OBJ) $(BUILDDIR)/$(LIB_SH_VER)
+$(BUILDDIR)/test/units/cyaml-shared: $(TEST_OBJ) $(BUILDDIR)/$(LIB_SH_MAJ)
 	$(CC) $(LDFLAGS_COV) -o $@ $^ $(LDFLAGS)
 
 $(TEST_OBJ): $(BUILDDIR)/%.o : %.c
