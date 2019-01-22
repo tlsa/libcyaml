@@ -49,6 +49,7 @@ INCLUDE = -I include
 CFLAGS += $(INCLUDE) $(VERSION_FLAGS)
 CFLAGS += -std=c11 -Wall -Wextra -pedantic
 LDFLAGS += -lyaml
+LDFLAGS_SHARED += -Wl,-soname=$(LIB_SH_MAJ) -shared
 
 ifeq ($(VARIANT), debug)
 	CFLAGS += -O0 -g
@@ -78,6 +79,8 @@ LIB_OBJ = $(patsubst %.c,%.o, $(addprefix $(BUILDDIR)/,$(LIB_SRC)))
 LIB_OBJ_SHARED = $(patsubst $(BUILDDIR)%,$(BUILDDIR_SHARED)%,$(LIB_OBJ))
 LIB_OBJ_STATIC = $(patsubst $(BUILDDIR)%,$(BUILDDIR_STATIC)%,$(LIB_OBJ))
 
+LIB_PATH = LD_LIBRARY_PATH=$(BUILDDIR)
+
 TEST_SRC_FILES = units/free.c units/load.c units/test.c units/util.c \
 		units/errs.c units/file.c units/save.c units/utf8.c
 TEST_SRC := $(addprefix test/,$(TEST_SRC_FILES))
@@ -96,28 +99,28 @@ coverage: test-verbose
 	@gcovr -e 'test/.*' --html --html-details -o build/coverage.html -r .
 
 test: $(TEST_BINS)
-	@for i in $(^); do $$i || exit; done
+	@for i in $(^); do $(LIB_PATH) $$i || exit; done
 
 test-quiet: $(TEST_BINS)
-	@for i in $(^); do $$i -q || exit; done
+	@for i in $(^); do $(LIB_PATH) $$i -q || exit; done
 
 test-verbose: $(TEST_BINS)
-	@for i in $(^); do $$i -v || exit; done
+	@for i in $(^); do $(LIB_PATH) $$i -v || exit; done
 
 test-debug: $(TEST_BINS)
-	@for i in $(^); do $$i -d || exit; done
+	@for i in $(^); do $(LIB_PATH) $$i -d || exit; done
 
 valgrind: $(TEST_BINS)
-	@for i in $(^); do $(VALGRIND) $$i || exit; done
+	@for i in $(^); do $(LIB_PATH) $(VALGRIND) $$i || exit; done
 
 valgrind-quiet: $(TEST_BINS)
-	@for i in $(^); do $(VALGRIND) $$i -q || exit; done
+	@for i in $(^); do $(LIB_PATH) $(VALGRIND) $$i -q || exit; done
 
 valgrind-verbose: $(TEST_BINS)
-	@for i in $(^); do $(VALGRIND) $$i -v || exit; done
+	@for i in $(^); do $(LIB_PATH) $(VALGRIND) $$i -v || exit; done
 
 valgrind-debug: $(TEST_BINS)
-	@for i in $(^); do $(VALGRIND) $$i -d || exit; done
+	@for i in $(^); do $(LIB_PATH) $(VALGRIND) $$i -d || exit; done
 
 $(BUILDDIR)/$(LIB_PKGCON): $(LIB_PKGCON).in
 	sed \
@@ -131,7 +134,7 @@ $(BUILDDIR)/$(LIB_STATIC): $(LIB_OBJ_STATIC)
 	$(AR) -rcs $@ $^
 
 $(BUILDDIR)/$(LIB_SH_MAJ): $(LIB_OBJ_SHARED)
-	$(CC) $(LDFLAGS) $(LDFLAGS_COV) -shared -o $@ $^
+	$(CC) $(LDFLAGS) $(LDFLAGS_COV) $(LDFLAGS_SHARED) -o $@ $^
 
 $(LIB_OBJ_STATIC): $(BUILDDIR_STATIC)/%.o : %.c
 	@$(MKDIR) $(BUILDDIR_STATIC)/src
