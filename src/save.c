@@ -1005,7 +1005,7 @@ static cyaml_err_t cyaml__write_mapping(
 		if ((field->value.flags & CYAML_FLAG_OPTIONAL) &&
 		    (field->value.flags & CYAML_FLAG_POINTER)) {
 			const void *ptr = cyaml_data_read_pointer(
-					ctx->state->data + field->count_offset);
+					ctx->state->data + field->data_offset);
 			if (ptr == NULL) {
 				ctx->state->mapping.field++;
 				return CYAML_OK;
