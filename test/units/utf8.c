@@ -37,6 +37,8 @@ static bool test_utf8_get_codepoint(
 		{ 0xfffd, "\ufffd", SLEN("\ufffd") },
 		{ 0xfffd, "\xC1\x9C", SLEN("\xC1\x9C") },
 		{ 0x1f638, u8"😸", SLEN(u8"😸") },
+		{ 0xfffd, u8"😸", 0 },
+		{ 0xfffd, u8"😸", 5 },
 	};
 	bool pass = true;
 
