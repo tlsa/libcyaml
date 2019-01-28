@@ -50,7 +50,7 @@ unsigned cyaml_utf8_get_codepoint(
 {
 	if (*len == 1) {
 		return s[0];
-	} else {
+	} else if ((*len > 0) && (*len <= 4)) {
 		unsigned c = 0;
 		bool sf;
 
