@@ -16,7 +16,7 @@ endif
 # Master branch will always be DEVEL.  The release process will be to make
 # the release branch, set VESION_DEVEL to 0, and tag the release.
 VERSION_MAJOR = 0
-VERSION_MINOR = 0
+VERSION_MINOR = 1
 VERSION_PATCH = 0
 VERSION_DEVEL = 1 # Zero or one only.
 VERSION_STR = $(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH)
