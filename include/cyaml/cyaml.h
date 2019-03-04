@@ -14,6 +14,11 @@
 #ifndef CYAML_H
 #define CYAML_H
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 #include <stdarg.h>
 #include <stdint.h>
 #include <stddef.h>
@@ -1439,5 +1444,9 @@ extern cyaml_err_t cyaml_free(
  */
 extern const char * cyaml_strerror(
 		cyaml_err_t err);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
