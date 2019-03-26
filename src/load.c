@@ -642,6 +642,31 @@ static cyaml_err_t cyaml__read_int(
 }
 
 /**
+ * Helper to read a number into a uint64_t.
+ *
+ * \param[in]  value  String containing scaler value.
+ * \param[in]  out    The place to write the value in the output data.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static inline cyaml_err_t cyaml__read_uint64_t(
+		const char *value,
+		uint64_t *out)
+{
+	long long temp;
+	char *end = NULL;
+
+	errno = 0;
+	temp = strtoll(value, &end, 0);
+
+	if (end == value || errno == ERANGE || temp < 0) {
+		return CYAML_ERR_INVALID_VALUE;
+	}
+
+	*out = temp;
+	return CYAML_OK;
+}
+
+/**
  * Read a value of type \ref CYAML_UINT.
  *
  * \param[in]  ctx     The CYAML loading context.
@@ -656,8 +681,8 @@ static cyaml_err_t cyaml__read_uint(
 		const char *value,
 		uint8_t *data)
 {
-	long long temp;
-	char *end = NULL;
+	cyaml_err_t err;
+	uint64_t temp;
 	uint64_t max;
 
 	CYAML_UNUSED(ctx);
@@ -666,13 +691,13 @@ static cyaml_err_t cyaml__read_uint(
 		return CYAML_ERR_INVALID_DATA_SIZE;
 	}
 
+	err = cyaml__read_uint64_t(value, &temp);
+	if (err != CYAML_OK) {
+		return err;
+	}
+
 	max = (~(uint64_t)0) >> ((8 - schema->data_size) * 8);
-
-	errno = 0;
-	temp = strtoll(value, &end, 0);
-
-	if (end == value || errno == ERANGE ||
-	    temp < 0 || (uint64_t)temp > max) {
+	if (temp > max) {
 		return CYAML_ERR_INVALID_VALUE;
 	}
 
