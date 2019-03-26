@@ -63,8 +63,11 @@ typedef enum cyaml_type {
 	/**
 	 * Value is a flags bit field.  Values of this type require a string /
 	 * value list in the schema entry, to define the list of valid flag
-	 * values.  In the YAML, a \ref CYAML_FLAGS value must be presented as
-	 * a sequence of strings.
+	 * values.  Each bit is a boolean flag.  To store values of various
+	 * bit sizes, use a \ref CYAML_BITFIELD instead.
+	 *
+	 * In the YAML, a \ref CYAML_FLAGS value must be presented as a
+	 * sequence of strings.
 	 */
 	CYAML_FLAGS,
 	CYAML_FLOAT,    /**< Value is floating point. */
@@ -74,6 +77,16 @@ typedef enum cyaml_type {
 	 * array in the schema entry.
 	 */
 	CYAML_MAPPING,
+	/**
+	 * Value is a bit field.  Values of this type require an array of value
+	 * definititions in the schema entry.  If the bitfield is used to store
+	 * only single-bit flags, it may be better to use \ref CYAML_FLAGS
+	 * instead.
+	 *
+	 * In the YAML, a \ref CYAML_FLAGS value must be presented as a
+	 * mapping of bitfield entry names to their numerical values.
+	 */
+	CYAML_BITFIELD,
 	/**
 	 * Value is a sequence.  Values of this type must be the direct
 	 * children of a mapping.  They require:
@@ -216,6 +229,17 @@ typedef struct cyaml_strval {
 } cyaml_strval_t;
 
 /**
+ * Bitfield value info.
+ *
+ * Used for \ref CYAML_BITFIELD type.
+ */
+typedef struct cyaml_bitdef {
+	const char *name; /**< String representing the value's name. */
+	uint8_t offset;   /**< Bit offset to value in bitfield. */
+	uint8_t bits;     /**< Maximum bits available for value. */
+} cyaml_bitdef_t;
+
+/**
  * Schema definition for a value.
  *
  * \note There are convenience macros for each of the types to assist in
@@ -280,6 +304,13 @@ typedef struct cyaml_schema_value {
 			 */
 			const struct cyaml_schema_field *fields;
 		} mapping;
+		/** \ref CYAML_BITFIELD type-specific schema data. */
+		struct {
+			/** Array of bit defintiions for the bitfield. */
+			const struct cyaml_bitdef *bitdefs;
+			/** Entry count for bitdefs array. */
+			uint32_t count;
+		} bitfield;
 		/**
 		 * \ref CYAML_SEQUENCE and \ref CYAML_SEQUENCE_FIXED
 		 * type-specific schema data.
