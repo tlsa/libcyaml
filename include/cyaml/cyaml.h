@@ -791,6 +791,72 @@ typedef enum cyaml_err {
 }
 
 /**
+ * Value schema helper macro for values with \ref CYAML_BITFIELD type.
+ *
+ * \param[in]  _flags         Any behavioural flags relevant to this value.
+ * \param[in]  _type          The C type for this value.
+ * \param[in]  _bitvals       Array of bitfield value data for the bitfield.
+ * \param[in]  _bitvals_count Number of entries in _bitvals.
+ */
+#define CYAML_VALUE_BITFIELD( \
+		_flags, _type, _bitvals, _bitvals_count) \
+	.type = CYAML_BITFIELD, \
+	.flags = (_flags), \
+	.data_size = sizeof(_type), \
+	.bitfield = { \
+		.bitdefs = _bitvals, \
+		.count = _bitvals_count, \
+	}
+
+/**
+ * Mapping schema helper macro for keys with \ref CYAML_BITFIELD type.
+ *
+ * Use this for bitfield types contained in structs.
+ *
+ * \param[in]  _key        String defining the YAML mapping key for this value.
+ * \param[in]  _flags      Any behavioural flags relevant to this value.
+ * \param[in]  _structure  The structure corresponding to the mapping.
+ * \param[in]  _member     The member in _structure for this mapping value.
+ * \param[in]  _bitvals       Array of bitfield value data for the bitfield.
+ * \param[in]  _bitvals_count Number of entries in _bitvals.
+ */
+#define CYAML_FIELD_BITFIELD( \
+		_key, _flags, _structure, _member, _bitvals, _bitvals_count) \
+{ \
+	.key = _key, \
+	.value = { \
+		CYAML_VALUE_BITFIELD(((_flags) & (~CYAML_FLAG_POINTER)), \
+				(((_structure *)NULL)->_member), \
+				_bitvals, _bitvals_count), \
+	}, \
+	.data_offset = offsetof(_structure, _member) \
+}
+
+/**
+ * Mapping schema helper macro for keys with \ref CYAML_BITFIELD type.
+ *
+ * Use this for pointers to bitfied types.
+ *
+ * \param[in]  _key        String defining the YAML mapping key for this value.
+ * \param[in]  _flags      Any behavioural flags relevant to this value.
+ * \param[in]  _structure  The structure corresponding to the mapping.
+ * \param[in]  _member     The member in _structure for this mapping value.
+ * \param[in]  _bitvals       Array of bitfield value data for the bitfield.
+ * \param[in]  _bitvals_count Number of entries in _bitvals.
+ */
+#define CYAML_FIELD_BITFIELD_PTR( \
+		_key, _flags, _structure, _member, _bitvals, _bitvals_count) \
+{ \
+	.key = _key, \
+	.value = { \
+		CYAML_VALUE_BITFIELD(((_flags) | CYAML_FLAG_POINTER), \
+				(*(((_structure *)NULL)->_member)), \
+				_bitvals, _bitvals_count), \
+	}, \
+	.data_offset = offsetof(_structure, _member) \
+}
+
+/**
  * Value schema helper macro for values with \ref CYAML_FLOAT type.
  *
  * \param[in]  _flags         Any behavioural flags relevant to this value.
