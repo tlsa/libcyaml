@@ -477,6 +477,7 @@ typedef enum cyaml_err {
 	CYAML_ERR_BAD_MIN_MAX_SCHEMA,    /**< Schema minimum exceeds maximum. */
 	CYAML_ERR_BAD_PARAM_SEQ_COUNT,   /**< Bad seq_count param for schema. */
 	CYAML_ERR_BAD_PARAM_NULL_DATA,   /**< Client gave NULL data argument. */
+	CYAML_ERR_BAD_BITVAL_IN_SCHEMA,  /**< Bit value beyond bitfield size. */
 	CYAML_ERR_SEQUENCE_ENTRIES_MIN,  /**< Too few sequence entries. */
 	CYAML_ERR_SEQUENCE_ENTRIES_MAX,  /**< Too many sequence entries. */
 	CYAML_ERR_SEQUENCE_FIXED_COUNT,  /**< Mismatch between min and max. */
