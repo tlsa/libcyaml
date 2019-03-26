@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: ISC
  *
- * Copyright (C) 2017-2018 Michael Drake <tlsa@netsurf-browser.org>
+ * Copyright (C) 2017-2019 Michael Drake <tlsa@netsurf-browser.org>
  */
 
 /**
@@ -1001,7 +1001,6 @@ static cyaml_err_t cyaml__read_flags_value(
 	uint64_t value = 0;
 	yaml_event_t event;
 	cyaml_err_t err = CYAML_OK;
-	uint8_t entry_size = schema->data_size;
 
 	while (!exit) {
 		cyaml_event_t cyaml_event;
@@ -1032,7 +1031,7 @@ static cyaml_err_t cyaml__read_flags_value(
 		yaml_event_delete(&event);
 	}
 
-	err = cyaml_data_write(value, entry_size, data);
+	err = cyaml_data_write(value, schema->data_size, data);
 	if (err != CYAML_OK) {
 		return err;
 	}
