@@ -574,10 +574,10 @@ static int64_t cyaml_sign_pad(uint64_t raw, size_t size)
 }
 
 /**
- * Read a value of type \ref CYAML_INT.
+ * Write a value of type \ref CYAML_INT.
  *
  * \param[in]  ctx     The CYAML saving context.
- * \param[in]  schema  The schema for the value to be read.
+ * \param[in]  schema  The schema for the value to be written.
  * \param[in]  data    The place to read the value from in the client data.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
@@ -601,10 +601,10 @@ static cyaml_err_t cyaml__write_int(
 }
 
 /**
- * Read a value of type \ref CYAML_UINT.
+ * Write a value of type \ref CYAML_UINT.
  *
  * \param[in]  ctx     The CYAML saving context.
- * \param[in]  schema  The schema for the value to be read.
+ * \param[in]  schema  The schema for the value to be written.
  * \param[in]  data    The place to read the value from in the client data.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
@@ -626,10 +626,10 @@ static cyaml_err_t cyaml__write_uint(
 }
 
 /**
- * Read a value of type \ref CYAML_BOOL.
+ * Write a value of type \ref CYAML_BOOL.
  *
  * \param[in]  ctx     The CYAML saving context.
- * \param[in]  schema  The schema for the value to be read.
+ * \param[in]  schema  The schema for the value to be written.
  * \param[in]  data    The place to read the value from in the client data.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
@@ -651,10 +651,10 @@ static cyaml_err_t cyaml__write_bool(
 }
 
 /**
- * Read a value of type \ref CYAML_ENUM.
+ * Write a value of type \ref CYAML_ENUM.
  *
  * \param[in]  ctx     The CYAML saving context.
- * \param[in]  schema  The schema for the value to be read.
+ * \param[in]  schema  The schema for the value to be written.
  * \param[in]  data    The place to read the value from in the client data.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
@@ -690,7 +690,7 @@ static cyaml_err_t cyaml__write_enum(
 }
 
 /**
- * Read a value of type \ref CYAML_FLOAT.
+ * Write a value of type \ref CYAML_FLOAT.
  *
  * The `data_size` of the schema entry must be the size of a known
  * floating point C type.
@@ -699,7 +699,7 @@ static cyaml_err_t cyaml__write_enum(
  *       supported.
  *
  * \param[in]  ctx     The CYAML saving context.
- * \param[in]  schema  The schema for the value to be read.
+ * \param[in]  schema  The schema for the value to be written.
  * \param[in]  data    The place to read the value from in the client data.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
@@ -727,10 +727,10 @@ static cyaml_err_t cyaml__write_float(
 }
 
 /**
- * Read a value of type \ref CYAML_STRING.
+ * Write a value of type \ref CYAML_STRING.
  *
  * \param[in]  ctx     The CYAML saving context.
- * \param[in]  schema  The schema for the value to be read.
+ * \param[in]  schema  The schema for the value to be written.
  * \param[in]  data    The place to read the value from in the client data.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
@@ -744,10 +744,10 @@ static cyaml_err_t cyaml__write_string(
 }
 
 /**
- * Read a scalar value.
+ * Write a scalar value.
  *
  * \param[in]  ctx     The CYAML saving context.
- * \param[in]  schema  The schema for the value to be read.
+ * \param[in]  schema  The schema for the value to be written.
  * \param[in]  data    The place to read the value from in the client data.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
@@ -778,7 +778,7 @@ static cyaml_err_t cyaml__write_scalar_value(
  * Emit a sequence of flag values.
  *
  * \param[in]  ctx     The CYAML saving context.
- * \param[in]  schema  The schema for the value to be read.
+ * \param[in]  schema  The schema for the value to be written.
  * \param[in]  number  The value of the flag data.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
@@ -833,13 +833,10 @@ static cyaml_err_t cyaml__emit_flags_sequence(
 }
 
 /**
- * Read a value of type \ref CYAML_FLAGS.
- *
- * Since \ref CYAML_FLAGS is a composite value (a sequence of scalars), rather
- * than a simple scaler, this consumes events from the YAML input stream.
+ * Write a value of type \ref CYAML_FLAGS.
  *
  * \param[in]  ctx     The CYAML saving context.
- * \param[in]  schema  The schema for the value to be read.
+ * \param[in]  schema  The schema for the value to be written.
  * \param[in]  data    The place to read the value from in the client data.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
@@ -860,11 +857,11 @@ static cyaml_err_t cyaml__write_flags_value(
 }
 
 /**
- * Handle a YAML event corresponding to a YAML data value.
+ * Emit the YAML events required for a CYAML value.
  *
  * \param[in]  ctx        The CYAML saving context.
  * \param[in]  schema     CYAML schema for the expected value.
- * \param[in]  data    The place to read the value from in the client data.
+ * \param[in]  data       The place to read the value from in the client data.
  * \param[in]  seq_count  Entry count for sequence values.  Unused for
  *                        non-sequence values.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
