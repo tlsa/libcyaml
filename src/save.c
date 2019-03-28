@@ -523,14 +523,19 @@ static const char * cyaml__get_int(
  * Convert unsigned integer to string.
  *
  * \param[in]  value  The integer to convert.
+ * \param[in]  hex    Whether to render the number as hexadecimal.
  * \return String conversion of the value.
  */
 static const char * cyaml__get_uint(
-		uint64_t value)
+		uint64_t value, bool hex)
 {
 	static char string[32];
 
-	sprintf(string, "%"PRIu64, value);
+	if (hex) {
+		sprintf(string, "0x%"PRIx64, value);
+	} else {
+		sprintf(string, "%"PRIu64, value);
+	}
 
 	return string;
 }
@@ -618,7 +623,7 @@ static cyaml_err_t cyaml__write_uint(
 
 	number = cyaml_data_read(schema->data_size, data, &err);
 	if (err == CYAML_OK) {
-		const char *string = cyaml__get_uint(number);
+		const char *string = cyaml__get_uint(number, false);
 		err = cyaml__emit_scalar(ctx, schema, string, YAML_INT_TAG);
 	}
 
@@ -818,7 +823,7 @@ static cyaml_err_t cyaml__emit_flags_sequence(
 		if (schema->flags & CYAML_FLAG_STRICT) {
 			return CYAML_ERR_INVALID_VALUE;
 		} else {
-			const char *string = cyaml__get_uint(number);
+			const char *string = cyaml__get_uint(number, false);
 			err = cyaml__emit_scalar(ctx, schema, string,
 					YAML_STR_TAG);
 			if (err != CYAML_OK) {
