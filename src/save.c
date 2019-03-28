@@ -807,7 +807,6 @@ static cyaml_err_t cyaml__emit_flags_sequence(
 	}
 
 	for (uint32_t i = 0; i < schema->enumeration.count; i++) {
-		cyaml_err_t err;
 		uint64_t flag = strings->val;
 		if (number & flag) {
 			err = cyaml__emit_scalar(ctx, schema, strings->str,
