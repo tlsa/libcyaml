@@ -1721,6 +1721,73 @@ static bool test_err_save_schema_bad_data_size_7(
 }
 
 /**
+ * Test saving with schema with data size (0).
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_save_schema_bad_data_size_8(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const cyaml_bitdef_t bitvals[] = {
+		{ .name = "a", .offset =  0, .bits =  3 },
+		{ .name = "b", .offset =  3, .bits =  7 },
+		{ .name = "c", .offset = 10, .bits = 32 },
+		{ .name = "d", .offset = 42, .bits =  8 },
+		{ .name = "e", .offset = 50, .bits = 14 },
+	};
+	static const struct target_struct {
+		uint64_t test_bitfield;
+	} data = {
+		.test_bitfield = 0xFFFFFFFFFFFFFFFFu,
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		{
+			.key = "test_bitfield",
+			.value = {
+				.type = CYAML_BITFIELD,
+				.flags = CYAML_FLAG_DEFAULT,
+				.data_size = 0,
+				.bitfield = {
+					.bitdefs = bitvals,
+					.count = CYAML_ARRAY_LEN(bitvals),
+				},
+			},
+			.data_offset = offsetof(struct target_struct,
+					test_bitfield),
+		},
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_ERR_INVALID_DATA_SIZE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (buffer != NULL || len != 0) {
+		return ttest_fail(&tc, "Buffer/len not untouched.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading with schema with sequence fixed with unequal min and max.
  *
  * \param[in]  report  The test report context.
@@ -2606,6 +2673,58 @@ static bool test_err_load_schema_bad_bitfield(
 
 	if (data_tgt != NULL) {
 		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving when schema has bitfield defined outside value data.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_save_schema_bad_bitfield(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const cyaml_bitdef_t bitvals[] = {
+		{ .name = "a", .offset =  30, .bits =  4 },
+	};
+	static const struct target_struct {
+		uint32_t test_bitfield;
+	} data = {
+		.test_bitfield = 0xFFFFFFFFu,
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_BITFIELD("test_bitfield", CYAML_FLAG_DEFAULT,
+				struct target_struct, test_bitfield,
+				bitvals, CYAML_ARRAY_LEN(bitvals)),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_ERR_BAD_BITVAL_IN_SCHEMA) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (buffer != NULL || len != 0) {
+		return ttest_fail(&tc, "Buffer/len not untouched.");
 	}
 
 	return ttest_pass(&tc);
@@ -5236,6 +5355,7 @@ bool errs_tests(
 	pass &= test_err_load_schema_bad_type(rc, &config);
 	pass &= test_err_save_schema_bad_type(rc, &config);
 	pass &= test_err_load_schema_bad_bitfield(rc, &config);
+	pass &= test_err_save_schema_bad_bitfield(rc, &config);
 	pass &= test_err_load_schema_string_min_max(rc, &config);
 	pass &= test_err_load_schema_bad_data_size_1(rc, &config);
 	pass &= test_err_load_schema_bad_data_size_2(rc, &config);
@@ -5252,6 +5372,7 @@ bool errs_tests(
 	pass &= test_err_save_schema_bad_data_size_5(rc, &config);
 	pass &= test_err_save_schema_bad_data_size_6(rc, &config);
 	pass &= test_err_save_schema_bad_data_size_7(rc, &config);
+	pass &= test_err_save_schema_bad_data_size_8(rc, &config);
 	pass &= test_err_load_schema_sequence_min_max(rc, &config);
 	pass &= test_err_save_schema_sequence_min_max(rc, &config);
 	pass &= test_err_load_schema_bad_data_size_float(rc, &config);
