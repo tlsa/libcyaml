@@ -860,6 +860,96 @@ static cyaml_err_t cyaml__write_flags_value(
 }
 
 /**
+ * Emit a mapping of bitfield values.
+ *
+ * \param[in]  ctx     The CYAML saving context.
+ * \param[in]  schema  The schema for the value to be written.
+ * \param[in]  number  The value of the bitfield data.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__emit_bitfield_mapping(
+		const cyaml_ctx_t *ctx,
+		const cyaml_schema_value_t *schema,
+		uint64_t number)
+{
+	const cyaml_bitdef_t *bitdef = schema->bitfield.bitdefs;
+	yaml_event_t event;
+	cyaml_err_t err;
+	int ret;
+
+	ret = yaml_mapping_start_event_initialize(&event, NULL,
+			(yaml_char_t *)YAML_MAP_TAG, 1,
+			cyaml__get_emit_style_map(ctx, schema));
+
+	err = cyaml__emit_event_helper(ctx, ret, &event);
+	if (err != CYAML_OK) {
+		return err;
+	}
+
+	for (uint32_t i = 0; i < schema->bitfield.count; i++) {
+		const char *value_str;
+		uint64_t value;
+		uint64_t mask;
+
+		if (bitdef[i].bits + bitdef[i].offset > schema->data_size * 8) {
+			return CYAML_ERR_BAD_BITVAL_IN_SCHEMA;
+		}
+
+		mask = ((~(uint64_t)0) >>
+		        ((8 * sizeof(uint64_t)) - bitdef[i].bits)
+		       ) << bitdef[i].offset;
+
+		if ((number & mask) == 0) {
+			continue;
+		}
+
+		value = (number & mask) >> bitdef[i].offset;
+
+		/* Emit bitfield value's name */
+		err = cyaml__emit_scalar(ctx, schema, bitdef[i].name,
+				YAML_STR_TAG);
+		if (err != CYAML_OK) {
+			return err;
+		}
+
+		/* Emit bitfield value's value */
+		value_str = cyaml__get_uint(value, true);
+		err = cyaml__emit_scalar(ctx, schema, value_str, YAML_INT_TAG);
+		if (err != CYAML_OK) {
+			return err;
+		}
+	}
+
+	ret = yaml_mapping_end_event_initialize(&event);
+
+	return cyaml__emit_event_helper(ctx, ret, &event);
+}
+
+/**
+ * Write a value of type \ref CYAML_BITFIELD.
+ *
+ * \param[in]  ctx     The CYAML saving context.
+ * \param[in]  schema  The schema for the value to be written.
+ * \param[in]  data    The place to read the value from in the client data.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__write_bitfield_value(
+		const cyaml_ctx_t *ctx,
+		const cyaml_schema_value_t *schema,
+		const cyaml_data_t *data)
+{
+	uint64_t number;
+	cyaml_err_t err;
+
+	number = cyaml_data_read(schema->data_size, data, &err);
+	if (err == CYAML_OK) {
+		err = cyaml__emit_bitfield_mapping(ctx, schema, number);
+	}
+
+	return err;
+}
+
+/**
  * Emit the YAML events required for a CYAML value.
  *
  * \param[in]  ctx        The CYAML saving context.
@@ -899,6 +989,9 @@ static cyaml_err_t cyaml__write_value(
 	case CYAML_MAPPING:
 		err = cyaml__stack_push(ctx, CYAML_STATE_IN_MAP_KEY,
 				schema, data);
+		break;
+	case CYAML_BITFIELD:
+		err = cyaml__write_bitfield_value(ctx, schema, data);
 		break;
 	case CYAML_SEQUENCE_FIXED:
 		if (schema->sequence.min != schema->sequence.max) {
