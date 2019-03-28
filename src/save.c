@@ -792,7 +792,6 @@ static cyaml_err_t cyaml__emit_flags_sequence(
 		const cyaml_schema_value_t *schema,
 		uint64_t number)
 {
-	const cyaml_strval_t *strings = schema->enumeration.strings;
 	yaml_event_t event;
 	cyaml_err_t err;
 	int ret;
@@ -807,16 +806,16 @@ static cyaml_err_t cyaml__emit_flags_sequence(
 	}
 
 	for (uint32_t i = 0; i < schema->enumeration.count; i++) {
-		uint64_t flag = strings->val;
+		const cyaml_strval_t *strval = &schema->enumeration.strings[i];
+		uint64_t flag = strval->val;
 		if (number & flag) {
-			err = cyaml__emit_scalar(ctx, schema, strings->str,
+			err = cyaml__emit_scalar(ctx, schema, strval->str,
 					YAML_STR_TAG);
 			if (err != CYAML_OK) {
 				return err;
 			}
 			number &= ~flag;
 		}
-		strings++;
 	}
 	if (number != 0) {
 		if (schema->flags & CYAML_FLAG_STRICT) {
