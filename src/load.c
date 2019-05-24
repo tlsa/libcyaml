@@ -505,29 +505,36 @@ static cyaml_err_t cyaml__data_handle_pointer(
 
 	if (schema->flags & CYAML_FLAG_POINTER) {
 		/* Need to create/extend an allocation. */
-		size_t delta = schema->data_size;
+		size_t data_size = schema->data_size;
 		uint8_t *value_data = NULL;
 		size_t offset = 0;
+		size_t delta;
 
-		if (schema->type == CYAML_STRING) {
+		switch (schema->type) {
+		case CYAML_STRING:
 			/* For a string the allocation size is the string
 			 * size from the event, plus trailing NULL. */
 			delta = strlen((const char *)
 					event->data.scalar.value) + 1;
-		}
-
-		if (schema->type == CYAML_SEQUENCE) {
+			break;
+		case CYAML_SEQUENCE:
 			/* Sequence; could be extending allocation. */
-			offset = schema->data_size * state->sequence.count;
+			offset = data_size * state->sequence.count;
 			value_data = state->sequence.data;
-		} else if (schema->type == CYAML_SEQUENCE_FIXED) {
+			delta = data_size;
+			break;
+		case CYAML_SEQUENCE_FIXED:
 			/* Allocation is only made for full fixed size
 			 * of sequence, on creation, and not extended. */
 			if (state->sequence.count > 0) {
 				*value_data_io = state->sequence.data;
 				return CYAML_OK;
 			}
-			delta = schema->data_size * schema->sequence.max;
+			delta = data_size * schema->sequence.max;
+			break;
+		default:
+			delta = data_size;
+			break;
 		}
 
 		value_data = cyaml__realloc(ctx->config, value_data,
@@ -1026,6 +1033,10 @@ static cyaml_err_t cyaml__read_flags_value(
 	uint64_t value = 0;
 	yaml_event_t event;
 	cyaml_err_t err = CYAML_OK;
+
+	if (schema->data_size == 0) {
+		return CYAML_ERR_INVALID_DATA_SIZE;
+	}
 
 	while (!exit) {
 		cyaml_event_t cyaml_event;

@@ -1301,6 +1301,72 @@ static bool test_err_load_schema_bad_data_size_8(
 }
 
 /**
+ * Test loading with schema with data size (9) for flags.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_bad_data_size_9(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const cyaml_strval_t strings[] = {
+		{ "foo", 0 },
+		{ "bar", 1 },
+		{ "baz", 2 },
+		{ "bat", 3 },
+	};
+	static const unsigned char yaml[] =
+		"key:\n"
+		"  - bat\n"
+		"  - bar\n";
+	struct target_struct {
+		int value;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		{
+			.key = "key",
+			.value = {
+				.type = CYAML_FLAGS,
+				.flags = CYAML_FLAG_DEFAULT,
+				.data_size = 9,
+				.enumeration = {
+					.strings = strings,
+					.count = CYAML_ARRAY_LEN(strings),
+				},
+			},
+			.data_offset = offsetof(struct target_struct, value),
+		},
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_DATA_SIZE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test saving with schema with data size (0).
  *
  * \param[in]  report  The test report context.
@@ -5365,6 +5431,7 @@ bool errs_tests(
 	pass &= test_err_load_schema_bad_data_size_6(rc, &config);
 	pass &= test_err_load_schema_bad_data_size_7(rc, &config);
 	pass &= test_err_load_schema_bad_data_size_8(rc, &config);
+	pass &= test_err_load_schema_bad_data_size_9(rc, &config);
 	pass &= test_err_save_schema_bad_data_size_1(rc, &config);
 	pass &= test_err_save_schema_bad_data_size_2(rc, &config);
 	pass &= test_err_save_schema_bad_data_size_3(rc, &config);
