@@ -1034,6 +1034,10 @@ static cyaml_err_t cyaml__read_flags_value(
 	yaml_event_t event;
 	cyaml_err_t err = CYAML_OK;
 
+	if (schema->data_size == 0) {
+		return CYAML_ERR_INVALID_DATA_SIZE;
+	}
+
 	while (!exit) {
 		cyaml_event_t cyaml_event;
 		err = cyaml_get_next_event(ctx, &event);
