@@ -27,6 +27,7 @@
 typedef struct test_data {
 	char **buffer;
 	cyaml_data_t **data;
+	cyaml_data_t **copy;
 	unsigned *seq_count;
 	const struct cyaml_config *config;
 	const struct cyaml_schema_value *schema;
@@ -52,6 +53,10 @@ static void cyaml_cleanup(void *data)
 
 	if (td->data != NULL) {
 		cyaml_free(td->config, td->schema, *(td->data), seq_count);
+	}
+
+	if (td->copy != NULL) {
+		cyaml_free(td->config, td->schema, *(td->copy), seq_count);
 	}
 }
 
@@ -150,6 +155,102 @@ static bool test_err_save_null_data(
 }
 
 /**
+ * Test copying with NULL data parameter.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_copy_null_data(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct target_struct {
+		int value;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_copy(config, &top_schema,
+			(const cyaml_data_t *) &data_tgt, 0,
+			(cyaml_data_t **) NULL);
+	if (err != CYAML_ERR_BAD_PARAM_NULL_DATA) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test copying an unsigned integer.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_copy_null_data2(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct target_struct {
+		unsigned test_value_uint;
+	} data_tgt = {
+		.test_value_uint = 9999,
+	};
+	struct target_struct *data_cpy = &data_tgt;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("test_uint", CYAML_FLAG_DEFAULT,
+				struct target_struct, test_value_uint),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = NULL,
+		.copy = NULL,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_copy(config, &top_schema,
+			(cyaml_data_t  *) &data_tgt, 0,
+			(cyaml_data_t **) &data_cpy);
+	if (err != CYAML_ERR_DATA_TARGET_NON_NULL) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading with NULL config parameter.
  *
  * \param[in]  report  The test report context.
@@ -232,6 +333,43 @@ static bool test_err_save_null_config(
 
 	if (buffer != NULL || len != 0) {
 		return ttest_fail(&tc, "Buffer/len not untouched.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test copying with NULL config parameter.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_copy_null_config(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	void *data_tgt = NULL;
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = NULL,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_copy(NULL, NULL, (const cyaml_data_t *) NULL, 0,
+			(cyaml_data_t **) NULL);
+	if (err != CYAML_ERR_BAD_PARAM_NULL_CONFIG) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
 	}
 
 	return ttest_pass(&tc);
@@ -332,6 +470,46 @@ static bool test_err_save_null_mem_fn(
 }
 
 /**
+ * Test copying with NULL memory allocation function.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_copy_null_mem_fn(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	cyaml_config_t cfg = *config;
+	void *data_tgt = NULL;
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = &cfg,
+		.schema = NULL,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	cfg.mem_fn = NULL;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_copy(&cfg, NULL, (const cyaml_data_t *) NULL, 0,
+			(cyaml_data_t **) NULL);
+	if (err != CYAML_ERR_BAD_CONFIG_NULL_MEMFN) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading with NULL schema.
  *
  * \param[in]  report  The test report context.
@@ -405,6 +583,43 @@ static bool test_err_save_null_schema(
 
 	if (buffer != NULL || len != 0) {
 		return ttest_fail(&tc, "Buffer/len not untouched.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test copying with NULL schema.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_copy_null_schema(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	void *data_tgt = NULL;
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = NULL,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_copy(config, NULL, (const cyaml_data_t *) NULL, 0,
+		(cyaml_data_t **) NULL);
+	if (err != CYAML_ERR_BAD_PARAM_NULL_SCHEMA) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
 	}
 
 	return ttest_pass(&tc);
@@ -497,6 +712,47 @@ static bool test_err_save_schema_top_level_non_pointer(
 }
 
 /**
+ * Test copying with schema with bad top level type (non-pointer).
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_copy_schema_top_level_non_pointer(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	int *value = NULL;
+	int *value_cpy = NULL;
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, int)
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &value,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_copy(config, &top_schema, (const cyaml_data_t *) &value, 0,
+			(cyaml_data_t **) &value_cpy);
+	if (err != CYAML_ERR_BAD_PARAM_NULL_DATA) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (value != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading with schema with bad top level sequence and no seq_count.
  *
  * \param[in]  report  The test report context.
@@ -583,6 +839,54 @@ static bool test_err_load_schema_top_level_not_sequence_count(
 	}
 
 	if (value != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test copying with schema with bad top level sequence and no seq_count.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_copy_schema_top_level_sequence_no_count(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct target_struct {
+		int *value;
+		unsigned value_count;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, int)
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_SEQUENCE(CYAML_FLAG_POINTER, int,
+				&entry_schema, 0, CYAML_UNLIMITED),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_copy(config, &top_schema,
+			(const cyaml_data_t *) &data_tgt, 0,
+			(cyaml_data_t **) NULL);
+	if (err != CYAML_ERR_BAD_PARAM_SEQ_COUNT) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
 		return ttest_fail(&tc, "Data non-NULL on error.");
 	}
 
@@ -742,6 +1046,65 @@ static bool test_err_save_schema_bad_type(
 
 	if (buffer != NULL || len != 0) {
 		return ttest_fail(&tc, "Buffer/len not untouched.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test copying with schema with bad type.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_copy_schema_bad_type(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct target_struct {
+		int value;
+	} data_tgt = {
+		.value = 9,
+	};
+	struct target_struct *data_cpy = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		{
+			.key = "key",
+			.value = {
+				.type = 99999,
+				.flags = CYAML_FLAG_DEFAULT,
+				.data_size = sizeof(data_tgt.value),
+			},
+			.data_offset = offsetof(struct target_struct, value),
+		},
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_cpy,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_copy(config, &top_schema,
+			(const cyaml_data_t *) &data_tgt, 0,
+			(cyaml_data_t **) &data_cpy);
+	if (err != CYAML_ERR_BAD_TYPE_IN_SCHEMA) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_cpy != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
 	}
 
 	return ttest_pass(&tc);
@@ -1958,6 +2321,81 @@ static bool test_err_save_schema_bad_data_size_8(
 }
 
 /**
+ * Test copying with schema with bad sequence count size.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_copy_schema_bad_data_size_1(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	unsigned arr[] = { 1, 2, 3, 4, 5 };
+	struct target_struct {
+		unsigned *seq;
+		uint32_t seq_count;
+	} data = {
+		.seq = arr,
+		.seq_count = CYAML_ARRAY_LEN(arr),
+	};
+	struct target_struct *copy = NULL;
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_UINT(CYAML_FLAG_DEFAULT, *(data.seq)),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		{
+			.key = "sequence",
+			.value = {
+				.type = CYAML_SEQUENCE,
+				.flags = CYAML_FLAG_POINTER,
+				.data_size = sizeof(*(data.seq)),
+				.sequence = {
+					.entry = &entry_schema,
+					.min = 0,
+					.max = 10,
+
+				},
+			},
+			.data_offset = offsetof(struct target_struct, seq),
+			.count_offset = offsetof(struct target_struct, seq_count),
+			.count_size = 9,
+		},
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	test_data_t td = {
+		.copy = (cyaml_data_t **) &copy,
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_copy(config, &top_schema,
+			(const cyaml_data_t  *) &data, 0,
+			(cyaml_data_t **) &copy);
+	if (err != CYAML_ERR_INVALID_DATA_SIZE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (buffer != NULL || len != 0) {
+		return ttest_fail(&tc, "Buffer/len not untouched.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading with schema with sequence fixed with unequal min and max.
  *
  * \param[in]  report  The test report context.
@@ -2089,6 +2527,78 @@ static bool test_err_save_schema_sequence_min_max(
 
 	if (buffer != NULL || len != 0) {
 		return ttest_fail(&tc, "Buffer/len not untouched.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test copying with schema with sequence fixed with unequal min and max.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_copy_schema_sequence_min_max(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct target_struct {
+		unsigned *seq;
+		uint32_t seq_count;
+	} data_tgt = {
+		.seq = NULL,
+		.seq_count = 0,
+	};
+	struct target_struct *data_cpy = NULL;
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_UINT(CYAML_FLAG_DEFAULT, *(data_tgt.seq)),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		{
+			.key = "sequence",
+			.value = {
+				.type = CYAML_SEQUENCE_FIXED,
+				.flags = CYAML_FLAG_POINTER,
+				.data_size = sizeof(*(data_tgt.seq)),
+				.sequence = {
+					.entry = &entry_schema,
+					.min = 0,
+					.max = CYAML_UNLIMITED,
+
+				},
+			},
+			.data_offset = offsetof(struct target_struct, seq),
+			.count_offset = offsetof(struct target_struct, seq_count),
+			.count_size = sizeof(data_tgt.seq_count),
+		},
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_copy(config, &top_schema,
+			(const cyaml_data_t *) &data_tgt, 0,
+			(cyaml_data_t **) &data_cpy);
+	if (err != CYAML_ERR_SEQUENCE_FIXED_COUNT) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_cpy != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
 	}
 
 	return ttest_pass(&tc);
@@ -2247,6 +2757,119 @@ static bool test_err_save_schema_sequence_in_sequence(
 
 	if (buffer != NULL || len != 0) {
 		return ttest_fail(&tc, "Buffer/len not untouched.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test copying with schema with sequence in sequence.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_copy_schema_sequence_in_sequence(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	unsigned data[2][2] = { { 1, 2 }, { 3, 4 } };
+	unsigned **seq = NULL;
+	static const struct cyaml_schema_value inner_entry_schema = {
+		CYAML_VALUE_UINT(CYAML_FLAG_DEFAULT, **seq),
+	};
+	static const struct cyaml_schema_value outer_entry_schema = {
+		CYAML_VALUE_SEQUENCE(CYAML_FLAG_POINTER, unsigned,
+				&inner_entry_schema, 0, CYAML_UNLIMITED)
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_SEQUENCE(CYAML_FLAG_POINTER, unsigned *,
+				&outer_entry_schema, 0, CYAML_UNLIMITED)
+	};
+	test_data_t td = {
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_copy(config, &top_schema,
+			(const cyaml_data_t *) data, 2,
+			(cyaml_data_t **) &seq);
+	if (err != CYAML_ERR_SEQUENCE_IN_SEQUENCE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (seq != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test copying a mapping with optional mapping missing.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_copy_schema_required_mapping_missing(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct target_struct_map {
+		char *str;
+	};
+	struct target_struct {
+		char *str;
+		struct target_struct_map *map;
+	} data = {
+		.str = (char *) "Hello",
+		.map = NULL,
+	};
+	struct target_struct *data_cpy = NULL;
+	static const struct cyaml_schema_field test_mapping_schema[] = {
+		CYAML_FIELD_STRING_PTR("map-str",
+				CYAML_FLAG_POINTER,
+				struct target_struct, str, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_STRING_PTR("str",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct target_struct, str, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_MAPPING_PTR("map", CYAML_FLAG_POINTER,
+				struct target_struct, map,
+				test_mapping_schema),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = NULL,
+		.copy = (cyaml_data_t **) &data_cpy,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_copy(config, &top_schema,
+			(cyaml_data_t  *) &data, 0,
+			(cyaml_data_t **) &data_cpy);
+	if (err != CYAML_ERR_MAPPING_FIELD_MISSING) {
+		return ttest_fail(&tc, cyaml_strerror(err));
 	}
 
 	return ttest_pass(&tc);
@@ -6386,6 +7009,416 @@ static bool test_err_save_alloc_oom_2(
 }
 
 /**
+ * Test copying, with all memory allocation failure at every possible point.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_copy_alloc_oom_1(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	cyaml_config_t cfg = *config;
+	static const unsigned char yaml[] =
+		"animals:\n"
+		"  - kind: cat\n"
+		"    sound: meow\n"
+		"    position: [ 1, 2, 1]\n"
+		"  - kind: snake\n"
+		"    sound: hiss\n"
+		"    position: [ 3, 1, 0]\n";
+	struct animal_s {
+		char *kind;
+		char *sound;
+		int *position;
+	};
+	struct target_struct {
+		struct animal_s **animal;
+		uint32_t animal_count;
+	} *data_tgt = NULL;
+	struct target_struct *data_cpy = NULL;
+	static const struct cyaml_schema_value position_entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, int),
+	};
+	static const struct cyaml_schema_field animal_schema[] = {
+		CYAML_FIELD_STRING_PTR("kind", CYAML_FLAG_POINTER,
+				struct animal_s, kind, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_STRING_PTR("sound", CYAML_FLAG_POINTER,
+				struct animal_s, sound, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_SEQUENCE_FIXED("position", CYAML_FLAG_POINTER,
+				struct animal_s, position,
+				&position_entry_schema, 3),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value animal_entry_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER, **(data_tgt->animal),
+				animal_schema),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_SEQUENCE("animals", CYAML_FLAG_POINTER,
+				struct target_struct, animal,
+				&animal_entry_schema, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.copy = (cyaml_data_t **) &data_cpy,
+		.config = &cfg,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+	struct test_cyaml_mem_ctx mem_ctx = {
+		.required = 0,
+	};
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	/*
+	 * First we load the YAML with the counting allocation function,
+	 * to find the number of allocations required to load the document.
+	 * This is deterministic.
+	 */
+	cfg.mem_fn = test_cyaml_mem_count_allocs;
+	cfg.mem_ctx = &mem_ctx;
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	err = cyaml_copy(&cfg, &top_schema,
+			(cyaml_data_t  *)  data_tgt, 0,
+			(cyaml_data_t **) &data_cpy);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (mem_ctx.required == 0) {
+		return ttest_fail(&tc, "There were no allocations.");
+	}
+
+	cyaml_free(config, &top_schema, data_cpy, 0);
+	data_cpy = NULL;
+
+	/*
+	 * Now we load the document multiple times, forcing every possible
+	 * allocation to fail.
+	 */
+	cfg.mem_fn = test_cyaml_mem_fail;
+
+	for (mem_ctx.fail = 0; mem_ctx.fail < mem_ctx.required;
+			mem_ctx.fail++) {
+		mem_ctx.current = 0;
+		err = cyaml_copy(&cfg, &top_schema,
+				(cyaml_data_t  *)  data_tgt, 0,
+				(cyaml_data_t **) &data_cpy);
+		if (err != CYAML_ERR_OOM) {
+			return ttest_fail(&tc, cyaml_strerror(err));
+		}
+
+		/* Now free what was loaded. */
+		cyaml_free(config, &top_schema, data_cpy, 0);
+		data_cpy = NULL;
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test copying, with all memory allocation failure at every possible point.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_copy_alloc_oom_2(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	enum test_f {
+		NONE   = 0,
+		FIRST  = (1 << 0),
+		SECOND = (1 << 1),
+		THIRD  = (1 << 2),
+		FOURTH = (1 << 3),
+	};
+	static const cyaml_strval_t strings[] = {
+		{ "first",  (1 << 0) },
+		{ "second", (1 << 1) },
+		{ "third",  (1 << 2) },
+		{ "fourth", (1 << 3) },
+	};
+	cyaml_config_t cfg = *config;
+	static const unsigned char yaml[] =
+		"animals:\n"
+		"  - kind: cat\n"
+		"    sound: meow\n"
+		"    position: [ 1, 2, 1]\n"
+		"    flags:\n"
+		"      - first\n"
+		"      - second\n"
+		"      - third\n"
+		"      - fourth\n"
+		"  - kind: snake\n"
+		"    sound: hiss\n"
+		"    position: [ 3, 1, 0]\n"
+		"    flags:\n"
+		"      - first\n"
+		"      - second\n"
+		"      - third\n"
+		"      - fourth\n";
+	struct animal_s {
+		char *kind;
+		char *sound;
+		int **position;
+		unsigned position_count;
+		enum test_f *flags;
+	};
+	struct target_struct {
+		struct animal_s **animal;
+		uint32_t animal_count;
+	} *data_tgt = NULL;
+	struct target_struct *data_cpy = NULL;
+	static const struct cyaml_schema_value position_entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_POINTER, int),
+	};
+	static const struct cyaml_schema_field animal_schema[] = {
+		CYAML_FIELD_STRING_PTR("kind", CYAML_FLAG_POINTER,
+				struct animal_s, kind, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_STRING_PTR("sound", CYAML_FLAG_POINTER,
+				struct animal_s, sound, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_SEQUENCE("position", CYAML_FLAG_POINTER,
+				struct animal_s, position,
+				&position_entry_schema, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_FLAGS("flags",
+				CYAML_FLAG_STRICT | CYAML_FLAG_POINTER,
+				struct animal_s, flags, strings, 4),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value animal_entry_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER, **(data_tgt->animal),
+				animal_schema),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_SEQUENCE("animals", CYAML_FLAG_POINTER,
+				struct target_struct, animal,
+				&animal_entry_schema, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	struct test_cyaml_mem_ctx mem_ctx = {
+		.required = 0,
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.copy = (cyaml_data_t **) &data_cpy,
+		.config = &cfg,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	/*
+	 * First we load the YAML with the counting allocation function,
+	 * to find the number of allocations required to load the document.
+	 * This is deterministic.
+	 */
+	cfg.mem_fn = test_cyaml_mem_count_allocs;
+	cfg.mem_ctx = &mem_ctx;
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	err = cyaml_copy(&cfg, &top_schema,
+			(cyaml_data_t  *)  data_tgt, 0,
+			(cyaml_data_t **) &data_cpy);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (mem_ctx.required == 0) {
+		return ttest_fail(&tc, "There were no allocations.");
+	}
+
+	cyaml_free(config, &top_schema, data_cpy, 0);
+	data_cpy = NULL;
+
+	/*
+	 * Now we load the document multiple times, forcing every possible
+	 * allocation to fail.
+	 */
+	cfg.mem_fn = test_cyaml_mem_fail;
+
+	for (mem_ctx.fail = 0; mem_ctx.fail < mem_ctx.required;
+			mem_ctx.fail++) {
+		mem_ctx.current = 0;
+		err = cyaml_copy(&cfg, &top_schema,
+				(cyaml_data_t  *)  data_tgt, 0,
+				(cyaml_data_t **) &data_cpy);
+		if (err != CYAML_ERR_OOM) {
+			return ttest_fail(&tc, cyaml_strerror(err));
+		}
+
+		/* Now free what was loaded. */
+		cyaml_free(config, &top_schema, data_cpy, 0);
+		data_cpy = NULL;
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test copying, with all memory allocation failure at every possible point.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_copy_alloc_oom_3(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	cyaml_config_t cfg = *config;
+	static const unsigned char yaml[] =
+		"animals:\n"
+		"  - kind: cat\n"
+		"    sound: meow\n"
+		"    position: [ 1, 2, 1]\n"
+		"  - kind: snake\n"
+		"    sound: hiss\n"
+		"    position: [ 3, 1, 0]\n";
+	struct animal_s {
+		char *kind;
+		char *sound;
+		int *position;
+	};
+	struct target_struct {
+		struct animal_s **animal;
+		uint32_t animal_count;
+	} *data_tgt = NULL;
+	struct target_struct data_cpy = { 0 };
+	struct target_struct *data_cpy_ptr = &data_cpy;
+	static const struct cyaml_schema_value position_entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, int),
+	};
+	static const struct cyaml_schema_field animal_schema[] = {
+		CYAML_FIELD_STRING_PTR("kind", CYAML_FLAG_POINTER,
+				struct animal_s, kind, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_STRING_PTR("sound", CYAML_FLAG_POINTER,
+				struct animal_s, sound, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_SEQUENCE_FIXED("position", CYAML_FLAG_POINTER,
+				struct animal_s, position,
+				&position_entry_schema, 3),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value animal_entry_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER, **(data_tgt->animal),
+				animal_schema),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_SEQUENCE("animals", CYAML_FLAG_POINTER,
+				struct target_struct, animal,
+				&animal_entry_schema, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	static const struct cyaml_schema_value top_schema2 = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.copy = NULL,
+		.config = &cfg,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+	struct test_cyaml_mem_ctx mem_ctx = {
+		.required = 0,
+	};
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	/*
+	 * First we load the YAML with the counting allocation function,
+	 * to find the number of allocations required to load the document.
+	 * This is deterministic.
+	 */
+	cfg.mem_fn = test_cyaml_mem_count_allocs;
+	cfg.mem_ctx = &mem_ctx;
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	err = cyaml_copy(&cfg, &top_schema2,
+			(cyaml_data_t  *)  data_tgt, 0,
+			(cyaml_data_t **) &data_cpy_ptr);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (mem_ctx.required == 0) {
+		return ttest_fail(&tc, "There were no allocations.");
+	}
+
+	cyaml_free(config, &top_schema2, data_cpy_ptr, 0);
+	data_cpy_ptr = &data_cpy;
+	memset(data_cpy_ptr, 0, sizeof(*data_cpy_ptr));
+
+	/*
+	 * Now we load the document multiple times, forcing every possible
+	 * allocation to fail.
+	 */
+	cfg.mem_fn = test_cyaml_mem_fail;
+
+	for (mem_ctx.fail = 0; mem_ctx.fail < mem_ctx.required;
+			mem_ctx.fail++) {
+		mem_ctx.current = 0;
+		err = cyaml_copy(&cfg, &top_schema2,
+				(cyaml_data_t  *)  data_tgt, 0,
+				(cyaml_data_t **) &data_cpy_ptr);
+		if (err != CYAML_ERR_OOM) {
+			return ttest_fail(&tc, cyaml_strerror(err));
+		}
+
+		/* Now free what was loaded. */
+		cyaml_free(config, &top_schema2, data_cpy_ptr, 0);
+		data_cpy_ptr = &data_cpy;
+		memset(data_cpy_ptr, 0, sizeof(*data_cpy_ptr));
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading a flag with an aliased value.
  *
  * \param[in]  report  The test report context.
@@ -7219,15 +8252,22 @@ bool errs_tests(
 
 	pass &= test_err_load_null_data(rc, &config);
 	pass &= test_err_save_null_data(rc, &config);
+	pass &= test_err_copy_null_data(rc, &config);
+	pass &= test_err_copy_null_data2(rc, &config);
 	pass &= test_err_load_null_config(rc, &config);
 	pass &= test_err_save_null_config(rc, &config);
+	pass &= test_err_copy_null_config(rc, &config);
 	pass &= test_err_load_null_mem_fn(rc, &config);
 	pass &= test_err_save_null_mem_fn(rc, &config);
+	pass &= test_err_copy_null_mem_fn(rc, &config);
 	pass &= test_err_load_null_schema(rc, &config);
 	pass &= test_err_save_null_schema(rc, &config);
+	pass &= test_err_copy_null_schema(rc, &config);
 	pass &= test_err_load_schema_top_level_non_pointer(rc, &config);
 	pass &= test_err_save_schema_top_level_non_pointer(rc, &config);
+	pass &= test_err_copy_schema_top_level_non_pointer(rc, &config);
 	pass &= test_err_load_schema_top_level_sequence_no_count(rc, &config);
+	pass &= test_err_copy_schema_top_level_sequence_no_count(rc, &config);
 	pass &= test_err_load_schema_top_level_not_sequence_count(rc, &config);
 	pass &= test_err_save_schema_top_level_not_sequence_count(rc, &config);
 
@@ -7235,6 +8275,7 @@ bool errs_tests(
 
 	pass &= test_err_load_schema_bad_type(rc, &config);
 	pass &= test_err_save_schema_bad_type(rc, &config);
+	pass &= test_err_copy_schema_bad_type(rc, &config);
 	pass &= test_err_load_schema_bad_bitfield(rc, &config);
 	pass &= test_err_save_schema_bad_bitfield(rc, &config);
 	pass &= test_err_load_schema_string_min_max(rc, &config);
@@ -7255,11 +8296,15 @@ bool errs_tests(
 	pass &= test_err_save_schema_bad_data_size_6(rc, &config);
 	pass &= test_err_save_schema_bad_data_size_7(rc, &config);
 	pass &= test_err_save_schema_bad_data_size_8(rc, &config);
+	pass &= test_err_copy_schema_bad_data_size_1(rc, &config);
 	pass &= test_err_load_schema_sequence_min_max(rc, &config);
 	pass &= test_err_save_schema_sequence_min_max(rc, &config);
+	pass &= test_err_copy_schema_sequence_min_max(rc, &config);
 	pass &= test_err_load_schema_bad_data_size_float(rc, &config);
 	pass &= test_err_load_schema_sequence_in_sequence(rc, &config);
 	pass &= test_err_save_schema_sequence_in_sequence(rc, &config);
+	pass &= test_err_copy_schema_sequence_in_sequence(rc, &config);
+	pass &= test_err_copy_schema_required_mapping_missing(rc, &config);
 
 	ttest_heading(rc, "YAML / schema mismatch: bad values");
 
@@ -7354,6 +8399,9 @@ bool errs_tests(
 	pass &= test_err_load_alloc_oom_2(rc, &config);
 	pass &= test_err_save_alloc_oom_1(rc, &config);
 	pass &= test_err_save_alloc_oom_2(rc, &config);
+	pass &= test_err_copy_alloc_oom_1(rc, &config);
+	pass &= test_err_copy_alloc_oom_2(rc, &config);
+	pass &= test_err_copy_alloc_oom_3(rc, &config);
 
 	ttest_heading(rc, "Alias tests");
 
