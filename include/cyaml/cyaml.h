@@ -609,6 +609,7 @@ typedef enum cyaml_err {
 	CYAML_ERR_BAD_CONFIG_NULL_MEMFN, /**< Client gave NULL mem function. */
 	CYAML_ERR_BAD_PARAM_NULL_CONFIG, /**< Client gave NULL config arg. */
 	CYAML_ERR_BAD_PARAM_NULL_SCHEMA, /**< Client gave NULL schema arg. */
+	CYAML_ERR_DATA_TARGET_NON_NULL,  /**< Data target must be NULL ptr */
 	CYAML_ERR_LIBYAML_EMITTER_INIT,  /**< Failed to initialise libyaml. */
 	CYAML_ERR_LIBYAML_PARSER_INIT,   /**< Failed to initialise libyaml. */
 	CYAML_ERR_LIBYAML_EVENT_INIT,    /**< Failed to initialise libyaml. */
