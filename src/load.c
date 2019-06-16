@@ -58,7 +58,7 @@ typedef struct cyaml_state {
 			uint8_t *data;
 			uint8_t *count_data;
 			uint32_t count;
-			uint64_t count_size;
+			uint8_t count_size;
 		} sequence;
 	};
 	uint8_t *data;
