@@ -10,6 +10,7 @@
  */
 
 #include <stdbool.h>
+#include <assert.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -111,5 +112,6 @@ const char * cyaml_strerror(
 	if ((unsigned)err >= CYAML_ERR__COUNT) {
 		return "Invalid error code";
 	}
+	assert(strings[err] != NULL);
 	return strings[err];
 }
