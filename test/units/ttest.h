@@ -110,12 +110,12 @@ static inline bool ttest_pass(
 
 	tc->report->passed++;
 
-	if (tc->report->quiet == false) {
-		fprintf(stderr, "  PASS: %s\n", tc->name);
-	}
-
 	if (tc->cleanup != NULL) {
 		tc->cleanup(tc->cleanup_data);
+	}
+
+	if (tc->report->quiet == false) {
+		fprintf(stderr, "  PASS: %s\n", tc->name);
 	}
 
 	return true;
@@ -141,15 +141,15 @@ static inline bool ttest_fail(
 	assert(tc != NULL);
 	assert(tc->report != NULL);
 
+	if (tc->cleanup != NULL) {
+		tc->cleanup(tc->cleanup_data);
+	}
+
 	fprintf(stderr, "  FAIL: %s (", tc->name);
 	va_start(args, reason);
 	vfprintf(stderr, reason, args);
 	va_end(args);
 	fprintf(stderr, ")\n");
-
-	if (tc->cleanup != NULL) {
-		tc->cleanup(tc->cleanup_data);
-	}
 
 	return false;
 }
@@ -171,12 +171,12 @@ static inline bool ttest_todo(
 
 	tc->report->todo++;
 
-	if (tc->report->quiet == false) {
-		fprintf(stderr, "  TODO: %s\n", tc->name);
-	}
-
 	if (tc->cleanup != NULL) {
 		tc->cleanup(tc->cleanup_data);
+	}
+
+	if (tc->report->quiet == false) {
+		fprintf(stderr, "  TODO: %s\n", tc->name);
 	}
 
 	return true;
