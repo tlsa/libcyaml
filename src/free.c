@@ -156,6 +156,8 @@ cyaml_err_t cyaml_free(
 		return CYAML_ERR_BAD_PARAM_NULL_SCHEMA;
 	}
 	cyaml__log(config, CYAML_LOG_DEBUG, "Free: Top level data: %p\n", data);
-	cyaml__free_value(config, schema, (void *)&data, seq_count);
+	cyaml__free_value(config, schema,
+			(schema->flags & CYAML_FLAG_POINTER) ? &data : data,
+			seq_count);
 	return CYAML_OK;
 }
