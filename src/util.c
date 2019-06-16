@@ -68,7 +68,7 @@ void cyaml_log(
 		[CYAML_LOG_WARNING] = "WARNING",
 		[CYAML_LOG_ERROR]   = "ERROR",
 	};
-	fprintf(stderr, "libcyaml: %s: ", strings[level]);
+	fprintf(stderr, "libcyaml: %7.7s: ", strings[level]);
 	vfprintf(stderr, fmt, args);
 }
 
