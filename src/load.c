@@ -61,7 +61,7 @@ typedef struct cyaml_state {
 			uint8_t count_size;
 		} sequence;
 	};
-	uint8_t *data;
+	uint8_t *data; /**< Pointer to output client data for this state. */
 } cyaml_state_t;
 
 /**
