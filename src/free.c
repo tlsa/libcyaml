@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: ISC
  *
- * Copyright (C) 2017-2018 Michael Drake <tlsa@netsurf-browser.org>
+ * Copyright (C) 2017-2019 Michael Drake <tlsa@netsurf-browser.org>
  */
 
 /**
@@ -150,6 +150,8 @@ cyaml_err_t cyaml_free(
 	if (schema == NULL) {
 		return CYAML_ERR_BAD_PARAM_NULL_SCHEMA;
 	}
-	cyaml__free_value(config, schema, (void *)&data, seq_count);
+	cyaml__free_value(config, schema,
+			(schema->flags & CYAML_FLAG_POINTER) ? &data : data,
+			seq_count);
 	return CYAML_OK;
 }
