@@ -58,10 +58,10 @@ typedef struct cyaml_state {
 			uint8_t *data;
 			uint8_t *count_data;
 			uint32_t count;
-			uint64_t count_size;
+			uint8_t count_size;
 		} sequence;
 	};
-	uint8_t *data;
+	uint8_t *data; /**< Pointer to output client data for this state. */
 } cyaml_state_t;
 
 /**
@@ -146,7 +146,7 @@ static cyaml_err_t cyaml_get_next_event(
 {
 	if (!yaml_parser_parse(ctx->parser, event)) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
-				"libyaml: %s\n", ctx->parser->problem);
+				"Load: libyaml: %s\n", ctx->parser->problem);
 		return CYAML_ERR_LIBYAML_PARSER;
 	}
 
@@ -156,7 +156,7 @@ static cyaml_err_t cyaml_get_next_event(
 		return CYAML_ERR_ALIAS;
 	}
 
-	cyaml__log(ctx->config, CYAML_LOG_DEBUG, "Event: %s\n",
+	cyaml__log(ctx->config, CYAML_LOG_DEBUG, "Load: Event: %s\n",
 			cyaml__libyaml_event_type_str(event));
 
 	return CYAML_OK;
@@ -350,7 +350,7 @@ static cyaml_err_t cyaml__mapping_bitfieid_validate(
 			continue;
 		}
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
-				"Missing required mapping field: %s\n",
+				"Load: Missing required mapping field: %s\n",
 				state->mapping.schema[i].key);
 		return CYAML_ERR_MAPPING_FIELD_MISSING;
 	}
@@ -436,7 +436,7 @@ static cyaml_err_t cyaml__stack_push(
 	}
 
 	cyaml__log(ctx->config, CYAML_LOG_DEBUG,
-			"PUSH[%u]: %s\n", ctx->stack_idx,
+			"Load: PUSH[%u]: %s\n", ctx->stack_idx,
 			cyaml__state_to_str(state));
 
 	ctx->stack[ctx->stack_idx] = s;
@@ -471,7 +471,7 @@ static void cyaml__stack_pop(
 
 	idx--;
 
-	cyaml__log(ctx->config, CYAML_LOG_DEBUG, "POP[%u]: %s\n", idx,
+	cyaml__log(ctx->config, CYAML_LOG_DEBUG, "Load: POP[%u]: %s\n", idx,
 			cyaml__state_to_str(ctx->state->state));
 
 	ctx->state = (idx == 0) ? NULL : &ctx->stack[idx - 1];
@@ -544,7 +544,7 @@ static cyaml_err_t cyaml__data_handle_pointer(
 		}
 
 		cyaml__log(ctx->config, CYAML_LOG_DEBUG,
-				"Allocation: %p (%zu + %zu bytes)\n",
+				"Load: Allocation: %p (%zu + %zu bytes)\n",
 				value_data, offset, delta);
 
 		if (cyaml__is_sequence(schema)) {
@@ -573,7 +573,7 @@ static void cyaml__backtrace(
 		cyaml_ctx_t *ctx)
 {
 	if (ctx->stack_idx > 1) {
-		cyaml__log(ctx->config, CYAML_LOG_ERROR, "Backtrace:\n");
+		cyaml__log(ctx->config, CYAML_LOG_ERROR, "Load: Backtrace:\n");
 	} else {
 		return;
 	}
@@ -770,7 +770,7 @@ static cyaml_err_t cyaml__read_enum(
 
 	if (schema->flags & CYAML_FLAG_STRICT) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
-				"Invalid enumeration value: %s\n", value);
+				"Load: Invalid enumeration value: %s\n", value);
 		return CYAML_ERR_INVALID_VALUE;
 
 	}
@@ -961,7 +961,7 @@ static cyaml_err_t cyaml__read_scalar_value(
 		[CYAML_STRING] = cyaml__read_string,
 	};
 
-	cyaml__log(ctx->config, CYAML_LOG_INFO, "  <%s>\n", value);
+	cyaml__log(ctx->config, CYAML_LOG_INFO, "Load:   <%s>\n", value);
 
 	assert(fn[schema->type] != NULL);
 
@@ -1008,7 +1008,8 @@ static cyaml_err_t cyaml__set_flag(
 		}
 	}
 
-	cyaml__log(ctx->config, CYAML_LOG_ERROR, "Unknown flag: %s\n", value);
+	cyaml__log(ctx->config, CYAML_LOG_ERROR,
+			"Load: Unknown flag: %s\n", value);
 
 	return CYAML_ERR_INVALID_VALUE;
 }
@@ -1073,7 +1074,7 @@ static cyaml_err_t cyaml__read_flags_value(
 	}
 
 	cyaml__log(ctx->config, CYAML_LOG_INFO,
-			"  <Flags: 0x%"PRIx64">\n", value);
+			"Load:   <Flags: 0x%"PRIx64">\n", value);
 
 	return err;
 }
@@ -1115,7 +1116,7 @@ static cyaml_err_t cyaml__set_bitval(
 
 	if (i == schema->bitfield.count) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
-				"Unknown bit value: %s\n", name);
+				"Load: Unknown bit value: %s\n", name);
 		return CYAML_ERR_INVALID_VALUE;
 	}
 
@@ -1141,7 +1142,7 @@ static cyaml_err_t cyaml__set_bitval(
 	mask = (~(uint64_t)0) >> ((8 * sizeof(uint64_t)) - bitdef[i].bits);
 	if (value > mask) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
-				"Value too big for bits: %s\n", name);
+				"Load: Value too big for bits: %s\n", name);
 		return CYAML_ERR_INVALID_VALUE;
 	}
 
@@ -1204,7 +1205,7 @@ static cyaml_err_t cyaml__read_bitfield_value(
 	}
 
 	cyaml__log(ctx->config, CYAML_LOG_INFO,
-			"  <Bits: 0x%"PRIx64">\n", value);
+			"Load:   <Bits: 0x%"PRIx64">\n", value);
 
 	return err;
 }
@@ -1285,7 +1286,7 @@ static cyaml_err_t cyaml__read_value(
 	cyaml_err_t err = CYAML_OK;
 
 	cyaml__log(ctx->config, CYAML_LOG_DEBUG,
-			"Reading value of type '%s'%s\n",
+			"Load: Reading value of type '%s'%s\n",
 			cyaml__type_to_str(schema->type),
 			schema->flags & CYAML_FLAG_POINTER ? " (pointer)" : "");
 
@@ -1334,7 +1335,7 @@ static cyaml_err_t cyaml__read_value(
 	case CYAML_SEQUENCE_FIXED:
 		if (cyaml_event != CYAML_EVT_SEQ_START) {
 			cyaml__log(ctx->config, CYAML_LOG_ERROR,
-					"Expecting sequence, got: %s\n",
+					"Load: Expecting sequence, got: %s\n",
 					cyaml__libyaml_event_type_str(event));
 			return CYAML_ERR_INVALID_VALUE;
 		}
@@ -1456,7 +1457,7 @@ static cyaml_err_t cyaml__map_key(
 	key = (const char *)event->data.scalar.value;
 	ctx->state->mapping.schema_idx =
 			cyaml__get_entry_from_mapping_schema(ctx, key);
-	cyaml__log(ctx->config, CYAML_LOG_INFO, "[%s]\n", key);
+	cyaml__log(ctx->config, CYAML_LOG_INFO, "Load: [%s]\n", key);
 
 	if (ctx->state->mapping.schema_idx == CYAML_SCHEMA_IDX_NONE) {
 		yaml_event_t ignore_event;
@@ -1464,11 +1465,11 @@ static cyaml_err_t cyaml__map_key(
 		if (!(ctx->config->flags &
 				CYAML_CFG_IGNORE_UNKNOWN_KEYS)) {
 			cyaml__log(ctx->config, CYAML_LOG_DEBUG,
-					"Unexpected key: %s\n", key);
+					"Load: Unexpected key: %s\n", key);
 			return CYAML_ERR_INVALID_KEY;
 		}
 		cyaml__log(ctx->config, CYAML_LOG_DEBUG,
-				"Ignoring key: %s\n", key);
+				"Load: Ignoring key: %s\n", key);
 		err = cyaml_get_next_event(ctx, &ignore_event);
 		if (err != CYAML_OK) {
 			return err;
@@ -1552,7 +1553,7 @@ static cyaml_err_t cyaml__seq_entry(
 
 	if (state->sequence.count + 1 > state->schema->sequence.max) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
-				"Excessive entries (%"PRIu32" max) "
+				"Load: Excessive entries (%"PRIu32" max) "
 				"in sequence.\n",
 				state->schema->sequence.max);
 		return CYAML_ERR_SEQUENCE_ENTRIES_MAX;
@@ -1564,7 +1565,7 @@ static cyaml_err_t cyaml__seq_entry(
 	}
 
 	cyaml__log(ctx->config, CYAML_LOG_DEBUG,
-			"Sequence entry: %u (%"PRIu32" bytes)\n",
+			"Load: Sequence entry: %u (%"PRIu32" bytes)\n",
 			state->sequence.count, schema->data_size);
 	value_data += schema->data_size * state->sequence.count;
 	state->sequence.count++;
@@ -1575,10 +1576,10 @@ static cyaml_err_t cyaml__seq_entry(
 				state->sequence.count_data);
 		if (err != CYAML_OK) {
 			cyaml__log(ctx->config, CYAML_LOG_ERROR,
-					"Failed writing sequence count\n");
+				"Load: Failed writing sequence count\n");
 			if (schema->flags & CYAML_FLAG_POINTER) {
 				cyaml__log(ctx->config, CYAML_LOG_DEBUG,
-						"Freeing %p\n",
+						"Load: Freeing %p\n",
 						state->sequence.data);
 				cyaml__free(ctx->config, state->sequence.data);
 			}
@@ -1612,13 +1613,14 @@ static cyaml_err_t cyaml__seq_end(
 	CYAML_UNUSED(event);
 
 	if (state->sequence.count < state->schema->sequence.min) {
-		cyaml__log(ctx->config, CYAML_LOG_ERROR, "Insufficient entries "
+		cyaml__log(ctx->config, CYAML_LOG_ERROR,
+				"Load: Insufficient entries "
 				"(%"PRIu32" of %"PRIu32" min) in sequence.\n",
 				state->sequence.count,
 				state->schema->sequence.min);
 		return CYAML_ERR_SEQUENCE_ENTRIES_MIN;
 	}
-	cyaml__log(ctx->config, CYAML_LOG_DEBUG, "Sequence count: %u\n",
+	cyaml__log(ctx->config, CYAML_LOG_DEBUG, "Load: Sequence count: %u\n",
 			state->sequence.count);
 
 	cyaml__stack_pop(ctx);
@@ -1714,7 +1716,8 @@ static inline cyaml_err_t cyaml__load_event(
 	cyaml_err_t err = CYAML_ERR_INTERNAL_ERROR;
 
 	if (fn != NULL) {
-		cyaml__log(ctx->config, CYAML_LOG_DEBUG, "Handle state %s\n",
+		cyaml__log(ctx->config, CYAML_LOG_DEBUG,
+				"Load: Handle state %s\n",
 				cyaml__state_to_str(state->state));
 		err = fn(ctx, event);
 	}

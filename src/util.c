@@ -10,6 +10,7 @@
  */
 
 #include <stdbool.h>
+#include <assert.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -68,7 +69,7 @@ void cyaml_log(
 		[CYAML_LOG_WARNING] = "WARNING",
 		[CYAML_LOG_ERROR]   = "ERROR",
 	};
-	fprintf(stderr, "libcyaml: %s: ", strings[level]);
+	fprintf(stderr, "libcyaml: %7.7s: ", strings[level]);
 	vfprintf(stderr, fmt, args);
 }
 
@@ -111,5 +112,6 @@ const char * cyaml_strerror(
 	if ((unsigned)err >= CYAML_ERR__COUNT) {
 		return "Invalid error code";
 	}
+	assert(strings[err] != NULL);
 	return strings[err];
 }
