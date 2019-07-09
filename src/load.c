@@ -65,10 +65,23 @@ typedef struct cyaml_state {
 } cyaml_state_t;
 
 /**
+ * CYAML's LibYAML event context.
+ *
+ * Only \ref cyaml_get_next_event and friends should poke around inside here.
+ * Everything else should use \ref cyaml__current_event to access the current
+ * event data, and call \ref cyaml_get_next_event to pump the event stream.
+ */
+typedef struct cyaml_event_ctx {
+	bool have_event;    /**< Whether event is currently populated. */
+	yaml_event_t event; /**< Current event. */
+} cyaml_event_ctx_t;
+
+/**
  * Internal YAML loading context.
  */
 typedef struct cyaml_ctx {
 	const cyaml_config_t *config; /**< Settings provided by client. */
+	cyaml_event_ctx_t event_ctx;  /**< Our LibYAML event context. */
 	cyaml_state_t *state;   /**< Current entry in state stack, or NULL. */
 	cyaml_state_t *stack;   /**< State stack */
 	uint32_t stack_idx;     /**< Next (empty) state stack slot */
@@ -131,28 +144,53 @@ static const char * cyaml__libyaml_event_type_str(const yaml_event_t *event)
 }
 
 /**
- * Helper function to read the next YAML input event.
+ * Delete any current event from the load context.
  *
  * This gets the next event from the CYAML load context's `libyaml` parser
  * object.
  *
  * \param[in]  ctx    The CYAML loading context.
- * \param[out] event  On success, returns the new event.
+ * \return \ref CYAML_OK on success, or appropriate error otherwise.
+ */
+static void cyaml__delete_yaml_event(
+		cyaml_ctx_t *ctx)
+{
+	if (ctx->event_ctx.have_event) {
+		yaml_event_delete(&ctx->event_ctx.event);
+		ctx->event_ctx.have_event = false;
+	}
+}
+
+/**
+ * Helper function to read the next YAML input event into the context.
+ *
+ * This gets the next event from the CYAML load context's `libyaml` parser
+ * object.  Any existing event in the load context is deleted first.
+ *
+ * Callers do not always need to delete the previous event from the context
+ * before calling this function.  However, after the final call, when cleaning
+ * up the context, any event must be deleted with a single call to \ref
+ * cyaml__delete_yaml_event.
+ *
+ * \param[in]  ctx    The CYAML loading context.
  * \return \ref CYAML_OK on success, or appropriate error otherwise.
  */
 static cyaml_err_t cyaml_get_next_event(
-		const cyaml_ctx_t *ctx,
-		yaml_event_t *event)
+		cyaml_ctx_t *ctx)
 {
+	yaml_event_t *event = &ctx->event_ctx.event;
+
+	cyaml__delete_yaml_event(ctx);
+
 	if (!yaml_parser_parse(ctx->parser, event)) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
 				"Load: libyaml: %s\n", ctx->parser->problem);
 		return CYAML_ERR_LIBYAML_PARSER;
 	}
+	ctx->event_ctx.have_event = true;
 
 	if (ctx->config->flags & CYAML_CFG_NO_ALIAS &&
-	    event->type == YAML_ALIAS_EVENT) {
-		yaml_event_delete(event);
+			event->type == YAML_ALIAS_EVENT) {
 		return CYAML_ERR_ALIAS;
 	}
 
@@ -160,6 +198,22 @@ static cyaml_err_t cyaml_get_next_event(
 			cyaml__libyaml_event_type_str(event));
 
 	return CYAML_OK;
+}
+
+/**
+ * Get a pointer to the load context's current event.
+ *
+ * The outside world should use this to get the address of the event data,
+ * which will not change for subsequent events.  The event should only be used
+ * after \ref cyaml_get_next_event() has returned \ref CYAML_OK.
+ *
+ * \param[in]  ctx    The CYAML loading context.
+ * \return \ref CYAML_OK on success, or appropriate error otherwise.
+ */
+static inline const yaml_event_t * cyaml__current_event(
+		const cyaml_ctx_t *ctx)
+{
+	return &ctx->event_ctx.event;
 }
 
 /**
@@ -944,7 +998,7 @@ static cyaml_err_t cyaml__read_scalar_value(
 		const cyaml_ctx_t *ctx,
 		const cyaml_schema_value_t *schema,
 		cyaml_data_t *data,
-		yaml_event_t *event)
+		const yaml_event_t *event)
 {
 	const char *value = (const char *)event->data.scalar.value;
 	typedef cyaml_err_t (*cyaml_read_scalar_fn)(
@@ -1032,8 +1086,8 @@ static cyaml_err_t cyaml__read_flags_value(
 {
 	bool exit = false;
 	uint64_t value = 0;
-	yaml_event_t event;
 	cyaml_err_t err = CYAML_OK;
+	const yaml_event_t *const event = cyaml__current_event(ctx);
 
 	if (schema->data_size == 0) {
 		return CYAML_ERR_INVALID_DATA_SIZE;
@@ -1041,19 +1095,18 @@ static cyaml_err_t cyaml__read_flags_value(
 
 	while (!exit) {
 		cyaml_event_t cyaml_event;
-		err = cyaml_get_next_event(ctx, &event);
+		err = cyaml_get_next_event(ctx);
 		if (err != CYAML_OK) {
 			return err;
 		}
-		cyaml_event = cyaml__get_event_type(&event);
+		cyaml_event = cyaml__get_event_type(event);
 
 		switch (cyaml_event) {
 		case CYAML_EVT_SCALAR:
 			err = cyaml__set_flag(ctx, schema,
-					(const char *)event.data.scalar.value,
+					(const char *)event->data.scalar.value,
 					&value);
 			if (err != CYAML_OK) {
-				yaml_event_delete(&event);
 				return err;
 			}
 			break;
@@ -1061,11 +1114,8 @@ static cyaml_err_t cyaml__read_flags_value(
 			exit = true;
 			break;
 		default:
-			yaml_event_delete(&event);
 			return CYAML_ERR_UNEXPECTED_EVENT;
 		}
-
-		yaml_event_delete(&event);
 	}
 
 	err = cyaml_data_write(value, schema->data_size, data);
@@ -1092,13 +1142,13 @@ static cyaml_err_t cyaml__read_flags_value(
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
 static cyaml_err_t cyaml__set_bitval(
-		const cyaml_ctx_t *ctx,
+		cyaml_ctx_t *ctx,
 		const cyaml_schema_value_t *schema,
 		const char *name,
 		uint64_t *bits_out)
 {
+	const yaml_event_t *const event = cyaml__current_event(ctx);
 	const cyaml_bitdef_t *bitdef = schema->bitfield.bitdefs;
-	yaml_event_t event;
 	cyaml_err_t err;
 	uint64_t value;
 	uint64_t mask;
@@ -1120,22 +1170,20 @@ static cyaml_err_t cyaml__set_bitval(
 		return CYAML_ERR_INVALID_VALUE;
 	}
 
-	err = cyaml_get_next_event(ctx, &event);
+	err = cyaml_get_next_event(ctx);
 	if (err != CYAML_OK) {
 		return err;
 	}
 
-	switch (cyaml__get_event_type(&event)) {
+	switch (cyaml__get_event_type(event)) {
 	case CYAML_EVT_SCALAR:
 		err = cyaml__read_uint64_t(
-				(const char *)event.data.scalar.value, &value);
-		yaml_event_delete(&event);
+				(const char *)event->data.scalar.value, &value);
 		if (err != CYAML_OK) {
 			return err;
 		}
 		break;
 	default:
-		yaml_event_delete(&event);
 		return CYAML_ERR_UNEXPECTED_EVENT;
 	}
 
@@ -1168,23 +1216,22 @@ static cyaml_err_t cyaml__read_bitfield_value(
 {
 	bool exit = false;
 	uint64_t value = 0;
-	yaml_event_t event;
 	cyaml_err_t err = CYAML_OK;
+	const yaml_event_t *const event = cyaml__current_event(ctx);
 
 	while (!exit) {
 		cyaml_event_t cyaml_event;
-		err = cyaml_get_next_event(ctx, &event);
+		err = cyaml_get_next_event(ctx);
 		if (err != CYAML_OK) {
 			return err;
 		}
-		cyaml_event = cyaml__get_event_type(&event);
+		cyaml_event = cyaml__get_event_type(event);
 		switch (cyaml_event) {
 		case CYAML_EVT_SCALAR:
 			err = cyaml__set_bitval(ctx, schema,
-					(const char *)event.data.scalar.value,
+					(const char *)event->data.scalar.value,
 					&value);
 			if (err != CYAML_OK) {
-				yaml_event_delete(&event);
 				return err;
 			}
 			break;
@@ -1192,11 +1239,8 @@ static cyaml_err_t cyaml__read_bitfield_value(
 			exit = true;
 			break;
 		default:
-			yaml_event_delete(&event);
 			return CYAML_ERR_UNEXPECTED_EVENT;
 		}
-
-		yaml_event_delete(&event);
 	}
 
 	err = cyaml_data_write(value, schema->data_size, data);
@@ -1240,13 +1284,14 @@ static cyaml_err_t cyaml__consume_ignored_value(
 
 		while (level > 0) {
 			cyaml_err_t err;
-			yaml_event_t event;
+			const yaml_event_t *const event =
+					cyaml__current_event(ctx);
 
-			err = cyaml_get_next_event(ctx, &event);
+			err = cyaml_get_next_event(ctx);
 			if (err != CYAML_OK) {
 				return err;
 			}
-			switch (cyaml__get_event_type(&event)) {
+			switch (cyaml__get_event_type(event)) {
 			case CYAML_EVT_SEQ_START: /* Fall through */
 			case CYAML_EVT_MAP_START:
 				level++;
@@ -1260,7 +1305,6 @@ static cyaml_err_t cyaml__consume_ignored_value(
 			default:
 				break;
 			}
-			yaml_event_delete(&event);
 		}
 	}
 
@@ -1280,7 +1324,7 @@ static cyaml_err_t cyaml__read_value(
 		cyaml_ctx_t *ctx,
 		const cyaml_schema_value_t *schema,
 		uint8_t *data,
-		yaml_event_t *event)
+		const yaml_event_t *event)
 {
 	cyaml_event_t cyaml_event = cyaml__get_event_type(event);
 	cyaml_err_t err = CYAML_OK;
@@ -1362,7 +1406,7 @@ static cyaml_err_t cyaml__read_value(
  */
 static cyaml_err_t cyaml__stream_start(
 		cyaml_ctx_t *ctx,
-		yaml_event_t *event)
+		const yaml_event_t *event)
 {
 	CYAML_UNUSED(event);
 	return cyaml__stack_push(ctx, CYAML_STATE_IN_STREAM,
@@ -1378,7 +1422,7 @@ static cyaml_err_t cyaml__stream_start(
  */
 static cyaml_err_t cyaml__doc_start(
 		cyaml_ctx_t *ctx,
-		yaml_event_t *event)
+		const yaml_event_t *event)
 {
 	CYAML_UNUSED(event);
 	if (ctx->state->stream.doc_count == 1) {
@@ -1401,7 +1445,7 @@ static cyaml_err_t cyaml__doc_start(
  */
 static cyaml_err_t cyaml__stream_end(
 		cyaml_ctx_t *ctx,
-		yaml_event_t *event)
+		const yaml_event_t *event)
 {
 	CYAML_UNUSED(event);
 	cyaml__stack_pop(ctx);
@@ -1417,7 +1461,7 @@ static cyaml_err_t cyaml__stream_end(
  */
 static cyaml_err_t cyaml__doc_root_value(
 		cyaml_ctx_t *ctx,
-		yaml_event_t *event)
+		const yaml_event_t *event)
 {
 	return cyaml__read_value(ctx, ctx->state->schema,
 			ctx->state->data, event);
@@ -1432,7 +1476,7 @@ static cyaml_err_t cyaml__doc_root_value(
  */
 static cyaml_err_t cyaml__doc_end(
 		cyaml_ctx_t *ctx,
-		yaml_event_t *event)
+		const yaml_event_t *event)
 {
 	CYAML_UNUSED(event);
 	cyaml__stack_pop(ctx);
@@ -1449,7 +1493,7 @@ static cyaml_err_t cyaml__doc_end(
  */
 static cyaml_err_t cyaml__map_key(
 		cyaml_ctx_t *ctx,
-		yaml_event_t *event)
+		const yaml_event_t *event)
 {
 	const char *key;
 	cyaml_err_t err = CYAML_OK;
@@ -1460,7 +1504,8 @@ static cyaml_err_t cyaml__map_key(
 	cyaml__log(ctx->config, CYAML_LOG_INFO, "Load: [%s]\n", key);
 
 	if (ctx->state->mapping.schema_idx == CYAML_SCHEMA_IDX_NONE) {
-		yaml_event_t ignore_event;
+		const yaml_event_t *const ignore_event =
+				cyaml__current_event(ctx);
 		cyaml_event_t cyaml_event;
 		if (!(ctx->config->flags &
 				CYAML_CFG_IGNORE_UNKNOWN_KEYS)) {
@@ -1470,12 +1515,11 @@ static cyaml_err_t cyaml__map_key(
 		}
 		cyaml__log(ctx->config, CYAML_LOG_DEBUG,
 				"Load: Ignoring key: %s\n", key);
-		err = cyaml_get_next_event(ctx, &ignore_event);
+		err = cyaml_get_next_event(ctx);
 		if (err != CYAML_OK) {
 			return err;
 		}
-		cyaml_event = cyaml__get_event_type(&ignore_event);
-		yaml_event_delete(&ignore_event);
+		cyaml_event = cyaml__get_event_type(ignore_event);
 		return cyaml__consume_ignored_value(ctx, cyaml_event);
 	}
 	cyaml__mapping_bitfieid_set(ctx);
@@ -1495,7 +1539,7 @@ static cyaml_err_t cyaml__map_key(
  */
 static cyaml_err_t cyaml__map_end(
 		cyaml_ctx_t *ctx,
-		yaml_event_t *event)
+		const yaml_event_t *event)
 {
 	cyaml_err_t err;
 
@@ -1519,7 +1563,7 @@ static cyaml_err_t cyaml__map_end(
  */
 static cyaml_err_t cyaml__map_value(
 		cyaml_ctx_t *ctx,
-		yaml_event_t *event)
+		const yaml_event_t *event)
 {
 	cyaml_state_t *state = ctx->state;
 	const cyaml_schema_field_t *entry = cyaml_mapping_schema_field(ctx);
@@ -1544,7 +1588,7 @@ static cyaml_err_t cyaml__map_value(
  */
 static cyaml_err_t cyaml__seq_entry(
 		cyaml_ctx_t *ctx,
-		yaml_event_t *event)
+		const yaml_event_t *event)
 {
 	cyaml_err_t err;
 	cyaml_state_t *state = ctx->state;
@@ -1606,7 +1650,7 @@ static cyaml_err_t cyaml__seq_entry(
  */
 static cyaml_err_t cyaml__seq_end(
 		cyaml_ctx_t *ctx,
-		yaml_event_t *event)
+		const yaml_event_t *event)
 {
 	cyaml_state_t *state = ctx->state;
 
@@ -1676,12 +1720,12 @@ static inline cyaml_err_t cyaml__validate_load_params(
  */
 static inline cyaml_err_t cyaml__load_event(
 		cyaml_ctx_t *ctx,
-		yaml_event_t *event)
+		const yaml_event_t *event)
 {
 	cyaml_state_t *state = ctx->state;
 	typedef cyaml_err_t (* const cyaml_read_fn)(
 			cyaml_ctx_t *ctx,
-			yaml_event_t *event);
+			const yaml_event_t *event);
 	static const cyaml_read_fn fns[CYAML_STATE__COUNT][CYAML_EVT__COUNT] = {
 		[CYAML_STATE_START] = {
 			[CYAML_EVT_STRM_START] = cyaml__stream_start,
@@ -1768,15 +1812,14 @@ static cyaml_err_t cyaml__load(
 	}
 
 	do {
-		yaml_event_t event;
+		const yaml_event_t *const event = cyaml__current_event(&ctx);
 
-		err = cyaml_get_next_event(&ctx, &event);
+		err = cyaml_get_next_event(&ctx);
 		if (err != CYAML_OK) {
 			goto out;
 		}
 
-		err = cyaml__load_event(&ctx, &event);
-		yaml_event_delete(&event);
+		err = cyaml__load_event(&ctx, event);
 		if (err != CYAML_OK) {
 			goto out;
 		}
@@ -1799,6 +1842,7 @@ out:
 		cyaml__stack_pop(&ctx);
 	}
 	cyaml__free(config, ctx.stack);
+	cyaml__delete_yaml_event(&ctx);
 	return err;
 }
 
