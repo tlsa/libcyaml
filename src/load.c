@@ -29,6 +29,24 @@
 #define CYAML_SCHEMA_IDX_NONE 0xffff
 
 /**
+ * CYAML events.  These correspond to `libyaml` events.
+ */
+typedef enum cyaml_event {
+	CYAML_EVT_NO_EVENT   = YAML_NO_EVENT,
+	CYAML_EVT_STRM_START = YAML_STREAM_START_EVENT,
+	CYAML_EVT_STRM_END   = YAML_STREAM_END_EVENT,
+	CYAML_EVT_DOC_START  = YAML_DOCUMENT_START_EVENT,
+	CYAML_EVT_DOC_END    = YAML_DOCUMENT_END_EVENT,
+	CYAML_EVT_ALIAS      = YAML_ALIAS_EVENT,
+	CYAML_EVT_SCALAR     = YAML_SCALAR_EVENT,
+	CYAML_EVT_SEQ_START  = YAML_SEQUENCE_START_EVENT,
+	CYAML_EVT_SEQ_END    = YAML_SEQUENCE_END_EVENT,
+	CYAML_EVT_MAP_START  = YAML_MAPPING_START_EVENT,
+	CYAML_EVT_MAP_END    = YAML_MAPPING_END_EVENT,
+	CYAML_EVT__COUNT,
+} cyaml_event_t;
+
+/**
  * A CYAML load state machine stack entry.
  */
 typedef struct cyaml_state {
@@ -89,24 +107,6 @@ typedef struct cyaml_ctx {
 	unsigned seq_count;     /**< Top-level sequence count. */
 	yaml_parser_t *parser;  /**< Internal libyaml parser object. */
 } cyaml_ctx_t;
-
-/**
- * CYAML events.  These correspond to `libyaml` events.
- */
-typedef enum cyaml_event {
-	CYAML_EVT_NO_EVENT   = YAML_NO_EVENT,
-	CYAML_EVT_STRM_START = YAML_STREAM_START_EVENT,
-	CYAML_EVT_STRM_END   = YAML_STREAM_END_EVENT,
-	CYAML_EVT_DOC_START  = YAML_DOCUMENT_START_EVENT,
-	CYAML_EVT_DOC_END    = YAML_DOCUMENT_END_EVENT,
-	CYAML_EVT_ALIAS      = YAML_ALIAS_EVENT,
-	CYAML_EVT_SCALAR     = YAML_SCALAR_EVENT,
-	CYAML_EVT_SEQ_START  = YAML_SEQUENCE_START_EVENT,
-	CYAML_EVT_SEQ_END    = YAML_SEQUENCE_END_EVENT,
-	CYAML_EVT_MAP_START  = YAML_MAPPING_START_EVENT,
-	CYAML_EVT_MAP_END    = YAML_MAPPING_END_EVENT,
-	CYAML_EVT__COUNT,
-} cyaml_event_t;
 
 /**
  * Get the CYAML event type from a `libyaml` event.
