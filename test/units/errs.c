@@ -4708,6 +4708,9 @@ static bool test_err_load_alloc_oom_1(
 /**
  * Test loading, with all memory allocation failure at every possible point.
  *
+ * Uses aliases and anchors, to exercies the event/anchor recording error
+ * paths too.
+ *
  * \param[in]  report  The test report context.
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
@@ -4731,23 +4734,33 @@ static bool test_err_load_alloc_oom_2(
 	};
 	cyaml_config_t cfg = *config;
 	static const unsigned char yaml[] =
-		"animals:\n"
-		"  - kind: cat\n"
-		"    sound: meow\n"
-		"    position: [ 1, 2, 1]\n"
-		"    flags:\n"
-		"      - first\n"
-		"      - second\n"
-		"      - third\n"
-		"      - fourth\n"
+		"anchors:\n"
+		"  - &a1 {"
+		"      kind: cat,\n"
+		"      sound: meow,\n"
+		"      position: &a2 [ 1, 2, 1],\n"
+		"      flags: &a3 [\n"
+		"        first,\n"
+		"        &a4 second,\n"
+		"        third,\n"
+		"        fourth,\n"
+		"      ]\n"
+		"    }\n"
 		"  - kind: snake\n"
-		"    sound: hiss\n"
-		"    position: [ 3, 1, 0]\n"
-		"    flags:\n"
-		"      - first\n"
-		"      - second\n"
-		"      - third\n"
-		"      - fourth\n";
+		"    sound: &a5 hiss\n"
+		"    position: &a6 [ 3, 1, 0]\n"
+		"    flags: &a7 [\n"
+		"      first,\n"
+		"      second,\n"
+		"      third,\n"
+		"      fourth,\n"
+		"    ]\n"
+		"animals:\n"
+		"  - *a1\n"
+		"  - kind: snake\n"
+		"    sound: *a5\n"
+		"    position: *a6\n"
+		"    flags: *a7\n";
 	struct animal_s {
 		char *kind;
 		char *sound;
@@ -4780,6 +4793,7 @@ static bool test_err_load_alloc_oom_2(
 				animal_schema),
 	};
 	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_IGNORE("anchors", CYAML_FLAG_OPTIONAL),
 		CYAML_FIELD_SEQUENCE("animals", CYAML_FLAG_POINTER,
 				struct target_struct, animal,
 				&animal_entry_schema, 0, CYAML_UNLIMITED),
