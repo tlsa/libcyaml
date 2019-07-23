@@ -479,6 +479,7 @@ typedef enum cyaml_err {
 	CYAML_ERR_FILE_OPEN,             /**< Failed to open file. */
 	CYAML_ERR_INVALID_KEY,           /**< Mapping key rejected by schema. */
 	CYAML_ERR_INVALID_VALUE,         /**< Value rejected by schema. */
+	CYAML_ERR_INVALID_ALIAS,         /**< No anchor found for alias. */
 	CYAML_ERR_INTERNAL_ERROR,        /**< Internal error in LibCYAML. */
 	CYAML_ERR_UNEXPECTED_EVENT,      /**< YAML event rejected by schema. */
 	CYAML_ERR_STRING_LENGTH_MIN,     /**< String length too short. */
