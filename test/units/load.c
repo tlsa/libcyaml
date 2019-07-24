@@ -5349,6 +5349,263 @@ static bool test_load_mapping_fields_value_insensitive_1(
 }
 
 /**
+ * Test loading with an unused anchor.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_unused_anchor(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const char *string_value = "Hello World!";
+	const int int_value = 9;
+	static const unsigned char yaml[] =
+		"test_string: &foo Hello World!\n"
+		"test_int: 9\n";
+	struct target_struct {
+		char * test_value_string;
+		int test_value_int;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_STRING_PTR("test_string", CYAML_FLAG_POINTER,
+				struct target_struct, test_value_string,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_INT("test_int", CYAML_FLAG_DEFAULT,
+				struct target_struct, test_value_int),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (strcmp(data_tgt->test_value_string, string_value) != 0) {
+		return ttest_fail(&tc, "Incorrect value");
+	}
+
+	if (data_tgt->test_value_int != int_value) {
+		return ttest_fail(&tc, "Incorrect value");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading with an aliased string value.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_anchor_scalar_int(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const char *string_value = "Hello World!";
+	const int int_value = 9;
+	static const unsigned char yaml[] =
+		"test_int_anchor: &foo 9\n"
+		"test_string: Hello World!\n"
+		"test_int: *foo\n";
+	struct target_struct {
+		char * test_value_string;
+		int test_value_int;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_IGNORE("test_int_anchor", CYAML_FLAG_OPTIONAL),
+		CYAML_FIELD_STRING_PTR("test_string", CYAML_FLAG_POINTER,
+				struct target_struct, test_value_string,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_INT("test_int", CYAML_FLAG_DEFAULT,
+				struct target_struct, test_value_int),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (strcmp(data_tgt->test_value_string, string_value) != 0) {
+		return ttest_fail(&tc, "Incorrect value");
+	}
+
+	if (data_tgt->test_value_int != int_value) {
+		return ttest_fail(&tc, "Incorrect value");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading with an aliased string value.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_anchor_scalar_string(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const char *string_value = "Hello World!";
+	const int int_value = 9;
+	static const unsigned char yaml[] =
+		"test_string_anchor: &foo Hello World!\n"
+		"test_string: *foo\n"
+		"test_int: 9\n";
+	struct target_struct {
+		char * test_value_string;
+		int test_value_int;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_IGNORE("test_string_anchor", CYAML_FLAG_OPTIONAL),
+		CYAML_FIELD_STRING_PTR("test_string", CYAML_FLAG_POINTER,
+				struct target_struct, test_value_string,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_INT("test_int", CYAML_FLAG_DEFAULT,
+				struct target_struct, test_value_int),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (strcmp(data_tgt->test_value_string, string_value) != 0) {
+		return ttest_fail(&tc, "Incorrect value");
+	}
+
+	if (data_tgt->test_value_int != int_value) {
+		return ttest_fail(&tc, "Incorrect value");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading multiple anchored and alisased scalars.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_anchor_multiple_scalars(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const char *string_value1 = "Hello Me!";
+	const char *string_value2 = "Hello World!";
+	const int int_value = 99;
+	static const unsigned char yaml[] =
+		"anchors:\n"
+		"  - &a1 Hello World!\n"
+		"  - &a2 Hello Me!\n"
+		"  - &a3 99\n"
+		"test_string1: *a2\n"
+		"test_int: *a3\n"
+		"test_string2: *a1\n";
+	struct target_struct {
+		char * test_value_string1;
+		char * test_value_string2;
+		int test_value_int;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_IGNORE("anchors", CYAML_FLAG_OPTIONAL),
+		CYAML_FIELD_STRING_PTR("test_string1", CYAML_FLAG_POINTER,
+				struct target_struct, test_value_string1,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_STRING_PTR("test_string2", CYAML_FLAG_POINTER,
+				struct target_struct, test_value_string2,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_INT("test_int", CYAML_FLAG_DEFAULT,
+				struct target_struct, test_value_int),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (strcmp(data_tgt->test_value_string1, string_value1) != 0) {
+		return ttest_fail(&tc, "Incorrect value: "
+				"expected: %s, got: %s",
+				string_value1, data_tgt->test_value_string1);
+	}
+
+	if (strcmp(data_tgt->test_value_string2, string_value2) != 0) {
+		return ttest_fail(&tc, "Incorrect value: "
+				"expected: %s, got: %s",
+				string_value2, data_tgt->test_value_string2);
+	}
+
+	if (data_tgt->test_value_int != int_value) {
+		return ttest_fail(&tc, "Incorrect value: "
+				"expected: %i, got: %i",
+				int_value, data_tgt->test_value_int);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Run the YAML loading unit tests.
  *
  * \param[in]  rc         The ttest report context.
@@ -5468,6 +5725,13 @@ bool load_tests(
 	pass &= test_load_mapping_fields_cfg_insensitive_3(rc, &config);
 	pass &= test_load_mapping_fields_value_sensitive_1(rc, &config);
 	pass &= test_load_mapping_fields_value_insensitive_1(rc, &config);
+
+	ttest_heading(rc, "Load tests: anchors and aliases (scalars)");
+
+	pass &= test_load_unused_anchor(rc, &config);
+	pass &= test_load_anchor_scalar_int(rc, &config);
+	pass &= test_load_anchor_scalar_string(rc, &config);
+	pass &= test_load_anchor_multiple_scalars(rc, &config);
 
 	return pass;
 }
