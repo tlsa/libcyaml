@@ -5866,6 +5866,93 @@ static bool test_load_anchor_deep_mapping_sequence(
 }
 
 /**
+ * Test loading when an anchor is updated.
+ *
+ * The newest definition should be used.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_anchor_updated_anchor(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const char *string_value1 = "Hello Me!";
+	const char *string_value2 = "Hello World!";
+	static const unsigned char yaml[] =
+		"a: &a1 Hello Me!\n"
+		"b: *a1\n"
+		"c: &a1 Hello World!\n"
+		"d: *a1\n";
+	struct target_struct {
+		char *a;
+		char *b;
+		char *c;
+		char *d;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_STRING_PTR("a", CYAML_FLAG_POINTER,
+				struct target_struct, a,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_STRING_PTR("b", CYAML_FLAG_POINTER,
+				struct target_struct, b,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_STRING_PTR("c", CYAML_FLAG_POINTER,
+				struct target_struct, c,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_STRING_PTR("d", CYAML_FLAG_POINTER,
+				struct target_struct, d,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (strcmp(data_tgt->a, string_value1) != 0) {
+		return ttest_fail(&tc, "Incorrect value (a): "
+				"expected: %s, got: %s",
+				string_value1, data_tgt->a);
+	}
+
+	if (strcmp(data_tgt->b, string_value1) != 0) {
+		return ttest_fail(&tc, "Incorrect value (b): "
+				"expected: %s, got: %s",
+				string_value1, data_tgt->b);
+	}
+
+	if (strcmp(data_tgt->c, string_value2) != 0) {
+		return ttest_fail(&tc, "Incorrect value (c): "
+				"expected: %s, got: %s",
+				string_value2, data_tgt->c);
+	}
+
+	if (strcmp(data_tgt->d, string_value2) != 0) {
+		return ttest_fail(&tc, "Incorrect value (d): "
+				"expected: %s, got: %s",
+				string_value2, data_tgt->d);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Run the YAML loading unit tests.
  *
  * \param[in]  rc         The ttest report context.
@@ -5998,6 +6085,10 @@ bool load_tests(
 	pass &= test_load_anchor_mapping(rc, &config);
 	pass &= test_load_anchor_sequence(rc, &config);
 	pass &= test_load_anchor_deep_mapping_sequence(rc, &config);
+
+	ttest_heading(rc, "Load tests: anchors and aliases (edge cases)");
+
+	pass &= test_load_anchor_updated_anchor(rc, &config);
 
 	return pass;
 }
