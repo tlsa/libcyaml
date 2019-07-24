@@ -5606,6 +5606,266 @@ static bool test_load_anchor_multiple_scalars(
 }
 
 /**
+ * Test loading an aliased mapping.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_anchor_mapping(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const char *test_a = "Hello Me!";
+	const int test_b = 777;
+	static const unsigned char yaml[] =
+		"anchors:\n"
+		"  - &a2 Hello Me!\n"
+		"  - &a1 {\n"
+		"      a: *a2,\n"
+		"      b: 777,\n"
+		"    }\n"
+		"test: *a1\n";
+	struct my_test {
+		int b;
+		char *a;
+	};
+	struct target_struct {
+		struct my_test test;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field inner_mapping_schema[] = {
+		CYAML_FIELD_STRING_PTR("a", CYAML_FLAG_POINTER,
+				struct my_test, a,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_INT("b", CYAML_FLAG_DEFAULT,
+				struct my_test, b),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_IGNORE("anchors", CYAML_FLAG_OPTIONAL),
+		CYAML_FIELD_MAPPING("test", CYAML_FLAG_DEFAULT,
+				struct target_struct, test,
+				inner_mapping_schema),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (strcmp(data_tgt->test.a, test_a) != 0) {
+		return ttest_fail(&tc, "Incorrect value: "
+				"expected: %s, got: %s",
+				test_a, data_tgt->test.a);
+	}
+
+	if (data_tgt->test.b != test_b) {
+		return ttest_fail(&tc, "Incorrect value: "
+				"expected: %i, got: %i",
+				test_b, data_tgt->test.b);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading an aliased sequence.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_anchor_sequence(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const int test_a[] = { 1, 22, 333, 4444 };
+	static const unsigned char yaml[] =
+		"anchors:\n"
+		"  - &a1 [\n"
+		"      1,\n"
+		"      22,\n"
+		"      333,\n"
+		"      4444,\n"
+		"    ]\n"
+		"test: *a1\n";
+	struct target_struct {
+		int *a;
+		unsigned a_count;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_value sequence_entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, int),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_IGNORE("anchors", CYAML_FLAG_OPTIONAL),
+		CYAML_FIELD_SEQUENCE("test", CYAML_FLAG_POINTER,
+				struct target_struct, a,
+				&sequence_entry_schema,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->a_count != CYAML_ARRAY_LEN(test_a)) {
+		return ttest_fail(&tc, "Incorrect value: "
+				"expected: %u, got: %u",
+				data_tgt->a_count, CYAML_ARRAY_LEN(test_a));
+	}
+
+	for (unsigned i = 0; i < CYAML_ARRAY_LEN(test_a); i++) {
+		if (data_tgt->a[i] != test_a[i]) {
+			return ttest_fail(&tc, "Incorrect value: "
+					"expected: %i, got: %i",
+					data_tgt->a[i], test_a[i]);
+		}
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading with anchors within anchors, etc.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_anchor_deep_mapping_sequence(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const char *test_a = "Hello Me!";
+	const int test_b[] = { 1, 22, 333, 4444 };
+	static const unsigned char yaml[] =
+		"anchors:\n"
+		"  - &a1 Hello Me!\n"
+		"  - &a2 {\n"
+		"      a: *a1,\n"
+		"      b: &a3 [ 1, 22, 333, 4444 ],\n"
+		"      c: *a1,\n"
+		"      d: *a3,\n"
+		"    }\n"
+		"test_a: *a2\n"
+		"test_b: *a3\n";
+	struct my_test {
+		char *a;
+		int *b;
+		unsigned b_count;
+		char *c;
+		int *d;
+		unsigned d_count;
+	};
+	struct target_struct {
+		struct my_test test_a;
+		int *test_b;
+		unsigned test_b_count;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_value sequence_entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, int),
+	};
+	static const struct cyaml_schema_field inner_mapping_schema[] = {
+		CYAML_FIELD_STRING_PTR("a", CYAML_FLAG_POINTER,
+				struct my_test, a, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_SEQUENCE("b", CYAML_FLAG_POINTER, struct my_test, b,
+				&sequence_entry_schema, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_STRING_PTR("c", CYAML_FLAG_POINTER,
+				struct my_test, c, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_SEQUENCE("d", CYAML_FLAG_POINTER, struct my_test, d,
+				&sequence_entry_schema, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_IGNORE("anchors", CYAML_FLAG_OPTIONAL),
+		CYAML_FIELD_MAPPING("test_a", CYAML_FLAG_DEFAULT,
+				struct target_struct, test_a,
+				inner_mapping_schema),
+		CYAML_FIELD_SEQUENCE("test_b", CYAML_FLAG_POINTER,
+				struct target_struct, test_b,
+				&sequence_entry_schema,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (strcmp(data_tgt->test_a.a, test_a) != 0) {
+		return ttest_fail(&tc, "Incorrect value: "
+				"expected: %s, got: %s",
+				test_a, data_tgt->test_a.a);
+	}
+
+	if (strcmp(data_tgt->test_a.c, test_a) != 0) {
+		return ttest_fail(&tc, "Incorrect value: "
+				"expected: %s, got: %s",
+				test_a, data_tgt->test_a.c);
+	}
+
+	if (data_tgt->test_b_count != CYAML_ARRAY_LEN(test_b)) {
+		return ttest_fail(&tc, "Incorrect value: "
+				"expected: %u, got: %u",
+				data_tgt->test_b_count,
+				CYAML_ARRAY_LEN(test_b));
+	}
+
+	for (unsigned i = 0; i < CYAML_ARRAY_LEN(test_b); i++) {
+		if (data_tgt->test_b[i] != test_b[i]) {
+			return ttest_fail(&tc, "Incorrect value: "
+					"expected: %i, got: %i",
+					data_tgt->test_b[i], test_b[i]);
+		}
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Run the YAML loading unit tests.
  *
  * \param[in]  rc         The ttest report context.
@@ -5732,6 +5992,12 @@ bool load_tests(
 	pass &= test_load_anchor_scalar_int(rc, &config);
 	pass &= test_load_anchor_scalar_string(rc, &config);
 	pass &= test_load_anchor_multiple_scalars(rc, &config);
+
+	ttest_heading(rc, "Load tests: anchors and aliases (non scalars)");
+
+	pass &= test_load_anchor_mapping(rc, &config);
+	pass &= test_load_anchor_sequence(rc, &config);
+	pass &= test_load_anchor_deep_mapping_sequence(rc, &config);
 
 	return pass;
 }
