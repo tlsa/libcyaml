@@ -5616,6 +5616,68 @@ static bool test_err_load_invalid_alias(
 }
 
 /**
+ * Test loading an incomplete alias.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_incomplete_alias(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"anchors:\n"
+		"  - &a1 {\n"
+		"      a: 777,\n"
+		"      b: *a1,\n"
+		"    }\n"
+		"test: *a1\n";
+	struct my_test {
+		int a;
+		char *b;
+	};
+	struct target_struct {
+		struct my_test test;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field inner_mapping_schema[] = {
+		CYAML_FIELD_INT("a", CYAML_FLAG_DEFAULT,
+				struct my_test, a),
+		CYAML_FIELD_STRING_PTR("b", CYAML_FLAG_POINTER,
+				struct my_test, b,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_IGNORE("anchors", CYAML_FLAG_OPTIONAL),
+		CYAML_FIELD_MAPPING("test", CYAML_FLAG_DEFAULT,
+				struct target_struct, test,
+				inner_mapping_schema),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_ALIAS) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Run the CYAML error unit tests.
  *
  * \param[in]  rc         The ttest report context.
@@ -5763,6 +5825,7 @@ bool errs_tests(
 	ttest_heading(rc, "Alias tests");
 
 	pass &= test_err_load_invalid_alias(rc, &config);
+	pass &= test_err_load_incomplete_alias(rc, &config);
 	pass &= test_err_load_flag_value_alias(rc, &config);
 	pass &= test_err_load_mapping_key_alias(rc, &config);
 	pass &= test_err_load_mapping_value_alias_1(rc, &config);
