@@ -79,7 +79,7 @@ typedef enum cyaml_type {
 	CYAML_MAPPING,
 	/**
 	 * Value is a bit field.  Values of this type require an array of value
-	 * definititions in the schema entry.  If the bitfield is used to store
+	 * definitions in the schema entry.  If the bitfield is used to store
 	 * only single-bit flags, it may be better to use \ref CYAML_FLAGS
 	 * instead.
 	 *
@@ -306,7 +306,7 @@ typedef struct cyaml_schema_value {
 		} mapping;
 		/** \ref CYAML_BITFIELD type-specific schema data. */
 		struct {
-			/** Array of bit defintiions for the bitfield. */
+			/** Array of bit definitions for the bitfield. */
 			const struct cyaml_bitdef *bitdefs;
 			/** Entry count for bitdefs array. */
 			uint32_t count;
@@ -457,7 +457,7 @@ typedef enum cyaml_cfg_flags {
 /**
  * CYAML function return codes indicating success or reason for failure.
  *
- * Use \ref cyaml_strerror() to convert and error code to a human-readable
+ * Use \ref cyaml_strerror() to convert an error code to a human-readable
  * string.
  */
 typedef enum cyaml_err {
