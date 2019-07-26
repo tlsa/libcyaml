@@ -33,6 +33,7 @@ arranged in memory.
   conform to your schema.
 * Uses standard [`libyaml`](https://github.com/yaml/libyaml) library for
   low-level YAML read / write.
+* Support for YAML aliases and anchors.
 
 Status
 ------
