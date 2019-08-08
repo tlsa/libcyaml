@@ -79,7 +79,7 @@ typedef enum cyaml_type {
 	CYAML_MAPPING,
 	/**
 	 * Value is a bit field.  Values of this type require an array of value
-	 * definititions in the schema entry.  If the bitfield is used to store
+	 * definitions in the schema entry.  If the bitfield is used to store
 	 * only single-bit flags, it may be better to use \ref CYAML_FLAGS
 	 * instead.
 	 *
@@ -306,7 +306,7 @@ typedef struct cyaml_schema_value {
 		} mapping;
 		/** \ref CYAML_BITFIELD type-specific schema data. */
 		struct {
-			/** Array of bit defintiions for the bitfield. */
+			/** Array of bit definitions for the bitfield. */
 			const struct cyaml_bitdef *bitdefs;
 			/** Entry count for bitdefs array. */
 			uint32_t count;
@@ -452,21 +452,34 @@ typedef enum cyaml_cfg_flags {
 	 * By default, strings are compared with case sensitivity.
 	 */
 	CYAML_CFG_CASE_INSENSITIVE    = (1 << 4),
+	/**
+	 * When loading, don't allow YAML aliases in the document.
+	 *
+	 * If this option is enabled, anchors will be ignored, and the
+	 * error code \ref CYAML_ERR_ALIAS will be returned if an alias
+	 * is encountered.
+	 *
+	 * Setting this removes the overhead of recording anchors, so
+	 * it may be worth setting if aliases are not required, and
+	 * memory is constrained.
+	 */
+	CYAML_CFG_NO_ALIAS            = (1 << 5),
 } cyaml_cfg_flags_t;
 
 /**
  * CYAML function return codes indicating success or reason for failure.
  *
- * Use \ref cyaml_strerror() to convert and error code to a human-readable
+ * Use \ref cyaml_strerror() to convert an error code to a human-readable
  * string.
  */
 typedef enum cyaml_err {
 	CYAML_OK,                        /**< Success. */
 	CYAML_ERR_OOM,                   /**< Memory allocation failed. */
-	CYAML_ERR_ALIAS,                 /**< YAML alias is unsupported. */
+	CYAML_ERR_ALIAS,                 /**< See \ref CYAML_CFG_NO_ALIAS. */
 	CYAML_ERR_FILE_OPEN,             /**< Failed to open file. */
 	CYAML_ERR_INVALID_KEY,           /**< Mapping key rejected by schema. */
 	CYAML_ERR_INVALID_VALUE,         /**< Value rejected by schema. */
+	CYAML_ERR_INVALID_ALIAS,         /**< No anchor found for alias. */
 	CYAML_ERR_INTERNAL_ERROR,        /**< Internal error in LibCYAML. */
 	CYAML_ERR_UNEXPECTED_EVENT,      /**< YAML event rejected by schema. */
 	CYAML_ERR_STRING_LENGTH_MIN,     /**< String length too short. */

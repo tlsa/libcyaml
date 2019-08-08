@@ -29,6 +29,24 @@
 #define CYAML_SCHEMA_IDX_NONE 0xffff
 
 /**
+ * CYAML events.  These correspond to `libyaml` events.
+ */
+typedef enum cyaml_event {
+	CYAML_EVT_NO_EVENT   = YAML_NO_EVENT,
+	CYAML_EVT_STRM_START = YAML_STREAM_START_EVENT,
+	CYAML_EVT_STRM_END   = YAML_STREAM_END_EVENT,
+	CYAML_EVT_DOC_START  = YAML_DOCUMENT_START_EVENT,
+	CYAML_EVT_DOC_END    = YAML_DOCUMENT_END_EVENT,
+	CYAML_EVT_ALIAS      = YAML_ALIAS_EVENT,
+	CYAML_EVT_SCALAR     = YAML_SCALAR_EVENT,
+	CYAML_EVT_SEQ_START  = YAML_SEQUENCE_START_EVENT,
+	CYAML_EVT_SEQ_END    = YAML_SEQUENCE_END_EVENT,
+	CYAML_EVT_MAP_START  = YAML_MAPPING_START_EVENT,
+	CYAML_EVT_MAP_END    = YAML_MAPPING_END_EVENT,
+	CYAML_EVT__COUNT,
+} cyaml_event_t;
+
+/**
  * A CYAML load state machine stack entry.
  */
 typedef struct cyaml_state {
@@ -65,10 +83,69 @@ typedef struct cyaml_state {
 } cyaml_state_t;
 
 /**
+ * Anchor data.
+ *
+ * This is used to track the progress of recording the anchor's events, and then
+ * the data is referenced during replay.
+ */
+typedef struct cyaml_anchor {
+	char *name;     /**< Anchor name. */
+	uint32_t start; /**< Index into \ref cyaml_event_ctx_t events array. */
+	uint32_t end;   /**< Index into \ref cyaml_event_ctx_t events array. */
+	bool recording; /**< Whether the anchor is being actively recorded. */
+} cyaml_anchor_t;
+
+/**
+ * Event recording context.
+ *
+ * This records anchor details, and any anchored events.  A stack of
+ * events is maintained to keep track of matching start/end events, in
+ * order to end anchor recordings with the correct end event.
+ */
+typedef struct cyaml_event_record {
+	cyaml_anchor_t *anchors; /**< Array of anchor details or NULL. */
+	yaml_event_t *data;      /**< Array of anchor-referenced events. */
+	uint32_t *events;        /**< Array of event data indices. */
+	uint32_t *stack;         /**< Stack of start event array indices. */
+	uint32_t anchors_count;  /**< Number of anchor details in `anchors`. */
+	uint32_t events_count;   /**< Number of events in events array. */
+	uint32_t stack_count;    /**< Number of entries in the event stack. */
+	uint32_t data_count;     /**< Number of recorded libyaml events. */
+	/**
+	 * Number of anchors we're actively recording events for.
+	 */
+	uint32_t recording_count;
+} cyaml_event_record_t;
+
+/**
+ * Event replay context.
+ */
+typedef struct cyaml_event_replay {
+	bool active;         /**< Whether there's an active replay. */
+	uint32_t anchor_idx; /**< The recorded anchor data to replay. */
+	uint32_t event_idx;  /**< Current recorded event index during replay. */
+} cyaml_event_replay_t;
+
+/**
+ * CYAML's LibYAML event context.
+ *
+ * Only \ref cyaml_get_next_event and friends should poke around inside here.
+ * Everything else should use \ref cyaml__current_event to access the current
+ * event data, and call \ref cyaml_get_next_event to pump the event stream.
+ */
+typedef struct cyaml_event_ctx {
+	bool have_event;    /**< Whether event is currently populated. */
+	yaml_event_t event; /**< Current event. */
+	cyaml_event_record_t record; /**< Event recording context. */
+	cyaml_event_replay_t replay; /**< Event replaying context. */
+} cyaml_event_ctx_t;
+
+/**
  * Internal YAML loading context.
  */
 typedef struct cyaml_ctx {
 	const cyaml_config_t *config; /**< Settings provided by client. */
+	cyaml_event_ctx_t event_ctx;  /**< Our LibYAML event context. */
 	cyaml_state_t *state;   /**< Current entry in state stack, or NULL. */
 	cyaml_state_t *stack;   /**< State stack */
 	uint32_t stack_idx;     /**< Next (empty) state stack slot */
@@ -76,24 +153,6 @@ typedef struct cyaml_ctx {
 	unsigned seq_count;     /**< Top-level sequence count. */
 	yaml_parser_t *parser;  /**< Internal libyaml parser object. */
 } cyaml_ctx_t;
-
-/**
- * CYAML events.  These correspond to `libyaml` events.
- */
-typedef enum cyaml_event {
-	CYAML_EVT_NO_EVENT   = YAML_NO_EVENT,
-	CYAML_EVT_STRM_START = YAML_STREAM_START_EVENT,
-	CYAML_EVT_STRM_END   = YAML_STREAM_END_EVENT,
-	CYAML_EVT_DOC_START  = YAML_DOCUMENT_START_EVENT,
-	CYAML_EVT_DOC_END    = YAML_DOCUMENT_END_EVENT,
-	CYAML_EVT_ALIAS      = YAML_ALIAS_EVENT,
-	CYAML_EVT_SCALAR     = YAML_SCALAR_EVENT,
-	CYAML_EVT_SEQ_START  = YAML_SEQUENCE_START_EVENT,
-	CYAML_EVT_SEQ_END    = YAML_SEQUENCE_END_EVENT,
-	CYAML_EVT_MAP_START  = YAML_MAPPING_START_EVENT,
-	CYAML_EVT_MAP_END    = YAML_MAPPING_END_EVENT,
-	CYAML_EVT__COUNT,
-} cyaml_event_t;
 
 /**
  * Get the CYAML event type from a `libyaml` event.
@@ -131,35 +190,537 @@ static const char * cyaml__libyaml_event_type_str(const yaml_event_t *event)
 }
 
 /**
- * Helper function to read the next YAML input event.
+ * Get the anchor name for an event, or NULL if the event isn't an anchor.
+ *
+ * \param[in]  event  The `libyaml` event.
+ * \return String representing event's anchor, or NULL.
+ */
+static const char * cyaml__get_yaml_event_anchor(const yaml_event_t *event)
+{
+	switch (cyaml__get_event_type(event)) {
+	case CYAML_EVT_SCALAR:
+		return (const char *)event->data.scalar.anchor;
+	case CYAML_EVT_MAP_START:
+		return (const char *)event->data.mapping_start.anchor;
+	case CYAML_EVT_SEQ_START:
+		return (const char *)event->data.sequence_start.anchor;
+	default:
+		return NULL;
+	}
+}
+
+/**
+ * Get the anchor name for an alias event.
+ *
+ * \param[in]  event  The `libyaml` event.
+ * \return String representing event's aliased anchor name.
+ */
+static const char * cyaml__get_yaml_event_alias(const yaml_event_t *event)
+{
+	assert(cyaml__get_event_type(event) == CYAML_EVT_ALIAS);
+	assert(event->data.alias.anchor != NULL);
+
+	return (const char *)event->data.alias.anchor;
+}
+
+/**
+ * Handle an alias event.
+ *
+ * This searches the know anchors for a match.  If a matching anchor is found,
+ * it sets the replay context up to play back the recorded events associated
+ * with the anchor, setting the replay state to active.
+ *
+ * \param[in]  ctx    The CYAML loading context.
+ * \param[in]  event  The `libyaml` event.
+ * \return \ref CYAML_OK on success, or appropriate error otherwise.
+ */
+static cyaml_err_t cyaml__handle_alias(
+		cyaml_ctx_t *ctx,
+		const yaml_event_t *event)
+{
+	uint32_t anchor_idx;
+	cyaml_event_ctx_t *e_ctx = &ctx->event_ctx;
+	cyaml_event_replay_t *replay = &e_ctx->replay;
+	const cyaml_event_record_t *record = &e_ctx->record;
+	const char *alias = cyaml__get_yaml_event_alias(event);
+
+	anchor_idx = record->anchors_count;
+	for (uint32_t i = 0; i < record->anchors_count; i++) {
+		if (record->anchors[i].recording == false &&
+		    strcmp(record->anchors[i].name, alias) == 0) {
+			anchor_idx = i;
+		}
+	}
+
+	if (anchor_idx >= record->anchors_count) {
+		cyaml__log(ctx->config, CYAML_LOG_ERROR,
+				"Load: No anchor found for alias: '%s'\n",
+				alias);
+		return CYAML_ERR_INVALID_ALIAS;
+	}
+
+	cyaml__log(ctx->config, CYAML_LOG_INFO,
+			"Load: Found alias for anchor: '%s'\n", alias);
+
+	replay->active = true;
+	replay->anchor_idx = anchor_idx;
+	replay->event_idx = record->anchors[anchor_idx].start;
+
+	return CYAML_OK;
+}
+
+/**
+ * Handle an event that establishes an anchor.
+ *
+ * This should not be called while replaying recorded events, or it will
+ * try to rebuild anchors we already have.
+ *
+ * This is a no-op if the event doesn't establish an anchor.  If the event does
+ * create an anchor, an anchor entry is added to the recording context.
+ *
+ * \param[in]   ctx    The CYAML loading context.
+ * \param[in]   event  The `libyaml` event to handle any anchor for.
+ * \param[out]  is_anchor_out  Returns whether the event creates an anchor.
+ * \return \ref CYAML_OK on success, or appropriate error otherwise.
+ */
+static cyaml_err_t cyaml__handle_anchor(
+		cyaml_ctx_t *ctx,
+		const yaml_event_t *event,
+		bool *is_anchor_out)
+{
+	bool recording;
+	size_t anchors_size;
+	uint32_t anchors_count;
+	const char *anchor_name;
+	cyaml_anchor_t *anchors;
+	cyaml_event_ctx_t *e_ctx = &ctx->event_ctx;
+	cyaml_event_record_t *record = &e_ctx->record;
+
+	anchor_name = cyaml__get_yaml_event_anchor(event);
+	if (anchor_name == NULL) {
+		*is_anchor_out = false;
+		return CYAML_OK;
+	}
+
+	cyaml__log(ctx->config, CYAML_LOG_INFO,
+			"Load: Found anchor: '%s'\n", anchor_name);
+
+	anchors_count = record->anchors_count;
+	anchors_size = anchors_count * sizeof(*anchors);
+	anchors = cyaml__realloc(ctx->config, record->anchors,
+			anchors_size, anchors_size + sizeof(*anchors),
+			true);
+	if (anchors == NULL) {
+		return CYAML_ERR_OOM;
+	}
+
+	recording = cyaml__get_event_type(event) == CYAML_EVT_SEQ_START ||
+	            cyaml__get_event_type(event) == CYAML_EVT_MAP_START;
+
+	record->anchors_count++;
+	record->anchors = anchors;
+	record->recording_count += recording;
+
+	anchors[anchors_count].recording = recording;
+	anchors[anchors_count].start = record->events_count;
+	anchors[anchors_count].end = record->events_count;
+	anchors[anchors_count].name = cyaml__strdup(ctx->config, anchor_name);
+	if (anchors[anchors_count].name == NULL) {
+		return CYAML_ERR_OOM;
+	}
+
+	*is_anchor_out = true;
+	return CYAML_OK;
+}
+
+/**
+ * Push a recording stack context entry.
+ *
+ * \param[in] ctx          The CYAML loading context.
+ * \param[in] event_index  The current event's index in the recording.
+ * \return \ref CYAML_OK on success, or appropriate error otherwise.
+ */
+static cyaml_err_t cyaml__record_stack_push(
+		cyaml_ctx_t *ctx,
+		uint32_t event_index)
+{
+	uint32_t *stack;
+	size_t stack_size;
+	uint32_t stack_count;
+	cyaml_event_ctx_t *e_ctx = &ctx->event_ctx;
+	cyaml_event_record_t *record = &e_ctx->record;
+
+	stack_count = record->stack_count;
+	stack_size = stack_count * sizeof(*stack);
+	stack = cyaml__realloc(ctx->config, record->stack,
+			stack_size, stack_size + sizeof(*stack), true);
+	if (stack == NULL) {
+		return CYAML_ERR_OOM;
+	}
+	record->stack = stack;
+	record->stack_count++;
+
+	stack[stack_count] = event_index;
+
+	cyaml__log(ctx->config, CYAML_LOG_DEBUG,
+			"Load:   Push recording stack entry for %s\n",
+			cyaml__libyaml_event_type_str(
+				&record->data[record->events[event_index]]));
+
+	return CYAML_OK;
+}
+
+/**
+ * Pop a recording stack context entry.
+ *
+ * Any actively recording anchors are checked, and if this event
+ * ends the anchor, the anchor recording is terminated.
+ *
+ * \param[in] ctx          The CYAML loading context.
+ * \param[in] event_index  The current event's index in the recording.
+ */
+static void cyaml__record_stack_pop(
+		cyaml_ctx_t *ctx,
+		uint32_t event_index)
+{
+	uint32_t stack;
+	cyaml_event_ctx_t *e_ctx = &ctx->event_ctx;
+	cyaml_event_record_t *record = &e_ctx->record;
+
+	assert(record->stack_count > 0);
+
+	stack = record->stack[record->stack_count - 1];
+	for (uint32_t i = 0; i < record->anchors_count; i++) {
+		if (!record->anchors[i].recording) {
+			continue;
+		}
+
+		if (record->anchors[i].start != stack) {
+			continue;
+		}
+
+		record->anchors[i].recording = false;
+		record->recording_count--;
+
+		cyaml__log(ctx->config, CYAML_LOG_DEBUG,
+				"Load:   Finish recording events for '%s'\n",
+				record->anchors[i].name);
+	}
+
+	record->stack_count--;
+	cyaml__log(ctx->config, CYAML_LOG_DEBUG,
+			"Load:   Pop recording stack entry for %s\n",
+			cyaml__libyaml_event_type_str(
+				&record->data[record->events[event_index]]));
+}
+
+/**
+ * Update the anchor data in the recording context.
+ *
+ * \param[in] ctx          The CYAML loading context.
+ * \param[in] event_index  The current event's index in the recording.
+ * \param[in] event        The `libyaml` event to fill from the recording.
+ * \return \ref CYAML_OK on success, or appropriate error otherwise.
+ */
+static cyaml_err_t cyaml__update_anchor_recordings(
+		cyaml_ctx_t *ctx,
+		uint32_t event_index,
+		const yaml_event_t *event)
+{
+	cyaml_err_t err;
+	cyaml_event_ctx_t *e_ctx = &ctx->event_ctx;
+	cyaml_event_record_t *record = &e_ctx->record;
+
+	for (uint32_t i = 0; i < record->anchors_count; i++) {
+		if (!record->anchors[i].recording) {
+			continue;
+		}
+		if (record->anchors[i].start == event_index) {
+			continue;
+		}
+
+		record->anchors[i].end++;
+		cyaml__log(ctx->config, CYAML_LOG_DEBUG,
+				"Load:   Update '%s' end to index %"PRIu32"\n",
+				record->anchors[i].name,
+				record->anchors[i].end);
+	}
+
+	switch (cyaml__get_event_type(event)) {
+	case CYAML_EVT_SEQ_START: /* Fall through. */
+	case CYAML_EVT_MAP_START:
+		err = cyaml__record_stack_push(ctx, event_index);
+		if (err != CYAML_OK) {
+			return err;
+		}
+		break;
+	case CYAML_EVT_SEQ_END: /* Fall through. */
+	case CYAML_EVT_MAP_END:
+		cyaml__record_stack_pop(ctx, event_index);
+		break;
+	default:
+		break;
+	}
+
+	return CYAML_OK;
+}
+
+/**
+ * Handle the recording of the current event.
+ *
+ * \param[in] ctx                 The CYAML loading context.
+ * \param[in] event               The `libyaml` to record.
+ * \param[in] replayed_event      Whether this event is a replay.
+ * \param[in] replay_event_index  Index in events array of replayed event.
+ * \return \ref CYAML_OK on success, or appropriate error otherwise.
+ */
+static cyaml_err_t cyaml__handle_record(
+		cyaml_ctx_t *ctx,
+		const yaml_event_t *event,
+		bool replayed_event,
+		uint32_t replay_event_index)
+{
+	uint32_t *events;
+	size_t events_size;
+	uint32_t event_index;
+	uint32_t events_count;
+	cyaml_event_ctx_t *e_ctx = &ctx->event_ctx;
+	cyaml_event_record_t *record = &e_ctx->record;
+
+	if (replayed_event) {
+		if (e_ctx->record.recording_count == 0) {
+			return CYAML_OK;
+		}
+
+		event_index = record->events[replay_event_index];
+	} else {
+		size_t data_size;
+		yaml_event_t *data;
+		uint32_t data_count;
+		bool event_has_anchor = false;
+
+		/* We've not already seen this event, so if it creates an
+		 * anchor then we need to record it. */
+		cyaml_err_t err = cyaml__handle_anchor(ctx, event,
+				&event_has_anchor);
+		if (err != CYAML_OK) {
+			return err;
+		}
+
+		if (e_ctx->record.recording_count == 0 &&
+				event_has_anchor == false) {
+			return CYAML_OK;
+		}
+
+		/* Record event data. */
+		data_count = record->data_count;
+		data_size = data_count * sizeof(*data);
+		data = cyaml__realloc(ctx->config, record->data,
+				data_size, data_size + sizeof(*data),
+				true);
+		if (data == NULL) {
+			return CYAML_ERR_OOM;
+		}
+		record->data = data;
+		record->data_count++;
+
+		memcpy(data + data_count, event, sizeof(*data));
+		e_ctx->have_event = false;
+		event_index = data_count;
+	}
+
+	/* Record event data index.  Multiple event data indexes can
+	 * reference the same event data, due to replaying of events. */
+	events_count = record->events_count;
+	events_size = events_count * sizeof(*events);
+	events = cyaml__realloc(ctx->config, record->events,
+			events_size, events_size + sizeof(*events),
+			true);
+	if (events == NULL) {
+		return CYAML_ERR_OOM;
+	}
+	record->events = events;
+	record->events_count++;
+
+	cyaml__log(ctx->config, CYAML_LOG_DEBUG,
+		"Load:   Record event data %"PRIu32" at index %"PRIu32"\n",
+		event_index, events_count);
+
+	events[events_count] = event_index;
+
+	return cyaml__update_anchor_recordings(ctx, events_count, event);
+}
+
+/**
+ * Handle the current event replay.
+ *
+ * There must be an active replay before this is called.  If this call
+ * yields the final event of the anchor, the replay state is disabled.
+ *
+ * \param[in]  ctx              The CYAML loading context.
+ * \param[out] event_out        The `libyaml` event to fill from the recording.
+ * \param[out] event_index_out  The index in events array of the replayed event.
+ */
+static void cyaml__handle_replay(
+		cyaml_ctx_t *ctx,
+		yaml_event_t *event_out,
+		uint32_t *event_index_out)
+{
+	uint32_t event_index;
+	cyaml_event_ctx_t *e_ctx = &ctx->event_ctx;
+	cyaml_event_replay_t *replay = &e_ctx->replay;
+	const cyaml_event_record_t *record = &e_ctx->record;
+	const yaml_event_t *replay_event = record->data +
+			record->events[replay->event_idx];
+	const cyaml_anchor_t *replay_anchor = record->anchors +
+			replay->anchor_idx;
+
+	assert(replay->active);
+
+	event_index = replay->event_idx;
+	cyaml__log(ctx->config, CYAML_LOG_DEBUG,
+			"Load: Replaying event idx %"PRIu32": "
+			"event data: %"PRIu32"\n",
+			event_index, record->events[event_index]);
+
+	if (event_index == replay_anchor->end) {
+		replay->active = false;
+
+		cyaml__log(ctx->config, CYAML_LOG_DEBUG,
+				"Load: Finishing handling of alias: '%s'\n",
+				replay_anchor->name);
+	} else {
+		replay->event_idx++;
+	}
+
+	memcpy(event_out, replay_event, sizeof(*event_out));
+	*event_index_out = event_index;
+}
+
+/**
+ * Delete any current event from the load context.
  *
  * This gets the next event from the CYAML load context's `libyaml` parser
  * object.
  *
  * \param[in]  ctx    The CYAML loading context.
- * \param[out] event  On success, returns the new event.
+ * \return \ref CYAML_OK on success, or appropriate error otherwise.
+ */
+static void cyaml__delete_yaml_event(
+		cyaml_ctx_t *ctx)
+{
+	if (ctx->event_ctx.have_event) {
+		yaml_event_delete(&ctx->event_ctx.event);
+		ctx->event_ctx.have_event = false;
+	}
+}
+
+/**
+ * Free any recordings from the CYAML loading context.
+ *
+ * \param[in]  ctx    The CYAML loading context.
+ */
+static void cyaml__free_recording(
+		cyaml_ctx_t *ctx)
+{
+	cyaml_event_ctx_t *e_ctx = &ctx->event_ctx;
+	cyaml_event_record_t *record = &e_ctx->record;
+
+	for (uint32_t i = 0; i < record->anchors_count; i++) {
+		cyaml__free(ctx->config, record->anchors[i].name);
+	}
+	cyaml__free(ctx->config, record->anchors);
+
+	for (uint32_t i = 0; i < record->data_count; i++) {
+		yaml_event_delete(&record->data[i]);
+	}
+	cyaml__free(ctx->config, record->events);
+	cyaml__free(ctx->config, record->stack);
+	cyaml__free(ctx->config, record->data);
+}
+
+/**
+ * Helper function to read the next YAML input event into the context.
+ *
+ * This handles recording the events associated with anchors, and replaying
+ * them when an alias event references a valid anchor.  If we are not replaying
+ * anchored events, this gets the next event from the CYAML load context's
+ * `libyaml` parser  object.
+ *
+ * Any existing event in the load context is deleted first.
+ *
+ * Callers do not always need to delete the previous event from the context
+ * before calling this function.  However, after the final call, when cleaning
+ * up the context, any event must be deleted with a single call to \ref
+ * cyaml__delete_yaml_event.
+ *
+ * \param[in]  ctx    The CYAML loading context.
  * \return \ref CYAML_OK on success, or appropriate error otherwise.
  */
 static cyaml_err_t cyaml_get_next_event(
-		const cyaml_ctx_t *ctx,
-		yaml_event_t *event)
+		cyaml_ctx_t *ctx)
 {
-	if (!yaml_parser_parse(ctx->parser, event)) {
-		cyaml__log(ctx->config, CYAML_LOG_ERROR,
-				"Load: libyaml: %s\n", ctx->parser->problem);
-		return CYAML_ERR_LIBYAML_PARSER;
+	cyaml_event_ctx_t *e_ctx = &ctx->event_ctx;
+	yaml_event_t *event = &e_ctx->event;
+	uint32_t replay_event_index = 0;
+	bool replayed_event = false;
+	cyaml_err_t err;
+
+	cyaml__delete_yaml_event(ctx);
+
+	if (!e_ctx->replay.active) {
+		if (!yaml_parser_parse(ctx->parser, event)) {
+			cyaml__log(ctx->config, CYAML_LOG_ERROR,
+					"Load: libyaml: %s\n",
+					ctx->parser->problem);
+			return CYAML_ERR_LIBYAML_PARSER;
+		}
+		e_ctx->have_event = true;
+
+		if (event->type == YAML_ALIAS_EVENT) {
+			if (ctx->config->flags & CYAML_CFG_NO_ALIAS) {
+				return CYAML_ERR_ALIAS;
+			} else {
+				err = cyaml__handle_alias(ctx, event);
+				if (err != CYAML_OK) {
+					return err;
+				}
+			}
+
+			cyaml__delete_yaml_event(ctx);
+		}
 	}
 
-	if (event->type == YAML_ALIAS_EVENT) {
-		/** \todo Add support for alias? */
-		yaml_event_delete(event);
-		return CYAML_ERR_ALIAS;
+	if (e_ctx->replay.active) {
+		cyaml__handle_replay(ctx, event, &replay_event_index);
+		replayed_event = true;
 	}
 
 	cyaml__log(ctx->config, CYAML_LOG_DEBUG, "Load: Event: %s\n",
 			cyaml__libyaml_event_type_str(event));
 
-	return CYAML_OK;
+	if (ctx->config->flags & CYAML_CFG_NO_ALIAS) {
+		return CYAML_OK;
+	}
+
+	return cyaml__handle_record(ctx, event, replayed_event,
+			replay_event_index);
+}
+
+/**
+ * Get a pointer to the load context's current event.
+ *
+ * The outside world should use this to get the address of the event data,
+ * which will not change for subsequent events.  The event should only be used
+ * after \ref cyaml_get_next_event() has returned \ref CYAML_OK.
+ *
+ * \param[in]  ctx    The CYAML loading context.
+ * \return \ref CYAML_OK on success, or appropriate error otherwise.
+ */
+static inline const yaml_event_t * cyaml__current_event(
+		const cyaml_ctx_t *ctx)
+{
+	return &ctx->event_ctx.event;
 }
 
 /**
@@ -944,7 +1505,7 @@ static cyaml_err_t cyaml__read_scalar_value(
 		const cyaml_ctx_t *ctx,
 		const cyaml_schema_value_t *schema,
 		cyaml_data_t *data,
-		yaml_event_t *event)
+		const yaml_event_t *event)
 {
 	const char *value = (const char *)event->data.scalar.value;
 	typedef cyaml_err_t (*cyaml_read_scalar_fn)(
@@ -1032,8 +1593,8 @@ static cyaml_err_t cyaml__read_flags_value(
 {
 	bool exit = false;
 	uint64_t value = 0;
-	yaml_event_t event;
 	cyaml_err_t err = CYAML_OK;
+	const yaml_event_t *const event = cyaml__current_event(ctx);
 
 	if (schema->data_size == 0) {
 		return CYAML_ERR_INVALID_DATA_SIZE;
@@ -1041,19 +1602,18 @@ static cyaml_err_t cyaml__read_flags_value(
 
 	while (!exit) {
 		cyaml_event_t cyaml_event;
-		err = cyaml_get_next_event(ctx, &event);
+		err = cyaml_get_next_event(ctx);
 		if (err != CYAML_OK) {
 			return err;
 		}
-		cyaml_event = cyaml__get_event_type(&event);
+		cyaml_event = cyaml__get_event_type(event);
 
 		switch (cyaml_event) {
 		case CYAML_EVT_SCALAR:
 			err = cyaml__set_flag(ctx, schema,
-					(const char *)event.data.scalar.value,
+					(const char *)event->data.scalar.value,
 					&value);
 			if (err != CYAML_OK) {
-				yaml_event_delete(&event);
 				return err;
 			}
 			break;
@@ -1061,11 +1621,8 @@ static cyaml_err_t cyaml__read_flags_value(
 			exit = true;
 			break;
 		default:
-			yaml_event_delete(&event);
 			return CYAML_ERR_UNEXPECTED_EVENT;
 		}
-
-		yaml_event_delete(&event);
 	}
 
 	err = cyaml_data_write(value, schema->data_size, data);
@@ -1092,13 +1649,13 @@ static cyaml_err_t cyaml__read_flags_value(
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
 static cyaml_err_t cyaml__set_bitval(
-		const cyaml_ctx_t *ctx,
+		cyaml_ctx_t *ctx,
 		const cyaml_schema_value_t *schema,
 		const char *name,
 		uint64_t *bits_out)
 {
+	const yaml_event_t *const event = cyaml__current_event(ctx);
 	const cyaml_bitdef_t *bitdef = schema->bitfield.bitdefs;
-	yaml_event_t event;
 	cyaml_err_t err;
 	uint64_t value;
 	uint64_t mask;
@@ -1120,22 +1677,20 @@ static cyaml_err_t cyaml__set_bitval(
 		return CYAML_ERR_INVALID_VALUE;
 	}
 
-	err = cyaml_get_next_event(ctx, &event);
+	err = cyaml_get_next_event(ctx);
 	if (err != CYAML_OK) {
 		return err;
 	}
 
-	switch (cyaml__get_event_type(&event)) {
+	switch (cyaml__get_event_type(event)) {
 	case CYAML_EVT_SCALAR:
 		err = cyaml__read_uint64_t(
-				(const char *)event.data.scalar.value, &value);
-		yaml_event_delete(&event);
+				(const char *)event->data.scalar.value, &value);
 		if (err != CYAML_OK) {
 			return err;
 		}
 		break;
 	default:
-		yaml_event_delete(&event);
 		return CYAML_ERR_UNEXPECTED_EVENT;
 	}
 
@@ -1168,23 +1723,22 @@ static cyaml_err_t cyaml__read_bitfield_value(
 {
 	bool exit = false;
 	uint64_t value = 0;
-	yaml_event_t event;
 	cyaml_err_t err = CYAML_OK;
+	const yaml_event_t *const event = cyaml__current_event(ctx);
 
 	while (!exit) {
 		cyaml_event_t cyaml_event;
-		err = cyaml_get_next_event(ctx, &event);
+		err = cyaml_get_next_event(ctx);
 		if (err != CYAML_OK) {
 			return err;
 		}
-		cyaml_event = cyaml__get_event_type(&event);
+		cyaml_event = cyaml__get_event_type(event);
 		switch (cyaml_event) {
 		case CYAML_EVT_SCALAR:
 			err = cyaml__set_bitval(ctx, schema,
-					(const char *)event.data.scalar.value,
+					(const char *)event->data.scalar.value,
 					&value);
 			if (err != CYAML_OK) {
-				yaml_event_delete(&event);
 				return err;
 			}
 			break;
@@ -1192,11 +1746,8 @@ static cyaml_err_t cyaml__read_bitfield_value(
 			exit = true;
 			break;
 		default:
-			yaml_event_delete(&event);
 			return CYAML_ERR_UNEXPECTED_EVENT;
 		}
-
-		yaml_event_delete(&event);
 	}
 
 	err = cyaml_data_write(value, schema->data_size, data);
@@ -1240,13 +1791,14 @@ static cyaml_err_t cyaml__consume_ignored_value(
 
 		while (level > 0) {
 			cyaml_err_t err;
-			yaml_event_t event;
+			const yaml_event_t *const event =
+					cyaml__current_event(ctx);
 
-			err = cyaml_get_next_event(ctx, &event);
+			err = cyaml_get_next_event(ctx);
 			if (err != CYAML_OK) {
 				return err;
 			}
-			switch (cyaml__get_event_type(&event)) {
+			switch (cyaml__get_event_type(event)) {
 			case CYAML_EVT_SEQ_START: /* Fall through */
 			case CYAML_EVT_MAP_START:
 				level++;
@@ -1260,7 +1812,6 @@ static cyaml_err_t cyaml__consume_ignored_value(
 			default:
 				break;
 			}
-			yaml_event_delete(&event);
 		}
 	}
 
@@ -1280,7 +1831,7 @@ static cyaml_err_t cyaml__read_value(
 		cyaml_ctx_t *ctx,
 		const cyaml_schema_value_t *schema,
 		uint8_t *data,
-		yaml_event_t *event)
+		const yaml_event_t *event)
 {
 	cyaml_event_t cyaml_event = cyaml__get_event_type(event);
 	cyaml_err_t err = CYAML_OK;
@@ -1362,7 +1913,7 @@ static cyaml_err_t cyaml__read_value(
  */
 static cyaml_err_t cyaml__stream_start(
 		cyaml_ctx_t *ctx,
-		yaml_event_t *event)
+		const yaml_event_t *event)
 {
 	CYAML_UNUSED(event);
 	return cyaml__stack_push(ctx, CYAML_STATE_IN_STREAM,
@@ -1378,7 +1929,7 @@ static cyaml_err_t cyaml__stream_start(
  */
 static cyaml_err_t cyaml__doc_start(
 		cyaml_ctx_t *ctx,
-		yaml_event_t *event)
+		const yaml_event_t *event)
 {
 	CYAML_UNUSED(event);
 	if (ctx->state->stream.doc_count == 1) {
@@ -1401,7 +1952,7 @@ static cyaml_err_t cyaml__doc_start(
  */
 static cyaml_err_t cyaml__stream_end(
 		cyaml_ctx_t *ctx,
-		yaml_event_t *event)
+		const yaml_event_t *event)
 {
 	CYAML_UNUSED(event);
 	cyaml__stack_pop(ctx);
@@ -1417,7 +1968,7 @@ static cyaml_err_t cyaml__stream_end(
  */
 static cyaml_err_t cyaml__doc_root_value(
 		cyaml_ctx_t *ctx,
-		yaml_event_t *event)
+		const yaml_event_t *event)
 {
 	return cyaml__read_value(ctx, ctx->state->schema,
 			ctx->state->data, event);
@@ -1432,7 +1983,7 @@ static cyaml_err_t cyaml__doc_root_value(
  */
 static cyaml_err_t cyaml__doc_end(
 		cyaml_ctx_t *ctx,
-		yaml_event_t *event)
+		const yaml_event_t *event)
 {
 	CYAML_UNUSED(event);
 	cyaml__stack_pop(ctx);
@@ -1449,7 +2000,7 @@ static cyaml_err_t cyaml__doc_end(
  */
 static cyaml_err_t cyaml__map_key(
 		cyaml_ctx_t *ctx,
-		yaml_event_t *event)
+		const yaml_event_t *event)
 {
 	const char *key;
 	cyaml_err_t err = CYAML_OK;
@@ -1460,7 +2011,8 @@ static cyaml_err_t cyaml__map_key(
 	cyaml__log(ctx->config, CYAML_LOG_INFO, "Load: [%s]\n", key);
 
 	if (ctx->state->mapping.schema_idx == CYAML_SCHEMA_IDX_NONE) {
-		yaml_event_t ignore_event;
+		const yaml_event_t *const ignore_event =
+				cyaml__current_event(ctx);
 		cyaml_event_t cyaml_event;
 		if (!(ctx->config->flags &
 				CYAML_CFG_IGNORE_UNKNOWN_KEYS)) {
@@ -1470,12 +2022,11 @@ static cyaml_err_t cyaml__map_key(
 		}
 		cyaml__log(ctx->config, CYAML_LOG_DEBUG,
 				"Load: Ignoring key: %s\n", key);
-		err = cyaml_get_next_event(ctx, &ignore_event);
+		err = cyaml_get_next_event(ctx);
 		if (err != CYAML_OK) {
 			return err;
 		}
-		cyaml_event = cyaml__get_event_type(&ignore_event);
-		yaml_event_delete(&ignore_event);
+		cyaml_event = cyaml__get_event_type(ignore_event);
 		return cyaml__consume_ignored_value(ctx, cyaml_event);
 	}
 	cyaml__mapping_bitfieid_set(ctx);
@@ -1495,7 +2046,7 @@ static cyaml_err_t cyaml__map_key(
  */
 static cyaml_err_t cyaml__map_end(
 		cyaml_ctx_t *ctx,
-		yaml_event_t *event)
+		const yaml_event_t *event)
 {
 	cyaml_err_t err;
 
@@ -1519,7 +2070,7 @@ static cyaml_err_t cyaml__map_end(
  */
 static cyaml_err_t cyaml__map_value(
 		cyaml_ctx_t *ctx,
-		yaml_event_t *event)
+		const yaml_event_t *event)
 {
 	cyaml_state_t *state = ctx->state;
 	const cyaml_schema_field_t *entry = cyaml_mapping_schema_field(ctx);
@@ -1544,7 +2095,7 @@ static cyaml_err_t cyaml__map_value(
  */
 static cyaml_err_t cyaml__seq_entry(
 		cyaml_ctx_t *ctx,
-		yaml_event_t *event)
+		const yaml_event_t *event)
 {
 	cyaml_err_t err;
 	cyaml_state_t *state = ctx->state;
@@ -1606,7 +2157,7 @@ static cyaml_err_t cyaml__seq_entry(
  */
 static cyaml_err_t cyaml__seq_end(
 		cyaml_ctx_t *ctx,
-		yaml_event_t *event)
+		const yaml_event_t *event)
 {
 	cyaml_state_t *state = ctx->state;
 
@@ -1676,12 +2227,12 @@ static inline cyaml_err_t cyaml__validate_load_params(
  */
 static inline cyaml_err_t cyaml__load_event(
 		cyaml_ctx_t *ctx,
-		yaml_event_t *event)
+		const yaml_event_t *event)
 {
 	cyaml_state_t *state = ctx->state;
 	typedef cyaml_err_t (* const cyaml_read_fn)(
 			cyaml_ctx_t *ctx,
-			yaml_event_t *event);
+			const yaml_event_t *event);
 	static const cyaml_read_fn fns[CYAML_STATE__COUNT][CYAML_EVT__COUNT] = {
 		[CYAML_STATE_START] = {
 			[CYAML_EVT_STRM_START] = cyaml__stream_start,
@@ -1768,15 +2319,14 @@ static cyaml_err_t cyaml__load(
 	}
 
 	do {
-		yaml_event_t event;
+		const yaml_event_t *const event = cyaml__current_event(&ctx);
 
-		err = cyaml_get_next_event(&ctx, &event);
+		err = cyaml_get_next_event(&ctx);
 		if (err != CYAML_OK) {
 			goto out;
 		}
 
-		err = cyaml__load_event(&ctx, &event);
-		yaml_event_delete(&event);
+		err = cyaml__load_event(&ctx, event);
 		if (err != CYAML_OK) {
 			goto out;
 		}
@@ -1799,6 +2349,8 @@ out:
 		cyaml__stack_pop(&ctx);
 	}
 	cyaml__free(config, ctx.stack);
+	cyaml__delete_yaml_event(&ctx);
+	cyaml__free_recording(&ctx);
 	return err;
 }
 

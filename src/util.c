@@ -84,6 +84,7 @@ const char * cyaml_strerror(
 		[CYAML_ERR_FILE_OPEN]             = "Could not open file",
 		[CYAML_ERR_INVALID_KEY]           = "Invalid key",
 		[CYAML_ERR_INVALID_VALUE]         = "Invalid value",
+		[CYAML_ERR_INVALID_ALIAS]         = "No anchor found for alias",
 		[CYAML_ERR_INTERNAL_ERROR]        = "Internal error",
 		[CYAML_ERR_UNEXPECTED_EVENT]      = "Unexpected event",
 		[CYAML_ERR_STRING_LENGTH_MIN]     = "String length too short",

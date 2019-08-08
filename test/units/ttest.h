@@ -141,15 +141,17 @@ static inline bool ttest_fail(
 	assert(tc != NULL);
 	assert(tc->report != NULL);
 
-	if (tc->cleanup != NULL) {
-		tc->cleanup(tc->cleanup_data);
-	}
-
 	fprintf(stderr, "  FAIL: %s (", tc->name);
 	va_start(args, reason);
 	vfprintf(stderr, reason, args);
 	va_end(args);
 	fprintf(stderr, ")\n");
+
+	/* Cleanup after printing result, in case `reason` refers to cleaned up
+	 * memory. */
+	if (tc->cleanup != NULL) {
+		tc->cleanup(tc->cleanup_data);
+	}
 
 	return false;
 }
