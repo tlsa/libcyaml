@@ -89,7 +89,7 @@ static bool test_util_strdup(
 		return ttest_fail(&tc, "Memory allocation failed.");
 	}
 
-	/* Check allocation was zeroed. */
+	/* Confirm string duplication. */
 	if (strcmp(orig, copy) != 0) {
 		return ttest_fail(&tc, "String not copied correctly.");
 	}
