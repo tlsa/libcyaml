@@ -1324,22 +1324,22 @@ cyaml_err_t cyaml_save_file(
 	cyaml_err_t err;
 	yaml_emitter_t emitter;
 
-	/* Initialize parser */
+	/* Initialize emitter */
 	if (!yaml_emitter_initialize(&emitter)) {
 		return CYAML_ERR_LIBYAML_EMITTER_INIT;
 	}
 
-	/* Open input file. */
+	/* Open output file. */
 	file = fopen(path, "w");
 	if (file == NULL) {
 		yaml_emitter_delete(&emitter);
 		return CYAML_ERR_FILE_OPEN;
 	}
 
-	/* Set input file */
+	/* Set output file */
 	yaml_emitter_set_output_file(&emitter, file);
 
-	/* Parse the input */
+	/* Serialise to the output */
 	err = cyaml__save(config, schema, data, seq_count, &emitter);
 	if (err != CYAML_OK) {
 		yaml_emitter_delete(&emitter);
@@ -1426,15 +1426,15 @@ cyaml_err_t cyaml_save_data(
 		.err = CYAML_OK,
 	};
 
-	/* Initialize parser */
+	/* Initialize emitter */
 	if (!yaml_emitter_initialize(&emitter)) {
 		return CYAML_ERR_LIBYAML_EMITTER_INIT;
 	}
 
-	/* Set input file */
+	/* Set output buffer */
 	yaml_emitter_set_output(&emitter, cyaml__buffer_handler, &buffer_ctx);
 
-	/* Parse the input */
+	/* Serialise to the output */
 	err = cyaml__save(config, schema, data, seq_count, &emitter);
 	if (err != CYAML_OK) {
 		yaml_emitter_delete(&emitter);
