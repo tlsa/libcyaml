@@ -45,10 +45,14 @@ VERSION_FLAGS = -DVERSION_MAJOR=$(VERSION_MAJOR) \
                 -DVERSION_PATCH=$(VERSION_PATCH) \
                 -DVERSION_DEVEL=$(VERSION_DEVEL)
 
+LIBYAML = yaml-0.1
+LIBYAML_CFLAGS := $(if $(PKG_CONFIG),$(shell $(PKG_CONFIG) --cflags $(LIBYAML)),)
+LIBYAML_LIBS := $(if $(PKG_CONFIG),$(shell $(PKG_CONFIG) --libs $(LIBYAML)),-lyaml)
+
 INCLUDE = -I include
-CFLAGS += $(INCLUDE) $(VERSION_FLAGS)
+CFLAGS += $(INCLUDE) $(VERSION_FLAGS) $(LIBYAML_CFLAGS)
 CFLAGS += -std=c11 -Wall -Wextra -pedantic
-LDFLAGS += -lyaml
+LDFLAGS += $(LIBYAML_LIBS)
 LDFLAGS_SHARED += -Wl,-soname=$(LIB_SH_MAJ) -shared
 
 ifeq ($(VARIANT), debug)
