@@ -1106,8 +1106,7 @@ static cyaml_err_t cyaml__write_mapping(
 			}
 		}
 
-		err = cyaml__emit_scalar(ctx, NULL, field->key,
-				YAML_STR_TAG);
+		err = cyaml__emit_scalar(ctx, NULL, field->key, YAML_STR_TAG);
 		if (err != CYAML_OK) {
 			return err;
 		}
