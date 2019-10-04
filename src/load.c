@@ -1819,6 +1819,41 @@ static cyaml_err_t cyaml__consume_ignored_value(
 }
 
 /**
+ * Check whether a string represents a NULL value.
+ *
+ * \param[in]  schema  CYAML schema for the value to test.
+ * \param[in]  value   String value to test.
+ * \return true if string represents a NULL, false otherwise.
+ */
+static bool cyaml__string_is_null_ptr(
+		const cyaml_schema_value_t *schema,
+		const char *value)
+{
+	assert(value != NULL);
+
+	if (cyaml__flag_check_all(schema->flags, CYAML_FLAG_POINTER_NULL) &&
+			value[0] == '\0') {
+		return true;
+	}
+
+	if (!cyaml__flag_check_all(schema->flags,
+			CYAML_FLAG_POINTER_NULL_STR)) {
+		return false;
+	}
+
+	switch (strlen(value)) {
+	case 1:
+		return (strcmp(value, "~") == 0);
+	case 4:
+		return (strcmp(value, "null") == 0 ||
+			strcmp(value, "Null") == 0 ||
+			strcmp(value, "NULL") == 0);
+	}
+
+	return false;
+}
+
+/**
  * Handle a YAML event corresponding to a YAML data value.
  *
  * \param[in]  ctx     The CYAML loading context.
@@ -1840,6 +1875,15 @@ static cyaml_err_t cyaml__read_value(
 			"Load: Reading value of type '%s'%s\n",
 			cyaml__type_to_str(schema->type),
 			schema->flags & CYAML_FLAG_POINTER ? " (pointer)" : "");
+
+	if (cyaml_event == CYAML_EVT_SCALAR) {
+		if (cyaml__string_is_null_ptr(schema,
+				(const char *)event->data.scalar.value)) {
+			cyaml__log(ctx->config, CYAML_LOG_INFO,
+					"Load:   <NULL>\n");
+			return CYAML_OK;
+		}
+	}
 
 	if (!cyaml__is_sequence(schema)) {
 		/* Since sequences extend their allocation for each entry,
