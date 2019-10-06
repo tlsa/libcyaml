@@ -1931,10 +1931,11 @@ static bool test_err_save_schema_sequence_min_max(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
+	unsigned value = 5;
 	struct target_struct {
 		unsigned *seq;
 	} data = {
-		.seq = NULL,
+		.seq = &value,
 	};
 	static const struct cyaml_schema_value entry_schema = {
 		CYAML_VALUE_UINT(CYAML_FLAG_DEFAULT, *(data.seq)),
