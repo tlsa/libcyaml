@@ -167,4 +167,18 @@ static inline int cyaml__strcmp(
 	return cyaml_utf8_casecmp(str1, str2);
 }
 
+/**
+ * Check of all the bits of a mask are set in a cyaml value flag word.
+ *
+ * \param[in] flags  The value flags to test.
+ * \param[in] mask   Mask of the bits to test for in flags.
+ * \return true if all bits of mask are set in flags.
+ */
+static inline bool cyaml__flag_check_all(
+		enum cyaml_flag flags,
+		enum cyaml_flag mask)
+{
+	return ((flags & mask) == mask);
+}
+
 #endif
