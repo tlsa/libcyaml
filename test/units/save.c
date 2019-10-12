@@ -3466,6 +3466,128 @@ static bool test_save_mapping_entry_ignored(
 }
 
 /**
+ * Test saving a sequence containing a NULL value.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_sequence_null_values_int(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char ref[] =
+		"---\n"
+		"- 7\n"
+		"- 6\n"
+		"- 5\n"
+		"- \n"
+		"- 3\n"
+		"- 2\n"
+		"- \n"
+		"- 0\n"
+		"...\n";
+	static const int d[] = { 7, 6, 5, 4, 3, 2, 1, 0 };
+	static const int *data[] = { d + 0, d + 1, d + 2, NULL,
+	                             d + 4, d + 5, NULL, d + 7, };
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_POINTER_NULL, int)
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_SEQUENCE(CYAML_FLAG_POINTER, int,
+				&entry_schema, 0, 3),
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	cyaml_config_t cfg = *config;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = &cfg,
+	};
+	cyaml_err_t err;
+
+	cfg.flags |= CYAML_CFG_STYLE_BLOCK;
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, &cfg, &top_schema, data,
+			CYAML_ARRAY_LEN(data));
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving a sequence containing a NULL value.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_sequence_null_str_values_int(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char ref[] =
+		"---\n"
+		"- 7\n"
+		"- 6\n"
+		"- 5\n"
+		"- null\n"
+		"- 3\n"
+		"- 2\n"
+		"- 1\n"
+		"- 0\n"
+		"...\n";
+	static const int d[] = { 7, 6, 5, 4, 3, 2, 1, 0 };
+	static const int *data[] = { d + 0, d + 1, d + 2, NULL,
+	                             d + 4, d + 5, d + 6, d + 7, };
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_POINTER_NULL_STR, int)
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_SEQUENCE(CYAML_FLAG_POINTER, int,
+				&entry_schema, 0, 3),
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	cyaml_config_t cfg = *config;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = &cfg,
+	};
+	cyaml_err_t err;
+
+	cfg.flags |= CYAML_CFG_STYLE_BLOCK;
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, &cfg, &top_schema, data,
+			CYAML_ARRAY_LEN(data));
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test saving with schema with sequence_fixed top level type.
  *
  * \param[in]  report  The test report context.
@@ -3880,6 +4002,11 @@ bool save_tests(
 	pass &= test_save_mapping_entry_sequence_ptr_sequence_fixed_int(rc, &config);
 	pass &= test_save_mapping_entry_sequence_ptr_sequence_fixed_ptr_int(rc, &config);
 	pass &= test_save_mapping_entry_sequence_ptr_sequence_fixed_flat_int(rc, &config);
+
+	ttest_heading(rc, "Save tests: ptr sequence with null values");
+
+	pass &= test_save_sequence_null_values_int(rc, &config);
+	pass &= test_save_sequence_null_str_values_int(rc, &config);
 
 	ttest_heading(rc, "Save tests: optional mapping fields");
 

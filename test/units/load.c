@@ -966,7 +966,7 @@ static bool test_load_mapping_entry_string(
 }
 
 /**
- * Test loading a string to a allocated char pointer.
+ * Test loading a string to an allocated char pointer.
  *
  * \param[in]  report  The test report context.
  * \param[in]  config  The CYAML config to use for the test.
@@ -976,9 +976,9 @@ static bool test_load_mapping_entry_string_ptr(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
-	const char *value = "Hello World!";
+	const char *value = "null";
 	static const unsigned char yaml[] =
-		"test_string: Hello World!\n";
+		"test_string: null\n";
 	struct target_struct {
 		char * test_value_string;
 	} *data_tgt = NULL;
@@ -1008,6 +1008,154 @@ static bool test_load_mapping_entry_string_ptr(
 	}
 
 	if (strcmp(data_tgt->test_value_string, value) != 0) {
+		return ttest_fail(&tc, "Incorrect value");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading an empty string to an allocated char pointer.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_entry_string_ptr_empty(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const char *value = "";
+	static const unsigned char yaml[] =
+		"test_string:\n";
+	struct target_struct {
+		char * test_value_string;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_STRING_PTR("test_string", CYAML_FLAG_POINTER,
+				struct target_struct, test_value_string,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (strcmp(data_tgt->test_value_string, value) != 0) {
+		return ttest_fail(&tc, "Incorrect value");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a null string to an allocated nullable char pointer.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_entry_string_ptr_null_str(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const char *value = NULL;
+	static const unsigned char yaml[] =
+		"test_string: null\n";
+	struct target_struct {
+		char * test_value_string;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_STRING_PTR("test_string",
+				CYAML_FLAG_POINTER_NULL_STR,
+				struct target_struct, test_value_string,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->test_value_string != value) {
+		return ttest_fail(&tc, "Incorrect value");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading an empty string to an allocated nullable char pointer.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_entry_string_ptr_null_empty(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const char *value = NULL;
+	static const unsigned char yaml[] =
+		"test_string:\n";
+	struct target_struct {
+		char * test_value_string;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_STRING_PTR("test_string", CYAML_FLAG_POINTER_NULL,
+				struct target_struct, test_value_string,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->test_value_string != value) {
 		return ttest_fail(&tc, "Incorrect value");
 	}
 
@@ -3497,6 +3645,241 @@ static bool test_load_mapping_entry_sequence_ptr_sequence_fixed_flat_int(
 						"got: %i, expected: %i", i, j,
 						data_tgt->seq[j * CYAML_ARRAY_LEN(*ref) + i],
 						ref[j][i]);
+			}
+		}
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading sequence of pointers to integer values with NULLs.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_sequence_null_str_values_int(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const int expected[] = {
+		777, 6, 5, 4, 3, 2, 1, 0,
+	};
+	static const bool expected_nulls[] = {
+		false, false, false, true, false, false, true, false,
+	};
+	static const unsigned char yaml[] =
+		"- 777\n"
+		"- 6\n"
+		"- 5\n"
+		"- ~\n"
+		"- 3\n"
+		"- 2\n"
+		"- null\n"
+		"- 0\n";
+	int **value = NULL;
+	unsigned count = 0;
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_POINTER_NULL_STR, **value)
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_SEQUENCE(CYAML_FLAG_POINTER, *value,
+				&entry_schema, 0, CYAML_UNLIMITED)
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &value,
+		.seq_count = &count,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &value, &count);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (count != CYAML_ARRAY_LEN(expected)) {
+		return ttest_fail(&tc, "Unexpected sequence count.");
+	}
+
+	if (value == NULL) {
+		return ttest_fail(&tc, "Data NULL on success.");
+	}
+
+	for (unsigned i = 0; i < CYAML_ARRAY_LEN(expected); i ++) {
+		if (expected_nulls[i]) {
+			if (value[i] != NULL) {
+				return ttest_fail(&tc, "Expected NULL.");
+			}
+			continue;
+		} else {
+			if (value[i] == NULL) {
+				return ttest_fail(&tc, "Unexpected NULL.");
+			}
+			if ((*(value)[i]) != expected[i]) {
+				return ttest_fail(&tc, "Bad value.");
+			}
+		}
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading sequence of pointers to integer values with NULLs.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_sequence_null_values_int(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const int expected[] = {
+		777, 6, 5, 4, 3, 2, 1, 0,
+	};
+	static const bool expected_nulls[] = {
+		false, false, false, true, false, false, true, false,
+	};
+	static const unsigned char yaml[] =
+		"- 777\n"
+		"- 6\n"
+		"- 5\n"
+		"- \n"
+		"- 3\n"
+		"- 2\n"
+		"- \n"
+		"- 0\n";
+	int **value = NULL;
+	unsigned count = 0;
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_POINTER_NULL, **value)
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_SEQUENCE(CYAML_FLAG_POINTER, *value,
+				&entry_schema, 0, CYAML_UNLIMITED)
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &value,
+		.seq_count = &count,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &value, &count);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (count != CYAML_ARRAY_LEN(expected)) {
+		return ttest_fail(&tc, "Unexpected sequence count.");
+	}
+
+	if (value == NULL) {
+		return ttest_fail(&tc, "Data NULL on success.");
+	}
+
+	for (unsigned i = 0; i < CYAML_ARRAY_LEN(expected); i ++) {
+		if (expected_nulls[i]) {
+			if (value[i] != NULL) {
+				return ttest_fail(&tc, "Expected NULL.");
+			}
+			continue;
+		} else {
+			if (value[i] == NULL) {
+				return ttest_fail(&tc, "Unexpected NULL.");
+			}
+			if ((*(value)[i]) != expected[i]) {
+				return ttest_fail(&tc, "Bad value.");
+			}
+		}
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading sequence of pointers to integer values with NULLs.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_sequence_null_str_values_uint(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const int expected[] = {
+		7, 6, 5555, 4, 3, 2, 1, 0,
+	};
+	static const bool expected_nulls[] = {
+		false, true, false, true, false, false, true, false,
+	};
+	static const unsigned char yaml[] =
+		"- 7\n"
+		"- \n"
+		"- 5555\n"
+		"- Null\n"
+		"- 3\n"
+		"- 2\n"
+		"- NULL\n"
+		"- 0\n";
+	int **value = NULL;
+	unsigned count = 0;
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_POINTER_NULL_STR,
+				**value)
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_SEQUENCE(CYAML_FLAG_POINTER, *value,
+				&entry_schema, 0, CYAML_UNLIMITED)
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &value,
+		.seq_count = &count,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &value, &count);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (count != CYAML_ARRAY_LEN(expected)) {
+		return ttest_fail(&tc, "Unexpected sequence count.");
+	}
+
+	if (value == NULL) {
+		return ttest_fail(&tc, "Data NULL on success.");
+	}
+
+	for (unsigned i = 0; i < CYAML_ARRAY_LEN(expected); i ++) {
+		if (expected_nulls[i]) {
+			if (value[i] != NULL) {
+				return ttest_fail(&tc, "Expected NULL.");
+			}
+			continue;
+		} else {
+			if (value[i] == NULL) {
+				return ttest_fail(&tc, "Unexpected NULL.");
+			}
+			if ((*(value)[i]) != expected[i]) {
+				return ttest_fail(&tc, "Bad value.");
 			}
 		}
 	}
@@ -5996,6 +6379,9 @@ bool load_tests(
 	pass &= test_load_mapping_entry_ignore_scalar(rc, &config);
 	pass &= test_load_mapping_entry_bool_true_ptr(rc, &config);
 	pass &= test_load_mapping_entry_bool_false_ptr(rc, &config);
+	pass &= test_load_mapping_entry_string_ptr_empty(rc, &config);
+	pass &= test_load_mapping_entry_string_ptr_null_str(rc, &config);
+	pass &= test_load_mapping_entry_string_ptr_null_empty(rc, &config);
 
 	ttest_heading(rc, "Load single entry mapping tests: complex types");
 
@@ -6037,6 +6423,12 @@ bool load_tests(
 	pass &= test_load_mapping_entry_sequence_ptr_sequence_fixed_int(rc, &config);
 	pass &= test_load_mapping_entry_sequence_ptr_sequence_fixed_ptr_int(rc, &config);
 	pass &= test_load_mapping_entry_sequence_ptr_sequence_fixed_flat_int(rc, &config);
+
+	ttest_heading(rc, "Load tests: ptr sequence with null values");
+
+	pass &= test_load_sequence_null_values_int(rc, &config);
+	pass &= test_load_sequence_null_str_values_int(rc, &config);
+	pass &= test_load_sequence_null_str_values_uint(rc, &config);
 
 	ttest_heading(rc, "Load tests: sequence count sizes");
 

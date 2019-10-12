@@ -1931,10 +1931,11 @@ static bool test_err_save_schema_sequence_min_max(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
+	unsigned value = 5;
 	struct target_struct {
 		unsigned *seq;
 	} data = {
-		.seq = NULL,
+		.seq = &value,
 	};
 	static const struct cyaml_schema_value entry_schema = {
 		CYAML_VALUE_UINT(CYAML_FLAG_DEFAULT, *(data.seq)),
@@ -2375,6 +2376,48 @@ static bool test_err_load_schema_invalid_value_flags_3(
 
 	if (data_tgt != NULL) {
 		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving a NULL when NULLs aren't allowed by the schema.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_save_schema_invalid_value_null_ptr(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const int d[] = { 7, 6, 5, 4, 3, 2, 1, 0 };
+	static const int *data[] = { d + 0, d + 1, d + 2, NULL,
+	                             d + 4, d + 5, d + 6, d + 7, };
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_POINTER, int)
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_SEQUENCE(CYAML_FLAG_POINTER, int,
+				&entry_schema, 0, 3),
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	cyaml_config_t cfg = *config;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = &cfg,
+	};
+	cyaml_err_t err;
+
+	cfg.flags |= CYAML_CFG_STYLE_BLOCK;
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_save_data(&buffer, &len, &cfg, &top_schema, data,
+			CYAML_ARRAY_LEN(data));
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
 	}
 
 	return ttest_pass(&tc);
@@ -5759,6 +5802,7 @@ bool errs_tests(
 	pass &= test_err_load_schema_invalid_value_flags_1(rc, &config);
 	pass &= test_err_load_schema_invalid_value_flags_2(rc, &config);
 	pass &= test_err_load_schema_invalid_value_flags_3(rc, &config);
+	pass &= test_err_save_schema_invalid_value_null_ptr(rc, &config);
 	pass &= test_err_load_schema_invalid_value_bitfield_1(rc, &config);
 	pass &= test_err_load_schema_invalid_value_bitfield_2(rc, &config);
 	pass &= test_err_load_schema_invalid_value_bitfield_3(rc, &config);

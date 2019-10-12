@@ -132,7 +132,47 @@ typedef enum cyaml_type {
 typedef enum cyaml_flag {
 	CYAML_FLAG_DEFAULT  = 0,        /**< Default value flags (none set). */
 	CYAML_FLAG_OPTIONAL = (1 << 0), /**< Mapping field is optional. */
-	CYAML_FLAG_POINTER  = (1 << 1), /**< Value is a pointer to its type. */
+	/**
+	 * Value is a pointer to its type.
+	 *
+	 * With this there must be a non-NULL value.  Consider using
+	 * \ref CYAML_FLAG_POINTER_NULL or \ref CYAML_FLAG_POINTER_NULL_STR
+	 * if you want to allow NULL values.
+	 */
+	CYAML_FLAG_POINTER  = (1 << 1),
+	/**
+	 * Permit `NULL` values for \ref CYAML_FLAG_POINTER types.
+	 *
+	 * An empty value in the YAML is loaded as a NULL pointer, and NULL
+	 * pointers are saved in YAML as empty values.
+	 *
+	 * Note, when you set \ref CYAML_FLAG_POINTER_NULL, then
+	 * \ref CYAML_FLAG_POINTER is set automatically.
+	 */
+	CYAML_FLAG_POINTER_NULL = (1 << 2) | CYAML_FLAG_POINTER,
+	/**
+	 * Permit storage of `NULL` values as special NULL strings in YAML.
+	 *
+	 * This extends \ref CYAML_FLAG_POINTER_NULL, but in addition to
+	 * treating empty values as NULL, any of the following are also treated
+	 * as NULL:
+	 *
+	 * * `null`,
+	 * * `Null`,
+	 * * `NULL`,
+	 * * `~`,
+	 *
+	 * Note that as a side effect, loading a \ref CYAML_STRING field with
+	 * one of these values will not store the literal string, it will store
+	 * NULL.
+	 *
+	 * When saving, a NULL value will be recorded in the YAML as `null`.
+	 *
+	 * Note, when you set \ref CYAML_FLAG_POINTER_NULL_STR, then both
+	 * \ref CYAML_FLAG_POINTER and \ref CYAML_FLAG_POINTER_NULL are set
+	 * automatically.
+	 */
+	CYAML_FLAG_POINTER_NULL_STR = (1 << 3) | CYAML_FLAG_POINTER_NULL,
 	/**
 	 * Make value handling strict.
 	 *
@@ -145,7 +185,7 @@ typedef enum cyaml_flag {
 	 * * For \ref CYAML_FLAGS, the values are bitwise ORed together.
 	 *   The numerical values are treated as unsigned,
 	 */
-	CYAML_FLAG_STRICT   = (1 << 2),
+	CYAML_FLAG_STRICT   = (1 << 4),
 	/**
 	 * When saving, emit mapping / sequence value in block style.
 	 *
@@ -162,7 +202,7 @@ typedef enum cyaml_flag {
 	 *       \ref cyaml_cfg_flags CYAML behavioural configuration flags,
 	 *       then libyaml's default behaviour is used.
 	 */
-	CYAML_FLAG_BLOCK    = (1 << 3),
+	CYAML_FLAG_BLOCK    = (1 << 5),
 	/**
 	 * When saving, emit mapping / sequence value in flow style.
 	 *
@@ -179,7 +219,7 @@ typedef enum cyaml_flag {
 	 *       \ref cyaml_cfg_flags CYAML behavioural configuration flags,
 	 *       then libyaml's default behaviour is used.
 	 */
-	CYAML_FLAG_FLOW     = (1 << 4),
+	CYAML_FLAG_FLOW     = (1 << 6),
 	/**
 	 * When comparing strings for this value, compare with case sensitivity.
 	 *
@@ -197,7 +237,7 @@ typedef enum cyaml_flag {
 	 *       enums and flags it applies to the comparison of
 	 *       \ref cyaml_strval strings.
 	 */
-	CYAML_FLAG_CASE_SENSITIVE   = (1 << 5),
+	CYAML_FLAG_CASE_SENSITIVE   = (1 << 7),
 	/**
 	 * When comparing strings for this value, compare with case sensitivity.
 	 *
@@ -215,7 +255,7 @@ typedef enum cyaml_flag {
 	 *       enums and flags it applies to the comparison of
 	 *       \ref cyaml_strval strings.
 	 */
-	CYAML_FLAG_CASE_INSENSITIVE = (1 << 6),
+	CYAML_FLAG_CASE_INSENSITIVE = (1 << 8),
 } cyaml_flag_e;
 
 /**

@@ -975,6 +975,20 @@ static cyaml_err_t cyaml__write_value(
 
 	data = cyaml__data_handle_pointer(ctx->config, schema, data);
 
+	if (data == NULL) {
+		if (cyaml__flag_check_all(schema->flags,
+				CYAML_FLAG_POINTER_NULL_STR)) {
+			return cyaml__emit_scalar(ctx, schema, "null",
+					YAML_STR_TAG);
+		} else if (cyaml__flag_check_all(schema->flags,
+				CYAML_FLAG_POINTER_NULL)) {
+			return cyaml__emit_scalar(ctx, schema, "",
+					YAML_STR_TAG);
+		} else {
+			return CYAML_ERR_INVALID_VALUE;
+		}
+	}
+
 	switch (schema->type) {
 	case CYAML_INT:   /* Fall through. */
 	case CYAML_UINT:  /* Fall through. */
@@ -1106,8 +1120,7 @@ static cyaml_err_t cyaml__write_mapping(
 			}
 		}
 
-		err = cyaml__emit_scalar(ctx, NULL, field->key,
-				YAML_STR_TAG);
+		err = cyaml__emit_scalar(ctx, NULL, field->key, YAML_STR_TAG);
 		if (err != CYAML_OK) {
 			return err;
 		}
