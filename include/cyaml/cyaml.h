@@ -1546,7 +1546,6 @@ extern cyaml_err_t cyaml_save_file(
  *                        cyaml_config_t to free the data.
  * \param[out] len        Returns the length of the data in output on success,
  *                        untouched on failure.
- * \param[out] len        Path to YAML file to write.
  * \param[in]  config     Client's CYAML configuration structure.
  * \param[in]  schema     CYAML schema for the YAML to be saved.
  * \param[in]  data       The caller-owned data to be saved.
