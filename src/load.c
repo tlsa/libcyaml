@@ -1639,7 +1639,7 @@ static cyaml_err_t cyaml__read_flags_value(
 /**
  * Set some bits in a \ref CYAML_BITFIELD value.
  *
- * If the fiven bit value name is one expected by the schema, then this
+ * If the given bit value name is one expected by the schema, then this
  * function consumes an event from the YAML input stream.
  *
  * \param[in]      ctx        The CYAML loading context.
