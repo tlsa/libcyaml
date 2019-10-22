@@ -59,6 +59,7 @@ const char *cyaml_version_str = CYAML_VERSION_STR;
 /* Exported function, documented in include/cyaml/cyaml.h */
 void cyaml_log(
 		cyaml_log_t level,
+		void *ctx,
 		const char *fmt,
 		va_list args)
 {
@@ -69,6 +70,9 @@ void cyaml_log(
 		[CYAML_LOG_WARNING] = "WARNING",
 		[CYAML_LOG_ERROR]   = "ERROR",
 	};
+
+	CYAML_UNUSED(ctx);
+
 	fprintf(stderr, "libcyaml: %7.7s: ", strings[level]);
 	vfprintf(stderr, fmt, args);
 }

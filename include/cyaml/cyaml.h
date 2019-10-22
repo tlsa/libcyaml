@@ -1321,11 +1321,13 @@ typedef enum cyaml_log_e {
  * Otherwise, consider using the standard logging function, \ref cyaml_log.
  *
  * \param[in] level  Log level of message to log.
+ * \param[in] ctx    Client's private logging context.
  * \param[in] fmt    Format string for message to log.
  * \param[in] args   Additional arguments used by fmt.
  */
 typedef void (*cyaml_log_fn_t)(
 		cyaml_log_t level,
+		void *ctx,
 		const char *fmt,
 		va_list args);
 
@@ -1370,6 +1372,16 @@ typedef struct cyaml_config {
 	 *       be rejected by your schema.
 	 */
 	cyaml_log_fn_t log_fn;
+	/**
+	 * Client logging function context pointer.
+	 *
+	 * Clients using their own custom logging function can pass their
+	 * context here, which will be passed through to their log_fn.
+	 *
+	 * The default logging function, \ref cyaml_log doesn't require a
+	 * logging context, so pass NULL for the log_ctx if using that.
+	 */
+	void *log_ctx;
 	/**
 	 * Client function to use for memory allocation handling.
 	 *
@@ -1417,11 +1429,13 @@ typedef struct cyaml_config {
  *       pass it in via \ref cyaml_config_t.
  *
  * \param[in] level  Log level of message to log.
+ * \param[in] ctx    Logging context, unused.
  * \param[in] fmt    Format string for message to log.
  * \param[in] args   Additional arguments used by fmt.
  */
 extern void cyaml_log(
 		cyaml_log_t level,
+		void *ctx,
 		const char *fmt,
 		va_list args);
 

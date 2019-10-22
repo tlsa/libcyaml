@@ -110,7 +110,7 @@ static inline void cyaml__log(
 	if (level >= cfg->log_level && cfg->log_fn != NULL) {
 		va_list args;
 		va_start(args, fmt);
-		cfg->log_fn(level, fmt, args);
+		cfg->log_fn(level, cfg->log_ctx, fmt, args);
 		va_end(args);
 	}
 }
