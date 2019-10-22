@@ -1,0 +1,36 @@
+name: Coverage
+on:
+  pull_request:
+    branches:
+    - master
+  push:
+    branches:
+    - master
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Setup Python  
+      uses: actions/setup-python@master
+      with:
+        version: 3.7
+    - name: apt-get install packages
+      run: sudo apt-get update -qq &&
+           sudo apt-get install --no-install-recommends -y
+               gcc
+               gcovr
+               git
+               libyaml-dev
+               make
+    - name: coverage test
+      run: make coverage
+    - name: filter output
+      run: find build/coverage -name "*.gc*" -type f -delete;
+    - name: upload coverage  
+      uses: codecov/codecov-action@v1.0.3
+      with:
+        token: ${{secrets.CODECOV_TOKEN}}
+        file: build/coverage.xml
+        flags: unittests
+        name: codecov-umbrella
