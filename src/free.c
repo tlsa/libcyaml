@@ -43,7 +43,7 @@ static void cyaml__free_value(
 		const cyaml_config_t *cfg,
 		const cyaml_schema_value_t *schema,
 		uint8_t * data,
-		unsigned count);
+		uint64_t count);
 
 /**
  * Internal function for freeing a CYAML-parsed sequence.
@@ -57,7 +57,7 @@ static void cyaml__free_sequence(
 		const cyaml_config_t *cfg,
 		const cyaml_schema_value_t *sequence_schema,
 		uint8_t * const data,
-		unsigned count)
+		uint64_t count)
 {
 	const cyaml_schema_value_t *schema = sequence_schema->sequence.entry;
 	uint32_t data_size = schema->data_size;
@@ -91,7 +91,7 @@ static void cyaml__free_mapping(
 	const cyaml_schema_field_t *schema = mapping_schema->mapping.fields;
 
 	while (schema->key != NULL) {
-		unsigned count = 0;
+		uint64_t count = 0;
 		cyaml__log(cfg, CYAML_LOG_DEBUG,
 				"Free: Freeing key: %s (at offset: %u)\n",
 				schema->key, (unsigned)schema->data_offset);
@@ -114,7 +114,7 @@ static void cyaml__free_value(
 		const cyaml_config_t *cfg,
 		const cyaml_schema_value_t *schema,
 		uint8_t * data,
-		unsigned count)
+		uint64_t count)
 {
 	if (schema->flags & CYAML_FLAG_POINTER) {
 		data = cyaml_data_read_pointer(data);
