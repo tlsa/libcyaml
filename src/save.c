@@ -42,8 +42,8 @@ typedef struct cyaml_state {
 		} mapping;
 		/**  Additional state for \ref CYAML_STATE_IN_SEQUENCE state. */
 		struct {
-			uint32_t entry;
-			uint32_t count;
+			uint64_t entry;
+			uint64_t count;
 		} sequence;
 	};
 	const uint8_t *data; /**< Start of client value data for this state. */
@@ -498,7 +498,7 @@ static cyaml_err_t cyaml__emit_scalar(
 	ret = yaml_scalar_event_initialize(&event, NULL,
 			(yaml_char_t *)tag,
 			(yaml_char_t *)value,
-			strlen(value),
+			(int)strlen(value),
 			1, 0, YAML_PLAIN_SCALAR_STYLE);
 
 	return cyaml__emit_event_helper(ctx, ret, &event);
@@ -570,7 +570,7 @@ static int64_t cyaml_sign_pad(uint64_t raw, size_t size)
 {
 	uint64_t sign_bit = (size == 0) ?
 			UINT64_MAX : ((uint64_t)1) << (size * CHAR_BIT - 1);
-	unsigned padding = (sizeof(raw) - size) * CHAR_BIT;
+	unsigned padding = ((unsigned)(sizeof(raw) - size)) * CHAR_BIT;
 
 	if ((sign_bit & raw) && (padding != 0)) {
 		raw |= (((uint64_t)1 << padding) - 1) << (size * CHAR_BIT);
@@ -672,7 +672,7 @@ static cyaml_err_t cyaml__write_enum(
 	int64_t number;
 	cyaml_err_t err;
 
-	number = cyaml_data_read(schema->data_size, data, &err);
+	number = (int64_t)cyaml_data_read(schema->data_size, data, &err);
 	if (err == CYAML_OK) {
 		const cyaml_strval_t *strings = schema->enumeration.strings;
 		const char *string = NULL;
@@ -808,7 +808,7 @@ static cyaml_err_t cyaml__emit_flags_sequence(
 
 	for (uint32_t i = 0; i < schema->enumeration.count; i++) {
 		const cyaml_strval_t *strval = &schema->enumeration.strings[i];
-		uint64_t flag = strval->val;
+		uint64_t flag = (uint64_t)strval->val;
 		if (number & flag) {
 			err = cyaml__emit_scalar(ctx, schema, strval->str,
 					YAML_STR_TAG);
@@ -964,7 +964,7 @@ static cyaml_err_t cyaml__write_value(
 		cyaml_ctx_t *ctx,
 		const cyaml_schema_value_t *schema,
 		const uint8_t *data,
-		unsigned seq_count)
+		uint64_t seq_count)
 {
 	cyaml_err_t err;
 
@@ -1103,7 +1103,7 @@ static cyaml_err_t cyaml__write_mapping(
 	cyaml_err_t err = CYAML_OK;
 
 	if (field != NULL && field->key != NULL) {
-		unsigned seq_count = 0;
+		uint64_t seq_count = 0;
 
 		if (field->value.type == CYAML_IGNORE) {
 			ctx->state->mapping.field++;
