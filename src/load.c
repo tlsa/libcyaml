@@ -810,7 +810,7 @@ static cyaml_err_t cyaml__stack_ensure(
  * \param[in]  mapping_schema  Array of mapping schema fields.
  * \return Number of entries in mapping_schema array.
  */
-static uint16_t cyaml__get_entry_count_from_mapping_schema(
+static unsigned cyaml__get_entry_count_from_mapping_schema(
 		const cyaml_schema_field_t *mapping_schema)
 {
 	const cyaml_schema_field_t *entry = mapping_schema;
@@ -819,7 +819,7 @@ static uint16_t cyaml__get_entry_count_from_mapping_schema(
 		entry++;
 	}
 
-	return entry - mapping_schema;
+	return (unsigned)(entry - mapping_schema);
 }
 
 /**
@@ -879,7 +879,7 @@ static void cyaml__mapping_bitfieid_set(
 	unsigned idx = state->mapping.schema_idx;
 
 	state->mapping.fields[idx / CYAML_BITFIELD_BITS] |=
-			1 << (idx % CYAML_BITFIELD_BITS);
+			1u << (idx % CYAML_BITFIELD_BITS);
 }
 
 /**
@@ -907,7 +907,7 @@ static cyaml_err_t cyaml__mapping_bitfieid_validate(
 			continue;
 		}
 		if (state->mapping.fields[i / CYAML_BITFIELD_BITS] &
-				(1 << (i % CYAML_BITFIELD_BITS))) {
+				(1u << (i % CYAML_BITFIELD_BITS))) {
 			continue;
 		}
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
@@ -1195,7 +1195,7 @@ static cyaml_err_t cyaml__read_int(
 		return CYAML_ERR_INVALID_DATA_SIZE;
 	}
 
-	max = ((~(uint64_t)0) >> ((8 - schema->data_size) * 8)) / 2;
+	max = (INT64_MAX >> ((8 - schema->data_size) * 8)) / 2;
 	min = (-max) - 1;
 
 	errno = 0;
@@ -1206,7 +1206,7 @@ static cyaml_err_t cyaml__read_int(
 		return CYAML_ERR_INVALID_VALUE;
 	}
 
-	return cyaml_data_write(temp, schema->data_size, data);
+	return cyaml_data_write((uint64_t)temp, schema->data_size, data);
 }
 
 /**
@@ -1220,17 +1220,17 @@ static inline cyaml_err_t cyaml__read_uint64_t(
 		const char *value,
 		uint64_t *out)
 {
-	long long temp;
+	unsigned long long temp;
 	char *end = NULL;
 
 	errno = 0;
-	temp = strtoll(value, &end, 0);
+	temp = strtoull(value, &end, 0);
 
-	if (end == value || errno == ERANGE || temp < 0) {
+	if (end == value || errno == ERANGE) {
 		return CYAML_ERR_INVALID_VALUE;
 	}
 
-	*out = temp;
+	*out = (uint64_t)temp;
 	return CYAML_OK;
 }
 
@@ -1324,7 +1324,7 @@ static cyaml_err_t cyaml__read_enum(
 	for (uint32_t i = 0; i < schema->enumeration.count; i++) {
 		if (cyaml__strcmp(ctx->config, schema,
 				value, strings[i].str) == 0) {
-			return cyaml_data_write(strings[i].val,
+			return cyaml_data_write((uint32_t)strings[i].val,
 					schema->data_size, data);
 		}
 	}
@@ -1549,7 +1549,7 @@ static cyaml_err_t cyaml__set_flag(
 	for (uint32_t i = 0; i < schema->enumeration.count; i++) {
 		if (cyaml__strcmp(ctx->config, schema,
 				value, strings[i].str) == 0) {
-			*flags_out |= strings[i].val;
+			*flags_out |= ((uint64_t)strings[i].val);
 			return CYAML_OK;
 		}
 	}
@@ -1564,7 +1564,7 @@ static cyaml_err_t cyaml__set_flag(
 
 		if (!(end == value || errno == ERANGE ||
 		      temp < 0 || (uint64_t)temp > max)) {
-			*flags_out |= temp;
+			*flags_out |= ((uint64_t)temp);
 			return CYAML_OK;
 		}
 	}
