@@ -1609,7 +1609,7 @@ static bool test_err_save_schema_bad_data_size_5(
 	static const struct target_struct {
 		float value;
 	} data = {
-		.value = 3.14,
+		.value = 3.14f,
 	};
 	static const struct cyaml_schema_field mapping_schema[] = {
 		{

@@ -348,7 +348,7 @@ static bool test_load_mapping_entry_float(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
-	float value = 3.14159;
+	float value = 3.14159f;
 	static const unsigned char yaml[] =
 		"test_fp: 3.14159\n";
 	struct target_struct {
@@ -398,7 +398,7 @@ static bool test_load_mapping_entry_float_ptr(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
-	float value = 3.14159;
+	float value = 3.14159f;
 	static const unsigned char yaml[] =
 		"test_fp: 3.14159\n";
 	struct target_struct {

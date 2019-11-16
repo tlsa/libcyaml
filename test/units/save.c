@@ -116,7 +116,7 @@ static bool test_save_mapping_entry_float(
 	static const struct target_struct {
 		float test_float;
 	} data = {
-		.test_float = 3.14,
+		.test_float = 3.14f,
 	};
 	static const struct cyaml_schema_field mapping_schema[] = {
 		CYAML_FIELD_FLOAT("test_float", CYAML_FLAG_DEFAULT,
@@ -3909,7 +3909,7 @@ static bool test_save_no_document_delimiters(
 
 	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
 
-	cfg.flags &= ~CYAML_CFG_DOCUMENT_DELIM;
+	cfg.flags &= ~((unsigned)CYAML_CFG_DOCUMENT_DELIM);
 	err = cyaml_save_data(&buffer, &len, &cfg, &top_schema, &data, 0);
 	if (err != CYAML_OK) {
 		return ttest_fail(&tc, cyaml_strerror(err));
