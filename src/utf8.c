@@ -55,7 +55,7 @@ unsigned cyaml_utf8_get_codepoint(
 		return s[0];
 	} else if ((*len > 1) && (*len <= 4)) {
 		/* Compose first byte into codepoint. */
-		c |= (s[0] & ((1 << (7 - *len)) - 1)) << ((*len - 1) * 6);
+		c |= (s[0] & ((1u << (7 - *len)) - 1u)) << ((*len - 1) * 6);
 
 		/* Handle continuation bytes. */
 		for (unsigned i = 1; i < *len; i++) {
@@ -68,7 +68,7 @@ unsigned cyaml_utf8_get_codepoint(
 			}
 
 			/* Compose continuation byte into codepoint. */
-			c |= (0x3f & s[i]) << ((*len - i - 1) * 6);
+			c |= (0x3fu & s[i]) << ((*len - i - 1) * 6);
 		}
 	}
 
@@ -120,7 +120,7 @@ static unsigned cyaml_utf8_to_lower(unsigned c)
 	if (((c >= 0x0041) && (c <= 0x005a)) /* Basic Latin */        ||
 	    ((c >= 0x00c0) && (c <= 0x00d6)) /* Latin-1 Supplement */ ||
 	    ((c >= 0x00d8) && (c <= 0x00de)) /* Latin-1 Supplement */ ) {
-		return c + 32;
+		return c + 32u;
 
 	} else if (((c >= 0x0100) && (c <= 0x012f)) /* Latin Extended-A */ ||
 	           ((c >= 0x0132) && (c <= 0x0137)) /* Latin Extended-A */ ||
@@ -131,13 +131,13 @@ static unsigned cyaml_utf8_to_lower(unsigned c)
 	           ((c >= 0x01f8) && (c <= 0x021f)) /* Latin Extended-B */ ||
 	           ((c >= 0x0222) && (c <= 0x0233)) /* Latin Extended-B */ ||
 	           ((c >= 0x0246) && (c <= 0x024f)) /* Latin Extended-B */ ) {
-		return c & ~0x1;
+		return c & ~0x1u;
 
 	} else if (((c >= 0x0139) && (c <= 0x0148) /* Latin Extended-A */) ||
 	           ((c >= 0x0179) && (c <= 0x017e) /* Latin Extended-A */) ||
 	           ((c >= 0x01b3) && (c <= 0x01b6) /* Latin Extended-B */) ||
 	           ((c >= 0x01cd) && (c <= 0x01dc) /* Latin Extended-B */)) {
-		return (c + 1) & ~0x1;
+		return (c + 1) & ~0x1u;
 
 	} else switch (c) {
 		case 0x0178: return 0x00ff; /* Latin Extended-A */
@@ -172,6 +172,18 @@ static unsigned cyaml_utf8_to_lower(unsigned c)
 	return c;
 }
 
+/**
+ * Find the difference between two codepoints.
+ *
+ * \param a  First codepoint.
+ * \param b  Second codepoint.
+ * \return the difference.
+ */
+static inline int cyaml_utf8_difference(unsigned a, unsigned b)
+{
+	return (((int)a) - ((int)b));
+}
+
 /* Exported function, documented in utf8.h. */
 int cyaml_utf8_casecmp(
 		const void * const str1,
@@ -183,8 +195,8 @@ int cyaml_utf8_casecmp(
 	while (true) {
 		unsigned len1;
 		unsigned len2;
-		int cmp1;
-		int cmp2;
+		unsigned cmp1;
+		unsigned cmp2;
 
 		/* Check for end of strings. */
 		if ((*s1 == 0) && (*s2 == 0)) {
@@ -207,11 +219,12 @@ int cyaml_utf8_casecmp(
 			if (*s1 != *s2) {
 				/* They're different; need to lower case. */
 				cmp1 = ((*s1 >= 'A') && (*s1 <= 'Z')) ?
-						(*s1 + 'a' - 'A') : *s1;
+						(*s1 + 32u) : *s1;
 				cmp2 = ((*s2 >= 'A') && (*s2 <= 'Z')) ?
-						(*s2 + 'a' - 'A') : *s2;
+						(*s2 + 32u) : *s2;
 				if (cmp1 != cmp2) {
-					return cmp1 - cmp2;
+					return cyaml_utf8_difference(
+							cmp1, cmp2);
 				}
 			}
 		} else if ((len1 != 0) && (len2 != 0)) {
@@ -225,13 +238,14 @@ int cyaml_utf8_casecmp(
 				cmp1 = cyaml_utf8_to_lower(cmp1);
 				cmp2 = cyaml_utf8_to_lower(cmp2);
 				if (cmp1 != cmp2) {
-					return cmp1 - cmp2;
+					return cyaml_utf8_difference(
+							cmp1, cmp2);
 				}
 			}
 		} else {
 			if (len1 | len2) {
 				/* One of the strings has invalid sequence. */
-				return ((int)len1) - ((int)len2);
+				return cyaml_utf8_difference(len1, len2);
 			} else {
 				/* Both strings have an invalid sequence. */
 				len1 = len2 = 1;

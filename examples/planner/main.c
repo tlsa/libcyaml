@@ -41,9 +41,9 @@ struct date {
 /* Structure for storing durations */
 struct duration {
 	uint8_t hours;
-	uint16_t days;
-	uint16_t weeks;
-	uint16_t years;
+	unsigned days;
+	unsigned weeks;
+	unsigned years;
 };
 
 /* Enumeration of task flags */

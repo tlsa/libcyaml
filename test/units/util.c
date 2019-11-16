@@ -202,7 +202,7 @@ static bool test_util_err_strings_invalid(
 				"'Invalid error code'");
 	}
 
-	if (strcmp(cyaml_strerror(-1), "Invalid error code") != 0) {
+	if (strcmp(cyaml_strerror((cyaml_err_t)-1), "Invalid error code") != 0) {
 		return ttest_fail(&tc, "-1 string not 'Invalid error code'");
 	}
 
