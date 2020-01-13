@@ -1040,6 +1040,54 @@ static void cyaml__stack_pop(
 }
 
 /**
+ * Validate the current event for what's expected by the schema.
+ *
+ * \param[in] ctx     The CYAML loading context.
+ * \param[in] schema  The schema for value that the event belongs to.
+ * \param[in] event   The event to be checked.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__validate_event_type_for_schema(
+		const cyaml_ctx_t *ctx,
+		const cyaml_schema_value_t *schema,
+		const yaml_event_t *event)
+{
+	cyaml_event_t cyaml_event = cyaml__get_event_type(event);
+	static const cyaml_event_t valid_event[CYAML__TYPE_COUNT] = {
+		[CYAML_INT]             = CYAML_EVT_SCALAR,
+		[CYAML_UINT]            = CYAML_EVT_SCALAR,
+		[CYAML_BOOL]            = CYAML_EVT_SCALAR,
+		[CYAML_ENUM]            = CYAML_EVT_SCALAR,
+		[CYAML_FLOAT]           = CYAML_EVT_SCALAR,
+		[CYAML_STRING]          = CYAML_EVT_SCALAR,
+		[CYAML_FLAGS]           = CYAML_EVT_SEQ_START,
+		[CYAML_MAPPING]         = CYAML_EVT_MAP_START,
+		[CYAML_BITFIELD]        = CYAML_EVT_MAP_START,
+		[CYAML_SEQUENCE]        = CYAML_EVT_SEQ_START,
+		[CYAML_SEQUENCE_FIXED]  = CYAML_EVT_SEQ_START,
+		[CYAML_IGNORE]          = CYAML__TYPE_COUNT,
+	};
+
+	if (schema->type >= CYAML__TYPE_COUNT) {
+		return CYAML_ERR_BAD_TYPE_IN_SCHEMA;
+	}
+
+	if (schema->type == CYAML_IGNORE) {
+		return CYAML_OK;
+	}
+
+	if (cyaml_event != valid_event[schema->type]) {
+		cyaml__log(ctx->config, CYAML_LOG_ERROR,
+				"Load: Expecting %s, got event: %s\n",
+				cyaml__type_to_str(schema->type),
+				cyaml__libyaml_event_type_str(event));
+		return CYAML_ERR_INVALID_VALUE;
+	}
+
+	return CYAML_OK;
+}
+
+/**
  * Helper to make allocations for loaded YAML values.
  *
  * If the current state is sequence, this extends any existing allocation
@@ -1869,12 +1917,17 @@ static cyaml_err_t cyaml__read_value(
 		const yaml_event_t *event)
 {
 	cyaml_event_t cyaml_event = cyaml__get_event_type(event);
-	cyaml_err_t err = CYAML_OK;
+	cyaml_err_t err;
 
 	cyaml__log(ctx->config, CYAML_LOG_DEBUG,
 			"Load: Reading value of type '%s'%s\n",
 			cyaml__type_to_str(schema->type),
 			schema->flags & CYAML_FLAG_POINTER ? " (pointer)" : "");
+
+	err = cyaml__validate_event_type_for_schema(ctx, schema, event);
+	if (err != CYAML_OK) {
+		return err;
+	}
 
 	if (cyaml_event == CYAML_EVT_SCALAR) {
 		if (cyaml__string_is_null_ptr(schema,
@@ -1885,7 +1938,7 @@ static cyaml_err_t cyaml__read_value(
 		}
 	}
 
-	if (!cyaml__is_sequence(schema)) {
+	if (cyaml__is_sequence(schema) == false) {
 		/* Since sequences extend their allocation for each entry,
 		 * they're handled in the sequence-specific code.
 		 */
@@ -1902,38 +1955,20 @@ static cyaml_err_t cyaml__read_value(
 	case CYAML_ENUM:  /* Fall through. */
 	case CYAML_FLOAT: /* Fall through. */
 	case CYAML_STRING:
-		if (cyaml_event != CYAML_EVT_SCALAR) {
-			return CYAML_ERR_INVALID_VALUE;
-		}
 		err = cyaml__read_scalar_value(ctx, schema, data, event);
 		break;
 	case CYAML_FLAGS:
-		if (cyaml_event != CYAML_EVT_SEQ_START) {
-			return CYAML_ERR_INVALID_VALUE;
-		}
 		err = cyaml__read_flags_value(ctx, schema, data);
 		break;
 	case CYAML_MAPPING:
-		if (cyaml_event != CYAML_EVT_MAP_START) {
-			return CYAML_ERR_INVALID_VALUE;
-		}
 		err = cyaml__stack_push(ctx, CYAML_STATE_IN_MAP_KEY,
 				schema, data);
 		break;
 	case CYAML_BITFIELD:
-		if (cyaml_event != CYAML_EVT_MAP_START) {
-			return CYAML_ERR_INVALID_VALUE;
-		}
 		err = cyaml__read_bitfield_value(ctx, schema, data);
 		break;
 	case CYAML_SEQUENCE: /* Fall through. */
 	case CYAML_SEQUENCE_FIXED:
-		if (cyaml_event != CYAML_EVT_SEQ_START) {
-			cyaml__log(ctx->config, CYAML_LOG_ERROR,
-					"Load: Expecting sequence, got: %s\n",
-					cyaml__libyaml_event_type_str(event));
-			return CYAML_ERR_INVALID_VALUE;
-		}
 		err = cyaml__stack_push(ctx, CYAML_STATE_IN_SEQUENCE,
 				schema, data);
 		break;
@@ -1941,8 +1976,7 @@ static cyaml_err_t cyaml__read_value(
 		err = cyaml__consume_ignored_value(ctx, cyaml_event);
 		break;
 	default:
-		err = CYAML_ERR_BAD_TYPE_IN_SCHEMA;
-		break;
+		return CYAML_ERR_INTERNAL_ERROR;
 	}
 
 	return err;

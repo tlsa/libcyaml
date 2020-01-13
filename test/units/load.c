@@ -4475,6 +4475,49 @@ static bool test_load_schema_top_level_scalar(
 }
 
 /**
+ * Test loading with schema with string top level type.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_schema_top_level_string(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"Hello\n";
+	char *value = NULL;
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_STRING(CYAML_FLAG_POINTER, int, 0, CYAML_UNLIMITED)
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &value,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &value, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (value == NULL) {
+		return ttest_fail(&tc, "Data NULL on success.");
+	}
+
+	if (strcmp(value, "Hello") != 0) {
+		return ttest_fail(&tc, "Bad value.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading with schema with sequence_fixed top level type.
  *
  * \param[in]  report  The test report context.
@@ -6445,6 +6488,7 @@ bool load_tests(
 
 	pass &= test_load_no_log(rc, &config);
 	pass &= test_load_schema_top_level_scalar(rc, &config);
+	pass &= test_load_schema_top_level_string(rc, &config);
 	pass &= test_load_schema_top_level_sequence(rc, &config);
 	pass &= test_load_multiple_documents_ignored(rc, &config);
 	pass &= test_load_mapping_with_multiple_fields(rc, &config);
