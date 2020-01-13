@@ -1885,7 +1885,7 @@ static cyaml_err_t cyaml__read_value(
 		}
 	}
 
-	if (!cyaml__is_sequence(schema)) {
+	if (cyaml__is_sequence(schema) == false) {
 		/* Since sequences extend their allocation for each entry,
 		 * they're handled in the sequence-specific code.
 		 */
