@@ -2181,6 +2181,41 @@ static bool test_err_load_schema_invalid_value_uint(
 }
 
 /**
+ * Test loading with schema with string top level type, with bad value.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_invalid_value_string(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"{ Hello }\n";
+	char *value = NULL;
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_STRING(CYAML_FLAG_POINTER, int, 0, CYAML_UNLIMITED)
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &value,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &value, NULL);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading when schema expects flags, but numerical value is invalid.
  *
  * \param[in]  report  The test report context.
@@ -5799,6 +5834,7 @@ bool errs_tests(
 
 	pass &= test_err_load_non_scalar_mapping_key(rc, &config);
 	pass &= test_err_load_schema_invalid_value_uint(rc, &config);
+	pass &= test_err_load_schema_invalid_value_string(rc, &config);
 	pass &= test_err_load_schema_invalid_value_flags_1(rc, &config);
 	pass &= test_err_load_schema_invalid_value_flags_2(rc, &config);
 	pass &= test_err_load_schema_invalid_value_flags_3(rc, &config);
