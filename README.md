@@ -35,12 +35,6 @@ arranged in memory.
   low-level YAML read / write.
 * Support for YAML aliases and anchors.
 
-Status
-------
-
-Until version 1.0.0 is released, the API and ABI are subject to change.
-Feedback welcome.
-
 Building
 --------
 
