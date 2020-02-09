@@ -35,27 +35,23 @@ arranged in memory.
   low-level YAML read / write.
 * Support for YAML aliases and anchors.
 
-Status
-------
-
-Until version 1.0.0 is released, the API and ABI are subject to change.
-Feedback welcome.
-
 Building
 --------
 
-To build the library (debug mode), run:
+To build the library, run:
 
     make
+
+You can control the optimisation and building of asserts by setting
+the build variant:
+
+    make VARIANT=debug
+    make VARIANT=release
 
 Another debug build variant which is built with address sanitiser (incompatible
 with valgrind) can be built with:
 
     make VARIANT=san
-
-To build a release version:
-
-    make VARIANT=release
 
 Installation
 ------------

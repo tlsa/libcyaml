@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: ISC
  *
- * Copyright (C) 2017-2019 Michael Drake <tlsa@netsurf-browser.org>
+ * Copyright (C) 2017-2020 Michael Drake <tlsa@netsurf-browser.org>
  */
 
 /**
@@ -1065,7 +1065,7 @@ static cyaml_err_t cyaml__validate_event_type_for_schema(
 		[CYAML_BITFIELD]        = CYAML_EVT_MAP_START,
 		[CYAML_SEQUENCE]        = CYAML_EVT_SEQ_START,
 		[CYAML_SEQUENCE_FIXED]  = CYAML_EVT_SEQ_START,
-		[CYAML_IGNORE]          = CYAML__TYPE_COUNT,
+		[CYAML_IGNORE]          = CYAML_EVT__COUNT,
 	};
 
 	if (schema->type >= CYAML__TYPE_COUNT) {
