@@ -1,16 +1,6 @@
 # SPDX-License-Identifier: ISC
 #
-# Copyright (C) 2017-2018 Michael Drake <tlsa@netsurf-browser.org>
-
-# Unfortunately ASan is incompatible with valgrind, so we have a special
-# variant for running with sanitisers.
-VARIANT = debug
-VALID_VARIANTS := release debug san
-
-ifneq ($(filter $(VARIANT),$(VALID_VARIANTS)),)
-else
-$(error VARIANT must be 'debug' (default), 'san', or 'release')
-endif
+# Copyright (C) 2017-2020 Michael Drake <tlsa@netsurf-browser.org>
 
 # CYAML's versioning is <MAJOR>.<MINOR>.<PATCH>[-DEVEL]
 # Master branch will always be DEVEL.  The release process will be to make
@@ -18,8 +8,23 @@ endif
 VERSION_MAJOR = 0
 VERSION_MINOR = 1
 VERSION_PATCH = 0
-VERSION_DEVEL = 1 # Zero or one only.
+VERSION_DEVEL = 1
 VERSION_STR = $(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH)
+
+# Default variant depends on whether it's a development build.
+ifeq ($(VERSION_DEVEL), 1)
+	VARIANT = debug
+else
+	VARIANT = release
+endif
+
+# Unfortunately ASan is incompatible with valgrind, so we have a special
+# variant for running with sanitisers.
+VALID_VARIANTS := release debug san
+ifneq ($(filter $(VARIANT),$(VALID_VARIANTS)),)
+else
+$(error VARIANT must be 'debug' (default), 'san', or 'release')
+endif
 
 LIB_NAME = libcyaml
 LIB_PKGCON = $(LIB_NAME).pc
