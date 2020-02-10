@@ -3819,7 +3819,7 @@ static bool test_load_sequence_null_str_values_uint(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
-	static const int expected[] = {
+	static const unsigned int expected[] = {
 		7, 6, 5555, 4, 3, 2, 1, 0,
 	};
 	static const bool expected_nulls[] = {
@@ -3834,10 +3834,10 @@ static bool test_load_sequence_null_str_values_uint(
 		"- 2\n"
 		"- NULL\n"
 		"- 0\n";
-	int **value = NULL;
+	unsigned int **value = NULL;
 	unsigned count = 0;
 	static const struct cyaml_schema_value entry_schema = {
-		CYAML_VALUE_INT(CYAML_FLAG_POINTER_NULL_STR,
+		CYAML_VALUE_UINT(CYAML_FLAG_POINTER_NULL_STR,
 				**value)
 	};
 	static const struct cyaml_schema_value top_schema = {
