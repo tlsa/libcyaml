@@ -163,6 +163,7 @@ clean:
 	rm -rf build/
 
 install: $(BUILDDIR)/$(LIB_SH_MAJ) $(BUILDDIR)/$(LIB_STATIC) $(BUILDDIR)/$(LIB_PKGCON)
+	$(INSTALL) -d $(DESTDIR)$(PREFIX)/$(LIBDIR)
 	$(INSTALL) $(BUILDDIR)/$(LIB_SH_MAJ) $(DESTDIR)$(PREFIX)/$(LIBDIR)/$(LIB_SH_VER)
 	(cd $(DESTDIR)$(PREFIX)/$(LIBDIR) && { ln -s -f $(LIB_SH_VER) $(LIB_SH_MAJ) || { rm -f $(LIB_SH_MAJ) && ln -s $(LIB_SH_VER) $(LIB_SH_MAJ); }; })
 	(cd $(DESTDIR)$(PREFIX)/$(LIBDIR) && { ln -s -f $(LIB_SH_VER) $(LIB_SHARED) || { rm -f $(LIB_SHARED) && ln -s $(LIB_SH_VER) $(LIB_SHARED); }; })
@@ -170,6 +171,7 @@ install: $(BUILDDIR)/$(LIB_SH_MAJ) $(BUILDDIR)/$(LIB_STATIC) $(BUILDDIR)/$(LIB_P
 	chmod 644 $(DESTDIR)$(PREFIX)/$(LIBDIR)/$(LIB_STATIC)
 	$(INSTALL) -d $(DESTDIR)$(PREFIX)/$(INCLUDEDIR)/cyaml
 	$(INSTALL) -m 644 include/cyaml/* $(DESTDIR)$(PREFIX)/$(INCLUDEDIR)/cyaml
+	$(INSTALL) -d $(DESTDIR)$(PREFIX)/$(LIBDIR)/pkgconfig
 	$(INSTALL) -m 644 $(BUILDDIR)/$(LIB_PKGCON) $(DESTDIR)$(PREFIX)/$(LIBDIR)/pkgconfig/$(LIB_PKGCON)
 
 examples: $(BUILDDIR)/planner $(BUILDDIR)/numerical
