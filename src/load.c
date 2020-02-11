@@ -1054,18 +1054,18 @@ static cyaml_err_t cyaml__validate_event_type_for_schema(
 {
 	cyaml_event_t cyaml_event = cyaml__get_event_type(event);
 	static const cyaml_event_t valid_event[CYAML__TYPE_COUNT] = {
-		[CYAML_INT]             = CYAML_EVT_SCALAR,
-		[CYAML_UINT]            = CYAML_EVT_SCALAR,
-		[CYAML_BOOL]            = CYAML_EVT_SCALAR,
-		[CYAML_ENUM]            = CYAML_EVT_SCALAR,
-		[CYAML_FLOAT]           = CYAML_EVT_SCALAR,
-		[CYAML_STRING]          = CYAML_EVT_SCALAR,
-		[CYAML_FLAGS]           = CYAML_EVT_SEQ_START,
-		[CYAML_MAPPING]         = CYAML_EVT_MAP_START,
-		[CYAML_BITFIELD]        = CYAML_EVT_MAP_START,
-		[CYAML_SEQUENCE]        = CYAML_EVT_SEQ_START,
-		[CYAML_SEQUENCE_FIXED]  = CYAML_EVT_SEQ_START,
-		[CYAML_IGNORE]          = CYAML_EVT__COUNT,
+		[CYAML_INT]            = CYAML_EVT_SCALAR,
+		[CYAML_UINT]           = CYAML_EVT_SCALAR,
+		[CYAML_BOOL]           = CYAML_EVT_SCALAR,
+		[CYAML_ENUM]           = CYAML_EVT_SCALAR,
+		[CYAML_FLOAT]          = CYAML_EVT_SCALAR,
+		[CYAML_STRING]         = CYAML_EVT_SCALAR,
+		[CYAML_FLAGS]          = CYAML_EVT_SEQ_START,
+		[CYAML_MAPPING]        = CYAML_EVT_MAP_START,
+		[CYAML_BITFIELD]       = CYAML_EVT_MAP_START,
+		[CYAML_SEQUENCE]       = CYAML_EVT_SEQ_START,
+		[CYAML_SEQUENCE_FIXED] = CYAML_EVT_SEQ_START,
+		[CYAML_IGNORE]         = CYAML_EVT__COUNT,
 	};
 
 	if (schema->type >= CYAML__TYPE_COUNT) {
@@ -1924,11 +1924,6 @@ static cyaml_err_t cyaml__read_value(
 			cyaml__type_to_str(schema->type),
 			schema->flags & CYAML_FLAG_POINTER ? " (pointer)" : "");
 
-	err = cyaml__validate_event_type_for_schema(ctx, schema, event);
-	if (err != CYAML_OK) {
-		return err;
-	}
-
 	if (cyaml_event == CYAML_EVT_SCALAR) {
 		if (cyaml__string_is_null_ptr(schema,
 				(const char *)event->data.scalar.value)) {
@@ -1936,6 +1931,11 @@ static cyaml_err_t cyaml__read_value(
 					"Load:   <NULL>\n");
 			return CYAML_OK;
 		}
+	}
+
+	err = cyaml__validate_event_type_for_schema(ctx, schema, event);
+	if (err != CYAML_OK) {
+		return err;
 	}
 
 	if (cyaml__is_sequence(schema) == false) {
