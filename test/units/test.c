@@ -91,16 +91,16 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 
 	} else if (argc > ARG_VERBOSE) {
-		if (strcmp(argv[ARG_VERBOSE], "-q") == 0) {
+		if ((strcmp(argv[ARG_VERBOSE], "-q") == 0) ||
+		    (strcmp(argv[ARG_VERBOSE], "--quiet") == 0)) {
 			quiet = true;
 			log_fn = NULL;
-		} else if (strcmp(argv[ARG_VERBOSE], "-v") == 0) {
+		} else if ((strcmp(argv[ARG_VERBOSE], "-v") == 0) ||
+		           (strcmp(argv[ARG_VERBOSE], "--verbose") == 0)) {
 			log_level = CYAML_LOG_INFO;
-		} else if (strcmp(argv[ARG_VERBOSE], "-d") == 0) {
+		} else if ((strcmp(argv[ARG_VERBOSE], "-d") == 0) ||
+		           (strcmp(argv[ARG_VERBOSE], "--debug") == 0)) {
 			log_level = CYAML_LOG_DEBUG;
-		} else {
-			usage(argv[ARG_PROG_NAME]);
-			return EXIT_FAILURE;
 		}
 	}
 
