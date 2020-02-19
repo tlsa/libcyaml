@@ -107,29 +107,11 @@ coverage: test-verbose
 	@gcovr -e 'test/.*' -x -o build/coverage.xml -r .
 	@gcovr -e 'test/.*' --html --html-details -o build/coverage.html -r .
 
-test: $(TEST_BINS)
-	@for i in $(^); do $(LIB_PATH) $$i || exit; done
+test test-quiet test-verbose test-debug: $(TEST_BINS)
+	@for i in $(^); do $(LIB_PATH) $$i $(subst test-,--,$@) || exit; done
 
-test-quiet: $(TEST_BINS)
-	@for i in $(^); do $(LIB_PATH) $$i -q || exit; done
-
-test-verbose: $(TEST_BINS)
-	@for i in $(^); do $(LIB_PATH) $$i -v || exit; done
-
-test-debug: $(TEST_BINS)
-	@for i in $(^); do $(LIB_PATH) $$i -d || exit; done
-
-valgrind: $(TEST_BINS)
-	@for i in $(^); do $(LIB_PATH) $(VALGRIND) $$i || exit; done
-
-valgrind-quiet: $(TEST_BINS)
-	@for i in $(^); do $(LIB_PATH) $(VALGRIND) $$i -q || exit; done
-
-valgrind-verbose: $(TEST_BINS)
-	@for i in $(^); do $(LIB_PATH) $(VALGRIND) $$i -v || exit; done
-
-valgrind-debug: $(TEST_BINS)
-	@for i in $(^); do $(LIB_PATH) $(VALGRIND) $$i -d || exit; done
+valgrind valgrind-quiet valgrind-verbose valgrind-debug: $(TEST_BINS)
+	@for i in $(^); do $(LIB_PATH) $(VALGRIND) $$i $(subst valgrind-,--,$@) || exit; done
 
 $(BUILDDIR)/$(LIB_PKGCON): $(LIB_PKGCON).in
 	sed \
