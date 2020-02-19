@@ -1692,17 +1692,16 @@ static cyaml_err_t cyaml__read_flags_value(
  *
  * \param[in]      ctx        The CYAML loading context.
  * \param[in]      schema     The schema for the value to be read.
- * \param[in]      name       String containing scaler bit value name.
  * \param[in,out]  bits_out   Current bits, updated on success.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
 static cyaml_err_t cyaml__set_bitval(
 		cyaml_ctx_t *ctx,
 		const cyaml_schema_value_t *schema,
-		const char *name,
 		uint64_t *bits_out)
 {
 	const yaml_event_t *const event = cyaml__current_event(ctx);
+	const char *name = (const char *)event->data.scalar.value;
 	const cyaml_bitdef_t *bitdef = schema->bitfield.bitdefs;
 	cyaml_err_t err;
 	uint64_t value;
@@ -1745,7 +1744,8 @@ static cyaml_err_t cyaml__set_bitval(
 	mask = (~(uint64_t)0) >> ((8 * sizeof(uint64_t)) - bitdef[i].bits);
 	if (value > mask) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
-				"Load: Value too big for bits: %s\n", name);
+				"Load: Value too big for bits: %s\n",
+				bitdef[i].name);
 		return CYAML_ERR_INVALID_VALUE;
 	}
 
@@ -1783,9 +1783,7 @@ static cyaml_err_t cyaml__read_bitfield_value(
 		cyaml_event = cyaml__get_event_type(event);
 		switch (cyaml_event) {
 		case CYAML_EVT_SCALAR:
-			err = cyaml__set_bitval(ctx, schema,
-					(const char *)event->data.scalar.value,
-					&value);
+			err = cyaml__set_bitval(ctx, schema, &value);
 			if (err != CYAML_OK) {
 				return err;
 			}
