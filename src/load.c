@@ -1685,28 +1685,21 @@ static cyaml_err_t cyaml__read_flags_value(
 }
 
 /**
- * Set some bits in a \ref CYAML_BITFIELD value.
+ * Get bitfield component index for name in a \ref CYAML_BITFIELD value.
  *
- * If the given bit value name is one expected by the schema, then this
- * function consumes an event from the YAML input stream.
- *
- * \param[in]      ctx        The CYAML loading context.
- * \param[in]      schema     The schema for the value to be read.
- * \param[in]      name       String containing scaler bit value name.
- * \param[in,out]  bits_out   Current bits, updated on success.
+ * \param[in]   ctx        The CYAML loading context.
+ * \param[in]   schema     The schema for the value to be read.
+ * \param[out]  index_out  Returns bitdefs index on success.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
-static cyaml_err_t cyaml__set_bitval(
+static cyaml_err_t cyaml__get_bitval_index(
 		cyaml_ctx_t *ctx,
 		const cyaml_schema_value_t *schema,
-		const char *name,
-		uint64_t *bits_out)
+		uint32_t *index_out)
 {
 	const yaml_event_t *const event = cyaml__current_event(ctx);
+	const char *name = (const char *)event->data.scalar.value;
 	const cyaml_bitdef_t *bitdef = schema->bitfield.bitdefs;
-	cyaml_err_t err;
-	uint64_t value;
-	uint64_t mask;
 	uint32_t i;
 
 	for (i = 0; i < schema->bitfield.count; i++) {
@@ -1723,6 +1716,38 @@ static cyaml_err_t cyaml__set_bitval(
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
 				"Load: Unknown bit value: %s\n", name);
 		return CYAML_ERR_INVALID_VALUE;
+	}
+
+	*index_out = i;
+	return CYAML_OK;
+}
+
+/**
+ * Set some bits in a \ref CYAML_BITFIELD value.
+ *
+ * If the given bit value name is one expected by the schema, then this
+ * function consumes an event from the YAML input stream.
+ *
+ * \param[in]      ctx        The CYAML loading context.
+ * \param[in]      schema     The schema for the value to be read.
+ * \param[in,out]  bits_out   Current bits, updated on success.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__set_bitval(
+		cyaml_ctx_t *ctx,
+		const cyaml_schema_value_t *schema,
+		uint64_t *bits_out)
+{
+	const yaml_event_t *const event = cyaml__current_event(ctx);
+	const cyaml_bitdef_t *bitdef = schema->bitfield.bitdefs;
+	cyaml_err_t err;
+	uint32_t index;
+	uint64_t value;
+	uint64_t mask;
+
+	err = cyaml__get_bitval_index(ctx, schema, &index);
+	if (err != CYAML_OK) {
+		return err;
 	}
 
 	err = cyaml_get_next_event(ctx);
@@ -1742,14 +1767,15 @@ static cyaml_err_t cyaml__set_bitval(
 		return CYAML_ERR_UNEXPECTED_EVENT;
 	}
 
-	mask = (~(uint64_t)0) >> ((8 * sizeof(uint64_t)) - bitdef[i].bits);
+	mask = (~(uint64_t)0) >> ((8 * sizeof(uint64_t)) - bitdef[index].bits);
 	if (value > mask) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
-				"Load: Value too big for bits: %s\n", name);
+				"Load: Value too big for bits: %s\n",
+				bitdef[index].name);
 		return CYAML_ERR_INVALID_VALUE;
 	}
 
-	*bits_out |= value << bitdef[i].offset;
+	*bits_out |= value << bitdef[index].offset;
 	return CYAML_OK;
 }
 
@@ -1783,9 +1809,7 @@ static cyaml_err_t cyaml__read_bitfield_value(
 		cyaml_event = cyaml__get_event_type(event);
 		switch (cyaml_event) {
 		case CYAML_EVT_SCALAR:
-			err = cyaml__set_bitval(ctx, schema,
-					(const char *)event->data.scalar.value,
-					&value);
+			err = cyaml__set_bitval(ctx, schema, &value);
 			if (err != CYAML_OK) {
 				return err;
 			}
