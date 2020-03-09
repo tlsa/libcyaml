@@ -113,6 +113,8 @@ test test-quiet test-verbose test-debug: $(TEST_BINS)
 valgrind valgrind-quiet valgrind-verbose valgrind-debug: $(TEST_BINS)
 	@for i in $(^); do $(LIB_PATH) $(VALGRIND) $$i $(subst valgrind-,--,$@) || exit; done
 
+check: test
+
 $(BUILDDIR)/$(LIB_PKGCON): $(LIB_PKGCON).in
 	sed \
 		-e 's#PREFIX#$(PREFIX)#' \
@@ -166,7 +168,7 @@ $(BUILDDIR)/numerical: examples/numerical/main.c $(BUILDDIR)/$(LIB_STATIC)
 
 .PHONY: all test test-quiet test-verbose test-debug \
 		valgrind valgrind-quiet valgrind-verbose valgrind-debug \
-		clean coverage docs install examples
+		clean coverage docs install examples check
 
 $(BUILDDIR)/test/units/cyaml-static: $(TEST_OBJ) $(BUILDDIR)/$(LIB_STATIC)
 	$(CC) $(LDFLAGS_COV) -o $@ $^ $(LDFLAGS)
