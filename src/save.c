@@ -542,7 +542,23 @@ static const char * cyaml__get_uint(
 }
 
 /**
- * Convert double precision floating point value to string.
+ * Get string representation for single precision floating point values.
+ *
+ * \param[in]  value  The value to convert.
+ * \return String conversion of the value.
+ */
+static const char * cyaml__get_float(
+		double value)
+{
+	static char string[64];
+
+	sprintf(string, "%g", value);
+
+	return string;
+}
+
+/**
+ * Get string representation for double precision floating point values.
  *
  * \param[in]  value  The value to convert.
  * \return String conversion of the value.
@@ -552,7 +568,7 @@ static const char * cyaml__get_double(
 {
 	static char string[64];
 
-	sprintf(string, "%g", value);
+	sprintf(string, "%.16e", value);
 
 	return string;
 }
@@ -719,7 +735,7 @@ static cyaml_err_t cyaml__write_float(
 	if (schema->data_size == sizeof(float)) {
 		float number;
 		memcpy(&number, data, schema->data_size);
-		string = cyaml__get_double(number);
+		string = cyaml__get_float(number);
 
 	} else if (schema->data_size == sizeof(double)) {
 		double number;
