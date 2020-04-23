@@ -167,7 +167,7 @@ static bool test_save_mapping_entry_double(
 {
 	static const unsigned char ref[] =
 		"---\n"
-		"test_float: 3.14\n"
+		"test_float: 3.1400000000000001e+00\n"
 		"...\n";
 	static const struct target_struct {
 		double test_float;
