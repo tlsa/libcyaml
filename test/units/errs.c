@@ -3627,6 +3627,50 @@ static bool test_err_load_schema_string_max_length(
 }
 
 /**
+ * Test loading a mapping with a duplicate field.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_duplicate_mapping_field(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"test_uint: 9998\n"
+		"test_uint: 9999\n";
+	struct target_struct {
+		unsigned test_value_uint;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("test_uint", CYAML_FLAG_DEFAULT,
+				struct target_struct, test_value_uint),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_UNEXPECTED_EVENT) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading when schema expects mapping field which is not present.
  *
  * \param[in]  report  The test report context.
@@ -5873,6 +5917,7 @@ bool errs_tests(
 
 	pass &= test_err_load_schema_missing_mapping_field(rc, &config);
 	pass &= test_err_load_schema_unknown_mapping_field(rc, &config);
+	pass &= test_err_load_schema_duplicate_mapping_field(rc, &config);
 
 	ttest_heading(rc, "YAML / schema mismatch: sequence counts");
 
