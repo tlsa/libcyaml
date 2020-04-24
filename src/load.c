@@ -924,6 +924,23 @@ static void cyaml__mapping_bitfieid_set(
 }
 
 /**
+ * Check the bit for current mapping's current field.
+ *
+ * Current CYAML load state must be \ref CYAML_STATE_IN_MAP_KEY.
+ *
+ * \param[in]  ctx     The CYAML loading context.
+ */
+static bool cyaml__mapping_bitfieid_check(
+		const cyaml_ctx_t *ctx)
+{
+	cyaml_state_t *state = ctx->state;
+	unsigned idx = state->mapping.schema_idx;
+
+	return state->mapping.fields[idx / CYAML_BITFIELD_BITS] &
+			(1u << (idx % CYAML_BITFIELD_BITS));
+}
+
+/**
  * Check a mapping had all the required fields.
  *
  * Checks all the bits are set in the bitfield, which correspond to
@@ -2172,6 +2189,13 @@ static cyaml_err_t cyaml__map_key(
 		cyaml_event = cyaml__get_event_type(ignore_event);
 		return cyaml__consume_ignored_value(ctx, cyaml_event);
 	}
+
+	if (cyaml__mapping_bitfieid_check(ctx) == true) {
+		cyaml__log(ctx->config, CYAML_LOG_ERROR,
+				"Load: Mapping field already seen: %s\n", key);
+		return CYAML_ERR_UNEXPECTED_EVENT;
+	}
+
 	cyaml__mapping_bitfieid_set(ctx);
 
 	/* Toggle mapping sub-state to value */
