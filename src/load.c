@@ -899,10 +899,11 @@ static cyaml_err_t cyaml__mapping_bitfieid_create(
  * \param[in]  state  CYAML load state for a \ref CYAML_STATE_IN_MAP_KEY state.
  */
 static void cyaml__mapping_bitfieid_destroy(
-		cyaml_ctx_t *ctx,
+		const cyaml_ctx_t *ctx,
 		cyaml_state_t *state)
 {
 	cyaml__free(ctx->config, state->mapping.fields);
+	state->mapping.fields = NULL;
 }
 
 /**
@@ -913,7 +914,7 @@ static void cyaml__mapping_bitfieid_destroy(
  * \param[in]  ctx     The CYAML loading context.
  */
 static void cyaml__mapping_bitfieid_set(
-		cyaml_ctx_t *ctx)
+		const cyaml_ctx_t *ctx)
 {
 	cyaml_state_t *state = ctx->state;
 	unsigned idx = state->mapping.schema_idx;
@@ -936,7 +937,7 @@ static void cyaml__mapping_bitfieid_set(
  *         \ref CYAML_ERR_MAPPING_FIELD_MISSING any are missing.
  */
 static cyaml_err_t cyaml__mapping_bitfieid_validate(
-		cyaml_ctx_t *ctx)
+		const cyaml_ctx_t *ctx)
 {
 	cyaml_state_t *state = ctx->state;
 	unsigned count = cyaml__get_entry_count_from_mapping_schema(
