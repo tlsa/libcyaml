@@ -3663,7 +3663,7 @@ static bool test_err_load_schema_duplicate_mapping_field(
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
-	if (err != CYAML_ERR_UNEXPECTED_EVENT) {
+	if (err != CYAML_ERR_DUPLICATE_MAPPING_KEY) {
 		return ttest_fail(&tc, cyaml_strerror(err));
 	}
 

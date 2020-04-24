@@ -105,6 +105,7 @@ const char * cyaml_strerror(
 		[CYAML_ERR_SEQUENCE_FIXED_COUNT]  = "Sequence fixed has unequal min max",
 		[CYAML_ERR_SEQUENCE_IN_SEQUENCE]  = "Non-fixed sequence in sequence",
 		[CYAML_ERR_MAPPING_FIELD_MISSING] = "Missing required mapping field",
+		[CYAML_ERR_DUPLICATE_MAPPING_KEY] = "Duplicate mapping field",
 		[CYAML_ERR_BAD_CONFIG_NULL_MEMFN] = "Bad config: NULL mem function",
 		[CYAML_ERR_BAD_PARAM_NULL_CONFIG] = "Bad parameter: NULL config",
 		[CYAML_ERR_BAD_PARAM_NULL_SCHEMA] = "Bad parameter: NULL schema",

@@ -2198,7 +2198,7 @@ static cyaml_err_t cyaml__map_key_check_field(
 			cyaml__log(ctx->config, CYAML_LOG_ERROR,
 				"Load: Mapping field already seen: %s\n",
 					field->key);
-			return CYAML_ERR_UNEXPECTED_EVENT;
+			return CYAML_ERR_DUPLICATE_MAPPING_KEY;
 		}
 	}
 

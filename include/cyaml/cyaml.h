@@ -536,6 +536,7 @@ typedef enum cyaml_err {
 	CYAML_ERR_SEQUENCE_FIXED_COUNT,  /**< Mismatch between min and max. */
 	CYAML_ERR_SEQUENCE_IN_SEQUENCE,  /**< Non-fixed sequence in sequence. */
 	CYAML_ERR_MAPPING_FIELD_MISSING, /**< Required mapping field missing. */
+	CYAML_ERR_DUPLICATE_MAPPING_KEY, /**< Mapping key already seen. */
 	CYAML_ERR_BAD_CONFIG_NULL_MEMFN, /**< Client gave NULL mem function. */
 	CYAML_ERR_BAD_PARAM_NULL_CONFIG, /**< Client gave NULL config arg. */
 	CYAML_ERR_BAD_PARAM_NULL_SCHEMA, /**< Client gave NULL schema arg. */
