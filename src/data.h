@@ -34,6 +34,10 @@ static inline cyaml_err_t cyaml_data_write(
 		return CYAML_ERR_INVALID_DATA_SIZE;
 	}
 
+	if (cyaml__host_is_big_endian()) {
+		value_bytes += sizeof(value) - entry_size;
+	}
+
 	memcpy(data_tgt, value_bytes, entry_size);
 
 	return CYAML_OK;
@@ -78,13 +82,18 @@ static inline uint64_t cyaml_data_read(
 		cyaml_err_t *error_out)
 {
 	uint64_t ret = 0;
+	uint8_t *ret_bytes = (uint8_t *)&ret;
 
 	if (entry_size == 0 || entry_size > sizeof(ret)) {
 		*error_out = CYAML_ERR_INVALID_DATA_SIZE;
 		return ret;
 	}
 
-	memcpy(&ret, data, entry_size);
+	if (cyaml__host_is_big_endian()) {
+		ret_bytes += sizeof(ret) - entry_size;
+	}
+
+	memcpy(ret_bytes, data, entry_size);
 
 	*error_out = CYAML_OK;
 	return ret;
