@@ -26,6 +26,30 @@
 /** Macro to squash unused variable compiler warnings. */
 #define CYAML_UNUSED(_x) ((void)(_x))
 
+/**
+ * Check whether the host is little endian.
+ *
+ * Checks whether least significant bit is in the first byte of a `uint16_t`.
+ *
+ * \return true if host is little endian.
+ */
+static inline bool cyaml__host_is_little_endian(void)
+{
+	static const uint16_t test = 1;
+
+	return ((uint8_t *) &test)[0] == 1;
+}
+
+/**
+ * Check whether the host is big endian.
+ *
+ * \return true if host is big endian.
+ */
+static inline bool cyaml__host_is_big_endian(void)
+{
+	return !cyaml__host_is_little_endian();
+}
+
 /** CYAML bitfield type. */
 typedef uint32_t cyaml_bitfield_t;
 

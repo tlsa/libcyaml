@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: ISC
  *
- * Copyright (C) 2017 Michael Drake <tlsa@netsurf-browser.org>
+ * Copyright (C) 2017-2020 Michael Drake <tlsa@netsurf-browser.org>
  */
 
 /**
@@ -28,25 +28,17 @@ static inline cyaml_err_t cyaml_data_write(
 		uint64_t entry_size,
 		uint8_t *data_tgt)
 {
-	if (entry_size == 0) {
+	const uint8_t *value_bytes = (uint8_t *)&value;
+
+	if (entry_size == 0 || entry_size > sizeof(value)) {
 		return CYAML_ERR_INVALID_DATA_SIZE;
 	}
 
-	data_tgt += entry_size - 1;
-
-	switch (entry_size) {
-	case 8: *data_tgt-- = (uint8_t)(value >> 56) & 0xff; /* Fall through. */
-	case 7: *data_tgt-- = (uint8_t)(value >> 48) & 0xff; /* Fall through. */
-	case 6: *data_tgt-- = (uint8_t)(value >> 40) & 0xff; /* Fall through. */
-	case 5: *data_tgt-- = (uint8_t)(value >> 32) & 0xff; /* Fall through. */
-	case 4: *data_tgt-- = (uint8_t)(value >> 24) & 0xff; /* Fall through. */
-	case 3: *data_tgt-- = (uint8_t)(value >> 16) & 0xff; /* Fall through. */
-	case 2: *data_tgt-- = (uint8_t)(value >>  8) & 0xff; /* Fall through. */
-	case 1: *data_tgt-- = (uint8_t)(value >>  0) & 0xff;
-		break;
-	default:
-		return CYAML_ERR_INVALID_DATA_SIZE;
+	if (cyaml__host_is_big_endian()) {
+		value_bytes += sizeof(value) - entry_size;
 	}
+
+	memcpy(data_tgt, value_bytes, entry_size);
 
 	return CYAML_OK;
 }
@@ -90,28 +82,18 @@ static inline uint64_t cyaml_data_read(
 		cyaml_err_t *error_out)
 {
 	uint64_t ret = 0;
+	uint8_t *ret_bytes = (uint8_t *)&ret;
 
-	if (entry_size == 0) {
+	if (entry_size == 0 || entry_size > sizeof(ret)) {
 		*error_out = CYAML_ERR_INVALID_DATA_SIZE;
 		return ret;
 	}
 
-	data += entry_size - 1;
-
-	switch (entry_size) {
-	case 8: ret |= ((uint64_t)(*data-- & 0xff)) << 56; /* Fall through. */
-	case 7: ret |= ((uint64_t)(*data-- & 0xff)) << 48; /* Fall through. */
-	case 6: ret |= ((uint64_t)(*data-- & 0xff)) << 40; /* Fall through. */
-	case 5: ret |= ((uint64_t)(*data-- & 0xff)) << 32; /* Fall through. */
-	case 4: ret |= ((uint64_t)(*data-- & 0xff)) << 24; /* Fall through. */
-	case 3: ret |= ((uint64_t)(*data-- & 0xff)) << 16; /* Fall through. */
-	case 2: ret |= ((uint64_t)(*data-- & 0xff)) <<  8; /* Fall through. */
-	case 1: ret |= ((uint64_t)(*data-- & 0xff)) <<  0;
-		break;
-	default:
-		*error_out = CYAML_ERR_INVALID_DATA_SIZE;
-		return ret;
+	if (cyaml__host_is_big_endian()) {
+		ret_bytes += sizeof(ret) - entry_size;
 	}
+
+	memcpy(ret_bytes, data, entry_size);
 
 	*error_out = CYAML_OK;
 	return ret;
