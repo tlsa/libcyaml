@@ -766,22 +766,25 @@ static inline const yaml_event_t * cyaml__current_event(
 /**
  * Get the offset to a mapping field by key in a mapping schema array.
  *
- * \param[in]  ctx  The CYAML loading context.
- * \param[in]  key  Key to search for in mapping schema.
+ * \param[in]  cfg     The client's CYAML library config.
+ * \param[in]  schema  CYAML schema for the mapping value to be loaded.
+ * \param[in]  key     Key to search for in mapping schema.
  * \return index the mapping schema's mapping fields array for key, or
  *         \ref CYAML_FIELDS_IDX_NONE if key is not present in schema.
  */
-static inline uint16_t cyaml__get_entry_from_mapping_schema(
-		const cyaml_ctx_t *ctx,
+static inline uint16_t cyaml__get_mapping_field_idx(
+		const cyaml_config_t *cfg,
+		const cyaml_schema_value_t *schema,
 		const char *key)
 {
-	const cyaml_schema_field_t *fields = ctx->state->mapping.fields;
-	const cyaml_schema_value_t *schema = ctx->state->schema;
+	const cyaml_schema_field_t *fields = schema->mapping.fields;
 	uint16_t index = 0;
+
+	assert(schema->type == CYAML_MAPPING);
 
 	/* Step through each entry in the schema */
 	for (; fields->key != NULL; fields++) {
-		if (cyaml__strcmp(ctx->config, schema, fields->key, key) == 0) {
+		if (cyaml__strcmp(cfg, schema, fields->key, key) == 0) {
 			return index;
 		}
 		index++;
@@ -2166,8 +2169,8 @@ static cyaml_err_t cyaml__map_key(
 	cyaml_err_t err = CYAML_OK;
 
 	key = (const char *)event->data.scalar.value;
-	ctx->state->mapping.fields_idx =
-			cyaml__get_entry_from_mapping_schema(ctx, key);
+	ctx->state->mapping.fields_idx = cyaml__get_mapping_field_idx(
+			ctx->config, ctx->state->schema, key);
 	cyaml__log(ctx->config, CYAML_LOG_INFO, "Load: [%s]\n", key);
 
 	if (ctx->state->mapping.fields_idx == CYAML_FIELDS_IDX_NONE) {
