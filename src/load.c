@@ -843,14 +843,14 @@ static cyaml_err_t cyaml__stack_ensure(
 }
 
 /**
- * Count the entries in a mapping schema array.
+ * Count the entries in a mapping field array schema.
  *
  * The mapping schema array must be terminated by an entry with a NULL key.
  *
  * \param[in]  mapping_schema  Array of mapping schema fields.
  * \return Number of entries in mapping_schema array.
  */
-static unsigned cyaml__get_entry_count_from_mapping_schema(
+static uint16_t cyaml__get_mapping_field_count(
 		const cyaml_schema_field_t *mapping_schema)
 {
 	const cyaml_schema_field_t *entry = mapping_schema;
@@ -859,7 +859,7 @@ static unsigned cyaml__get_entry_count_from_mapping_schema(
 		entry++;
 	}
 
-	return (unsigned)(entry - mapping_schema);
+	return (uint16_t)(entry - mapping_schema);
 }
 
 /**
@@ -877,8 +877,7 @@ static cyaml_err_t cyaml__mapping_bitfieid_create(
 		cyaml_state_t *state)
 {
 	cyaml_bitfield_t *bitfield;
-	unsigned count = cyaml__get_entry_count_from_mapping_schema(
-			state->mapping.fields);
+	unsigned count = state->mapping.fields_count;
 	size_t size = ((count + CYAML_BITFIELD_BITS - 1) / CYAML_BITFIELD_BITS)
 			* sizeof(*bitfield);
 
@@ -957,8 +956,7 @@ static cyaml_err_t cyaml__mapping_bitfieid_validate(
 		const cyaml_ctx_t *ctx)
 {
 	cyaml_state_t *state = ctx->state;
-	unsigned count = cyaml__get_entry_count_from_mapping_schema(
-			state->mapping.fields);
+	unsigned count = state->mapping.fields_count;
 
 	for (unsigned i = 0; i < count; i++) {
 		if (state->mapping.fields[i].value.flags & CYAML_FLAG_OPTIONAL) {
@@ -1021,6 +1019,8 @@ static cyaml_err_t cyaml__stack_push(
 	case CYAML_STATE_IN_MAP_KEY:
 		assert(schema->type == CYAML_MAPPING);
 		s.mapping.fields = schema->mapping.fields;
+		s.mapping.fields_count = cyaml__get_mapping_field_count(
+				schema->mapping.fields);
 		err = cyaml__mapping_bitfieid_create(ctx, &s);
 		if (err != CYAML_OK) {
 			return err;
