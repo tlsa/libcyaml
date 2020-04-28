@@ -113,8 +113,8 @@ typedef enum cyaml_type {
 	CYAML_SEQUENCE_FIXED,
 	/**
 	 * Value of this type is completely ignored.  This is most useful for
-	 * ignoring particular keys in a mapping, when CYAML client sets
-	 * configuration of \ref CYAML_CFG_IGNORE_UNKNOWN_KEYS.
+	 * ignoring particular keys in a mapping, when the LivCYAML client has
+	 * not set a configuration of \ref CYAML_CFG_IGNORE_UNKNOWN_KEYS.
 	 */
 	CYAML_IGNORE,
 	/**
