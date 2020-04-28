@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: ISC
  *
- * Copyright (c) 2017-2019 Michael Drake <tlsa@netsurf-browser.org>
+ * Copyright (c) 2017-2020 Michael Drake <tlsa@netsurf-browser.org>
  */
 
 /**
@@ -71,6 +71,14 @@ typedef enum cyaml_type {
 	 */
 	CYAML_FLAGS,
 	CYAML_FLOAT,    /**< Value is floating point. */
+	/**
+	 * YAML value is a mapping with a single key.
+	 *
+	 * Values of this type require mapping schema array in the schema entry.
+	 * Values of this type stored as fields in other mappings may reference
+	 * another field to use as the union discriminant.
+	 */
+	CYAML_UNION,
 	CYAML_STRING,   /**< Value is a string. */
 	/**
 	 * Value is a mapping.  Values of this type require mapping schema
@@ -333,7 +341,10 @@ typedef struct cyaml_schema_value {
 			 */
 			uint32_t max;
 		} string;
-		/** \ref CYAML_MAPPING type-specific schema data. */
+		/**
+		 * \ref CYAML_MAPPING and \ref CYAML_UNION type-specific
+		 * schema data.
+		 */
 		struct {
 			/**
 			 * Array of cyaml mapping field schema definitions.
@@ -343,6 +354,25 @@ typedef struct cyaml_schema_value {
 			 * and \ref CYAML_FIELD_END for more info.
 			 */
 			const struct cyaml_schema_field *fields;
+			/**
+			 * Field name, for \ref CYAML_UNION discriminant
+			 * storage in a parent mapping of NULL.
+			 *
+			 * For unions without a discriminant, sent this to NULL.
+			 *
+			 * The referenced field must be a \ref CYAML_ENUM
+			 * in a mapping that is an ancestor of this
+			 * \ref CYAML_UNION.
+			 *
+			 * When looking for the discriminant field, LibCYAML
+			 * will search back through the client's schema until
+			 * it finds a mapping with a field of this name, that
+			 * is a \ref CYAML_ENUM.  The first match found is used.
+			 *
+			 * \note This is ignored unless the value is a
+			 *       \ref CYAML_UNION.
+			 */
+			const char *union_discriminant;
 		} mapping;
 		/** \ref CYAML_BITFIELD type-specific schema data. */
 		struct {
@@ -517,6 +547,7 @@ typedef enum cyaml_err {
 	CYAML_ERR_OOM,                   /**< Memory allocation failed. */
 	CYAML_ERR_ALIAS,                 /**< See \ref CYAML_CFG_NO_ALIAS. */
 	CYAML_ERR_FILE_OPEN,             /**< Failed to open file. */
+	CYAML_ERR_EMPTY_UNION,           /**< Union had no data. */
 	CYAML_ERR_INVALID_KEY,           /**< Mapping key rejected by schema. */
 	CYAML_ERR_INVALID_VALUE,         /**< Value rejected by schema. */
 	CYAML_ERR_INVALID_ALIAS,         /**< No anchor found for alias. */
@@ -535,6 +566,8 @@ typedef enum cyaml_err {
 	CYAML_ERR_SEQUENCE_ENTRIES_MAX,  /**< Too many sequence entries. */
 	CYAML_ERR_SEQUENCE_FIXED_COUNT,  /**< Mismatch between min and max. */
 	CYAML_ERR_SEQUENCE_IN_SEQUENCE,  /**< Non-fixed sequence in sequence. */
+	CYAML_ERR_UNION_DISC_NOT_FOUND,  /**< Bad discriminant schema ref. */
+	CYAML_ERR_MULTIPLE_UNION_VALUES, /**< Union has more than one value. */
 	CYAML_ERR_MAPPING_FIELD_MISSING, /**< Required mapping field missing. */
 	CYAML_ERR_DUPLICATE_MAPPING_KEY, /**< Mapping key already seen. */
 	CYAML_ERR_BAD_CONFIG_NULL_MEMFN, /**< Client gave NULL mem function. */
@@ -1100,6 +1133,72 @@ typedef enum cyaml_err {
 	.value = { \
 		CYAML_VALUE_MAPPING(((_flags) | CYAML_FLAG_POINTER), \
 				(*(((_structure *)NULL)->_member)), _fields), \
+	}, \
+	.data_offset = offsetof(_structure, _member) \
+}
+
+/**
+ * Value schema helper macro for values with \ref CYAML_UNION type.
+ *
+ * \param[in]  _flags         Any behavioural flags relevant to this value.
+ * \param[in]  _type          The C type of structure corresponding to mapping.
+ * \param[in]  _fields        Pointer to mapping fields schema array.
+ * \param[in]  _field         String for union discriminant field name, or NULL.
+ */
+#define CYAML_VALUE_UNION( \
+		_flags, _type, _fields, _field) \
+	.type = CYAML_UNION, \
+	.flags = (_flags), \
+	.data_size = sizeof(_type), \
+	.mapping = { \
+		.fields = _fields, \
+		.union_discriminant = _field, \
+	}
+
+/**
+ * Mapping schema helper macro for keys with \ref CYAML_UNION type.
+ *
+ * Use this for structures contained within other structures.
+ *
+ * \param[in]  _key        String defining the YAML mapping key for this value.
+ * \param[in]  _flags      Any behavioural flags relevant to this value.
+ * \param[in]  _structure  The structure corresponding to the containing mapping.
+ * \param[in]  _member     The member in _structure for this mapping value.
+ * \param[in]  _fields     Pointer to mapping fields schema array.
+ * \param[in]  _field      String for union discriminant field name, or NULL.
+ */
+#define CYAML_FIELD_UNION( \
+		_key, _flags, _structure, _member, _fields, _field) \
+{ \
+	.key = _key, \
+	.value = { \
+		CYAML_VALUE_UNION(((_flags) & (~CYAML_FLAG_POINTER)), \
+				(((_structure *)NULL)->_member), _fields, \
+				_field), \
+	}, \
+	.data_offset = offsetof(_structure, _member) \
+}
+
+/**
+ * Mapping schema helper macro for keys with \ref CYAML_UNION type.
+ *
+ * Use this for pointers to structures.
+ *
+ * \param[in]  _key        String defining the YAML mapping key for this value.
+ * \param[in]  _flags      Any behavioural flags relevant to this value.
+ * \param[in]  _structure  The structure corresponding to the containing mapping.
+ * \param[in]  _member     The member in _structure for this mapping value.
+ * \param[in]  _fields     Pointer to mapping fields schema array.
+ * \param[in]  _field      String for union discriminant field name, or NULL.
+ */
+#define CYAML_FIELD_UNION_PTR( \
+		_key, _flags, _structure, _member, _fields, _field) \
+{ \
+	.key = _key, \
+	.value = { \
+		CYAML_VALUE_UNION(((_flags) | CYAML_FLAG_POINTER), \
+				(*(((_structure *)NULL)->_member)), _fields \
+				_field), \
 	}, \
 	.data_offset = offsetof(_structure, _member) \
 }
