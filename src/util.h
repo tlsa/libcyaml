@@ -105,6 +105,7 @@ static inline const char * cyaml__type_to_str(cyaml_type_e type)
 		[CYAML_ENUM]           = "ENUM",
 		[CYAML_FLAGS]          = "FLAGS",
 		[CYAML_FLOAT]          = "FLOAT",
+		[CYAML_UNION]          = "UNION",
 		[CYAML_STRING]         = "STRING",
 		[CYAML_MAPPING]        = "MAPPING",
 		[CYAML_BITFIELD]       = "BITFIELD",
