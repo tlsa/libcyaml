@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: ISC
  *
- * Copyright (C) 2017-2019 Michael Drake <tlsa@netsurf-browser.org>
+ * Copyright (C) 2017-2020 Michael Drake <tlsa@netsurf-browser.org>
  */
 
 /**
@@ -190,6 +190,40 @@ static inline int cyaml__strcmp(
 	}
 
 	return cyaml_utf8_casecmp(str1, str2);
+}
+
+/** Identifies that no mapping schema entry was found for key. */
+#define CYAML_FIELDS_IDX_NONE 0xffff
+
+/**
+ * Get the offset to a mapping field by key in a mapping schema array.
+ *
+ * \param[in]  cfg     The client's CYAML library config.
+ * \param[in]  schema  CYAML schema for the mapping value to be loaded.
+ * \param[in]  key     Key to search for in mapping schema.
+ * \return index the mapping schema's mapping fields array for key, or
+ *         \ref CYAML_FIELDS_IDX_NONE if key is not present in schema.
+ */
+static inline uint16_t cyaml__get_mapping_field_idx(
+		const cyaml_config_t *cfg,
+		const cyaml_schema_value_t *schema,
+		const char *key)
+{
+	const cyaml_schema_field_t *fields = schema->mapping.fields;
+	uint16_t index = 0;
+
+	assert(schema->type == CYAML_UNION ||
+	       schema->type == CYAML_MAPPING);
+
+	/* Step through each entry in the schema */
+	for (; fields->key != NULL; fields++) {
+		if (cyaml__strcmp(cfg, schema, fields->key, key) == 0) {
+			return index;
+		}
+		index++;
+	}
+
+	return CYAML_FIELDS_IDX_NONE;
 }
 
 /**
