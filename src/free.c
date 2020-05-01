@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: ISC
  *
- * Copyright (C) 2017-2018 Michael Drake <tlsa@netsurf-browser.org>
+ * Copyright (C) 2017-2020 Michael Drake <tlsa@netsurf-browser.org>
  */
 
 /**
@@ -127,6 +127,138 @@ static void cyaml__free_mapping(
 	}
 }
 
+/**
+ * Attempt to read union discriminant from client data using search schema.
+ *
+ * \param[in]  cfg            The client's CYAML library config.
+ * \param[in]  union_schema   The schema for the union.
+ * \param[in]  search_schema  A schema to search for union discriminant.
+ * \param[in]  data           Pointer to client data for value at schema.
+ * \param[out] idx_out        Returns union discriminant value on success.
+ * \return CYAML_OK on success, CYAML_ERR_UNION_DISC_NOT_FOUND if the given
+ *         schema entry did not contain a discriminant, or appropriate error
+ *         otherwise.
+ */
+static cyaml_err_t cyaml__get_union_idx(
+		const cyaml_config_t *cfg,
+		const cyaml_schema_value_t *union_schema,
+		const cyaml_schema_value_t *search_schema,
+		const uint8_t *data,
+		uint16_t *idx_out)
+{
+	const cyaml_schema_field_t *disc_field;
+	int64_t union_discriminant;
+	const char *field_str;
+	uint16_t field_idx;
+	uint16_t disc_idx;
+	cyaml_err_t err;
+
+	assert(union_schema->type == CYAML_UNION);
+
+	if (search_schema->type != CYAML_MAPPING &&
+			search_schema != union_schema) {
+		return CYAML_ERR_UNION_DISC_NOT_FOUND;
+	}
+
+	/* Get union discriminant field. */
+	disc_idx = cyaml__get_mapping_field_idx(cfg, search_schema,
+			union_schema->mapping.union_discriminant);
+	disc_field = search_schema->mapping.fields + disc_idx;
+	if (disc_idx == CYAML_FIELDS_IDX_NONE ||
+			disc_field->value.type != CYAML_ENUM ||
+			disc_field->value.flags & CYAML_FLAG_POINTER) {
+		return CYAML_ERR_UNION_DISC_NOT_FOUND;
+	}
+
+	/* Read in the discriminant from the client data. */
+	union_discriminant = cyaml_sign_pad(cyaml_data_read(
+			disc_field->value.data_size,
+			data + disc_field->data_offset, &err),
+			disc_field->value.data_size);
+	if (err != CYAML_OK) {
+		return err;
+	}
+
+	/*Search enum for this value. */
+	err = cyaml__schema_get_string_for_value(&disc_field->value,
+			union_discriminant, &field_str);
+	if (err != CYAML_OK) {
+		return err;
+	}
+
+	/* Find corresponding mapping field index. */
+	field_idx = cyaml__get_mapping_field_idx(cfg, union_schema, field_str);
+	if (field_idx == CYAML_FIELDS_IDX_NONE) {
+		return CYAML_ERR_INVALID_KEY;
+	}
+
+	*idx_out = field_idx;
+	return CYAML_OK;
+}
+
+/**
+ * Internal function for freeing a CYAML-parsed union.
+ *
+ * \param[in]  cfg     The client's CYAML library config.
+ * \param[in]  parent  Parent entry on the free stack.
+ */
+static void cyaml__free_union(
+		const cyaml_config_t *cfg,
+		const cyaml_free_stack_t *parent)
+{
+	const cyaml_schema_field_t *schema = parent->schema->mapping.fields;
+	uint64_t count = 0;
+	cyaml_err_t err;
+
+	if (parent->schema->mapping.union_discriminant != NULL) {
+		err = CYAML_ERR_UNION_DISC_NOT_FOUND;
+
+		for (const cyaml_free_stack_t *p = parent;
+				p != NULL; p = p->parent) {
+			uint16_t idx;
+
+			err = cyaml__get_union_idx(cfg,
+					parent->schema, p->schema,
+					parent->data, &idx);
+			if (err == CYAML_ERR_UNION_DISC_NOT_FOUND) {
+				continue;
+			} else if (err != CYAML_OK) {
+				break;
+			}
+
+			schema += idx;
+			break;
+		}
+
+		if (err != CYAML_OK) {
+			return;
+		}
+	}
+
+	cyaml__log(cfg, CYAML_LOG_DEBUG,
+			"Free: Freeing union of type: %s (at offset: %u)\n",
+			schema->key, (unsigned)schema->data_offset);
+
+	if (schema->value.type == CYAML_SEQUENCE) {
+		cyaml_err_t err;
+		count = cyaml_data_read(schema->count_size,
+				parent->data + schema->count_offset,
+				&err);
+		if (err != CYAML_OK) {
+			return;
+		}
+	}
+
+	{
+		cyaml_free_stack_t stack = {
+			.data = parent->data + schema->data_offset,
+			.schema = &schema->value,
+			.parent = parent,
+		};
+		cyaml__free_value(cfg, &stack, count);
+	}
+}
+
 /* This function is documented at the forward declaration above. */
 static void cyaml__free_value(
 		const cyaml_config_t *cfg,
@@ -142,6 +274,9 @@ static void cyaml__free_value(
 
 	if (parent->schema->type == CYAML_MAPPING) {
 		cyaml__free_mapping(cfg, parent);
+
+	} else if (parent->schema->type == CYAML_UNION) {
+		cyaml__free_union(cfg, parent);
 
 	} else if (parent->schema->type == CYAML_SEQUENCE ||
 	           parent->schema->type == CYAML_SEQUENCE_FIXED) {
