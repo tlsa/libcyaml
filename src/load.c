@@ -65,6 +65,7 @@ typedef struct cyaml_state {
 		 * Additional state for \ref CYAML_STATE_IN_MAP_KEY and
 		 * \ref CYAML_STATE_IN_MAP_VALUE states. */
 		struct {
+			const cyaml_schema_field_t *union_field;
 			const cyaml_schema_field_t *fields;
 			/** Bit field of mapping fields found. */
 			cyaml_bitfield_t *fields_set;
@@ -780,7 +781,8 @@ static inline uint16_t cyaml__get_mapping_field_idx(
 	const cyaml_schema_field_t *fields = schema->mapping.fields;
 	uint16_t index = 0;
 
-	assert(schema->type == CYAML_MAPPING);
+	assert(schema->type == CYAML_UNION ||
+	       schema->type == CYAML_MAPPING);
 
 	/* Step through each entry in the schema */
 	for (; fields->key != NULL; fields++) {
@@ -1023,7 +1025,8 @@ static cyaml_err_t cyaml__stack_push(
 
 	switch (state) {
 	case CYAML_STATE_IN_MAP_KEY:
-		assert(schema->type == CYAML_MAPPING);
+		assert(schema->type == CYAML_UNION ||
+		       schema->type == CYAML_MAPPING);
 		s.mapping.fields = schema->mapping.fields;
 		s.mapping.fields_count = cyaml__get_mapping_field_count(
 				schema->mapping.fields);
@@ -1125,6 +1128,7 @@ static cyaml_err_t cyaml__validate_event_type_for_schema(
 		[CYAML_FLOAT]          = CYAML_EVT_SCALAR,
 		[CYAML_STRING]         = CYAML_EVT_SCALAR,
 		[CYAML_FLAGS]          = CYAML_EVT_SEQ_START,
+		[CYAML_UNION]          = CYAML_EVT_MAP_START,
 		[CYAML_MAPPING]        = CYAML_EVT_MAP_START,
 		[CYAML_BITFIELD]       = CYAML_EVT_MAP_START,
 		[CYAML_SEQUENCE]       = CYAML_EVT_SEQ_START,
@@ -2048,6 +2052,7 @@ static cyaml_err_t cyaml__read_value(
 	case CYAML_FLAGS:
 		err = cyaml__read_flags_value(ctx, schema, data);
 		break;
+	case CYAML_UNION: /**< Fall through. */
 	case CYAML_MAPPING:
 		err = cyaml__stack_push(ctx, CYAML_STATE_IN_MAP_KEY,
 				schema, data);
@@ -2245,17 +2250,71 @@ static cyaml_err_t cyaml__map_end(
 		cyaml_ctx_t *ctx,
 		const yaml_event_t *event)
 {
-	cyaml_err_t err;
-
 	CYAML_UNUSED(event);
 
-	err = cyaml__mapping_bitfieid_validate(ctx);
-	if (err != CYAML_OK) {
-		return err;
+	if (ctx->state->schema->type == CYAML_MAPPING) {
+		cyaml_err_t err = cyaml__mapping_bitfieid_validate(ctx);
+		if (err != CYAML_OK) {
+			return err;
+		}
+	} else {
+		assert(ctx->state->schema->type == CYAML_UNION);
+		if (ctx->state->mapping.union_field == NULL) {
+			return CYAML_ERR_EMPTY_UNION;
+		}
 	}
 
 	cyaml__stack_pop(ctx);
 	return CYAML_OK;
+}
+
+/**
+ * Write discriminant for a \ref CYAML_UNION.
+ *
+ * \param[in]  ctx    The CYAML loading context.
+ * \param[in]  field  The field that was loaded for the union.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__union_write_discriminant(
+		cyaml_ctx_t *ctx,
+		const cyaml_schema_field_t *field)
+{
+	const cyaml_schema_value_t *union_schema = ctx->state->schema;
+
+	ctx->state->mapping.union_field = field;
+
+	if (union_schema->mapping.union_discriminant == NULL) {
+		return CYAML_OK;
+	}
+
+	for (unsigned i = ctx->stack_idx - 1; i > 0; i--) {
+		const cyaml_schema_value_t *s = (ctx->stack + i)->schema;
+		const cyaml_schema_field_t *f;
+		uint16_t idx;
+
+		if (s->type != CYAML_MAPPING && s != union_schema) {
+			continue;
+		}
+
+		idx = cyaml__get_mapping_field_idx(ctx->config, s,
+				union_schema->mapping.union_discriminant);
+		f = s->mapping.fields + idx;
+		if (idx == CYAML_FIELDS_IDX_NONE ||
+				f->value.type != CYAML_ENUM ||
+				f->value.flags & CYAML_FLAG_POINTER) {
+			continue;
+		}
+
+		return cyaml__read_enum(ctx, &f->value,
+				ctx->state->mapping.union_field->key,
+				(ctx->stack + i)->data + f->data_offset);
+	}
+
+	cyaml__log(ctx->config, CYAML_LOG_ERROR,
+			"Load: Referenced union discriminant mapping "
+			"not found. "
+			"It must be an ancestor of the union.\n");
+	return CYAML_ERR_UNION_DISC_NOT_FOUND;
 }
 
 /**
@@ -2272,6 +2331,22 @@ static cyaml_err_t cyaml__map_value(
 	cyaml_state_t *state = ctx->state;
 	const cyaml_schema_field_t *field = cyaml_mapping_schema_field(ctx);
 	cyaml_data_t *data = state->data + field->data_offset;
+
+	if (ctx->state->schema->type == CYAML_UNION) {
+		if (field->value.type != CYAML_IGNORE) {
+			if (ctx->state->mapping.union_field == NULL) {
+				cyaml_err_t err;
+
+				err = cyaml__union_write_discriminant(
+						ctx, field);
+				if (err != CYAML_OK) {
+					return err;
+				}
+			} else {
+				return CYAML_ERR_MULTIPLE_UNION_VALUES;
+			}
+		}
+	}
 
 	/* Toggle mapping sub-state back to key.  Do this before
 	 * reading value, because reading value might increase the
