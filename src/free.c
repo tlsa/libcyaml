@@ -31,66 +31,84 @@
 #include "mem.h"
 
 /**
+ * Free stack entry.
+ *
+ * This allows inspection back up the call stack; the parent pointers form
+ * a linked list.
+ */
+typedef struct cyaml_free_stack {
+	/** Schema for value to be freed. */
+	const cyaml_schema_value_t * const schema;
+	/** Parent free stack entry pointer. */
+	const struct cyaml_free_stack * const parent;
+	/** Data for value to be freed. */
+	uint8_t *data;
+} cyaml_free_stack_t;
+
+/**
  * Internal function for freeing a CYAML-parsed data structure.
  *
  * \param[in]  cfg     The client's CYAML library config.
- * \param[in]  schema  The schema describing how to free `data`.
- * \param[in]  data    The data structure to be freed.
+ * \param[in]  parent  Parent entry on the free stack.
  * \param[in]  count   If data is of type \ref CYAML_SEQUENCE, this is the
  *                     number of entries in the sequence.
  */
 static void cyaml__free_value(
 		const cyaml_config_t *cfg,
-		const cyaml_schema_value_t *schema,
-		uint8_t * data,
+		cyaml_free_stack_t *parent,
 		uint64_t count);
 
 /**
  * Internal function for freeing a CYAML-parsed sequence.
  *
- * \param[in]  cfg              The client's CYAML library config.
- * \param[in]  sequence_schema  The schema describing how to free `data`.
- * \param[in]  data             The data structure to be freed.
- * \param[in]  count            The sequence's entry count.
+ * \param[in]  cfg     The client's CYAML library config.
+ * \param[in]  parent  Parent entry on the free stack.
+ * \param[in]  count   The sequence's entry count.
  */
 static void cyaml__free_sequence(
 		const cyaml_config_t *cfg,
-		const cyaml_schema_value_t *sequence_schema,
-		uint8_t * const data,
+		const cyaml_free_stack_t *parent,
 		uint64_t count)
 {
-	const cyaml_schema_value_t *schema = sequence_schema->sequence.entry;
-	uint32_t data_size = schema->data_size;
+	uint32_t data_size = parent->schema->sequence.entry->data_size;
 
 	cyaml__log(cfg, CYAML_LOG_DEBUG,
 			"Free: Freeing sequence with count: %u\n", count);
 
-	if (schema->flags & CYAML_FLAG_POINTER) {
-		data_size = sizeof(data);
+	if (parent->schema->sequence.entry->flags & CYAML_FLAG_POINTER) {
+		data_size = sizeof(parent->data);
 	}
 
 	for (unsigned i = 0; i < count; i++) {
+		cyaml_free_stack_t stack = {
+			.schema = parent->schema->sequence.entry,
+			.data = parent->data + data_size * i,
+			.parent = parent,
+		};
 		cyaml__log(cfg, CYAML_LOG_DEBUG,
 				"Free: Freeing sequence entry: %u\n", i);
-		cyaml__free_value(cfg, schema, data + data_size * i, 0);
+		cyaml__free_value(cfg, &stack, 0);
 	}
 }
 
 /**
  * Internal function for freeing a CYAML-parsed mapping.
  *
- * \param[in]  cfg             The client's CYAML library config.
- * \param[in]  mapping_schema  The schema describing how to free `data`.
- * \param[in]  data            The data structure to be freed.
+ * \param[in]  cfg     The client's CYAML library config.
+ * \param[in]  parent  Parent entry on the free stack.
  */
 static void cyaml__free_mapping(
 		const cyaml_config_t *cfg,
-		const cyaml_schema_value_t *mapping_schema,
-		uint8_t * const data)
+		const cyaml_free_stack_t *parent)
 {
-	const cyaml_schema_field_t *schema = mapping_schema->mapping.fields;
+	const cyaml_schema_field_t *schema = parent->schema->mapping.fields;
 
 	while (schema->key != NULL) {
+		cyaml_free_stack_t stack = {
+			.data = parent->data + schema->data_offset,
+			.schema = &schema->value,
+			.parent = parent,
+		};
 		uint64_t count = 0;
 		cyaml__log(cfg, CYAML_LOG_DEBUG,
 				"Free: Freeing key: %s (at offset: %u)\n",
@@ -98,13 +116,13 @@ static void cyaml__free_mapping(
 		if (schema->value.type == CYAML_SEQUENCE) {
 			cyaml_err_t err;
 			count = cyaml_data_read(schema->count_size,
-					data + schema->count_offset, &err);
+					parent->data + schema->count_offset,
+					&err);
 			if (err != CYAML_OK) {
 				return;
 			}
 		}
-		cyaml__free_value(cfg, &schema->value,
-				data + schema->data_offset, count);
+		cyaml__free_value(cfg, &stack, count);
 		schema++;
 	}
 }
@@ -112,30 +130,31 @@ static void cyaml__free_mapping(
 /* This function is documented at the forward declaration above. */
 static void cyaml__free_value(
 		const cyaml_config_t *cfg,
-		const cyaml_schema_value_t *schema,
-		uint8_t * data,
+		cyaml_free_stack_t *parent,
 		uint64_t count)
 {
-	if (schema->flags & CYAML_FLAG_POINTER) {
-		data = cyaml_data_read_pointer(data);
-		if (data == NULL) {
+	if (parent->schema->flags & CYAML_FLAG_POINTER) {
+		parent->data = cyaml_data_read_pointer(parent->data);
+		if (parent->data == NULL) {
 			return;
 		}
 	}
 
-	if (schema->type == CYAML_MAPPING) {
-		cyaml__free_mapping(cfg, schema, data);
-	} else if (schema->type == CYAML_SEQUENCE ||
-	           schema->type == CYAML_SEQUENCE_FIXED) {
-		if (schema->type == CYAML_SEQUENCE_FIXED) {
-			count = schema->sequence.max;
+	if (parent->schema->type == CYAML_MAPPING) {
+		cyaml__free_mapping(cfg, parent);
+
+	} else if (parent->schema->type == CYAML_SEQUENCE ||
+	           parent->schema->type == CYAML_SEQUENCE_FIXED) {
+		if (parent->schema->type == CYAML_SEQUENCE_FIXED) {
+			count = parent->schema->sequence.max;
 		}
-		cyaml__free_sequence(cfg, schema, data, count);
+		cyaml__free_sequence(cfg, parent, count);
 	}
 
-	if (schema->flags & CYAML_FLAG_POINTER) {
-		cyaml__log(cfg, CYAML_LOG_DEBUG, "Free: Freeing: %p\n", data);
-		cyaml__free(cfg, data);
+	if (parent->schema->flags & CYAML_FLAG_POINTER) {
+		cyaml__log(cfg, CYAML_LOG_DEBUG, "Free: Freeing: %p\n",
+				parent->data);
+		cyaml__free(cfg, parent->data);
 	}
 }
 
@@ -146,6 +165,11 @@ cyaml_err_t cyaml_free(
 		cyaml_data_t *data,
 		unsigned seq_count)
 {
+	cyaml_free_stack_t stack = {
+		.schema = schema,
+		.data = (void *)&data,
+	};
+
 	if (config == NULL) {
 		return CYAML_ERR_BAD_PARAM_NULL_CONFIG;
 	}
@@ -156,6 +180,6 @@ cyaml_err_t cyaml_free(
 		return CYAML_ERR_BAD_PARAM_NULL_SCHEMA;
 	}
 	cyaml__log(config, CYAML_LOG_DEBUG, "Free: Top level data: %p\n", data);
-	cyaml__free_value(config, schema, (void *)&data, seq_count);
+	cyaml__free_value(config, &stack, seq_count);
 	return CYAML_OK;
 }
