@@ -814,26 +814,6 @@ static cyaml_err_t cyaml__stack_ensure(
 }
 
 /**
- * Count the entries in a mapping field array schema.
- *
- * The mapping schema array must be terminated by an entry with a NULL key.
- *
- * \param[in]  mapping_schema  Array of mapping schema fields.
- * \return Number of entries in mapping_schema array.
- */
-static uint16_t cyaml__get_mapping_field_count(
-		const cyaml_schema_field_t *mapping_schema)
-{
-	const cyaml_schema_field_t *entry = mapping_schema;
-
-	while (entry->key != NULL) {
-		entry++;
-	}
-
-	return (uint16_t)(entry - mapping_schema);
-}
-
-/**
  * Create \ref CYAML_STATE_IN_MAP_KEY state's bitfield array allocation.
  *
  * The bitfield is used to record whether the mapping as all the required
