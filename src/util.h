@@ -227,6 +227,26 @@ static inline uint16_t cyaml__get_mapping_field_idx(
 }
 
 /**
+ * Count the entries in a mapping field array schema.
+ *
+ * The mapping schema array must be terminated by an entry with a NULL key.
+ *
+ * \param[in]  mapping_schema  Array of mapping schema fields.
+ * \return Number of entries in mapping_schema array.
+ */
+static inline uint16_t cyaml__get_mapping_field_count(
+		const cyaml_schema_field_t *mapping_schema)
+{
+	const cyaml_schema_field_t *entry = mapping_schema;
+
+	while (entry->key != NULL) {
+		entry++;
+	}
+
+	return (uint16_t)(entry - mapping_schema);
+}
+
+/**
  * Check of all the bits of a mask are set in a cyaml value flag word.
  *
  * \param[in] flags  The value flags to test.
