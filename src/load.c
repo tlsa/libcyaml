@@ -90,6 +90,7 @@ typedef struct cyaml_state {
  */
 typedef struct cyaml_anchor {
 	char *name;     /**< Anchor name. */
+	size_t len;     /**< Length of anchor name. */
 	uint32_t start; /**< Index into \ref cyaml_event_ctx_t events array. */
 	uint32_t end;   /**< Index into \ref cyaml_event_ctx_t events array. */
 } cyaml_anchor_t;
@@ -237,15 +238,21 @@ static cyaml_err_t cyaml__handle_alias(
 		cyaml_ctx_t *ctx,
 		const yaml_event_t *event)
 {
+	size_t len;
 	uint32_t anchor_idx;
 	cyaml_event_ctx_t *e_ctx = &ctx->event_ctx;
 	cyaml_event_replay_t *replay = &e_ctx->replay;
 	const cyaml_event_record_t *record = &e_ctx->record;
 	const char *alias = cyaml__get_yaml_event_alias(event);
 
+	len = strlen(alias);
+
 	anchor_idx = record->complete_count;
 	for (uint32_t i = 0; i < record->complete_count; i++) {
-		if (strcmp(record->complete[i].name, alias) == 0) {
+		if (record->complete[i].len != len) {
+			continue;
+		}
+		if (memcmp(record->complete[i].name, alias, len) == 0) {
 			anchor_idx = i;
 		}
 	}
@@ -353,7 +360,7 @@ static cyaml_err_t cyaml__handle_anchor(
 
 	anchor->start = record->events_count;
 	anchor->end = record->events_count;
-	anchor->name = cyaml__strdup(ctx->config, anchor_name, NULL);
+	anchor->name = cyaml__strdup(ctx->config, anchor_name, &anchor->len);
 	if (anchor->name == NULL) {
 		return CYAML_ERR_OOM;
 	}
