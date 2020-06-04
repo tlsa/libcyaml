@@ -247,22 +247,25 @@ static cyaml_err_t cyaml__handle_alias(
 
 	len = strlen(alias);
 
-	anchor_idx = record->complete_count;
-	for (uint32_t i = 0; i < record->complete_count; i++) {
-		if (record->complete[i].len != len) {
+	anchor_idx = 0;
+	for (uint32_t i = record->complete_count; i > 0; i--) {
+		if (record->complete[i - 1].len != len) {
 			continue;
 		}
-		if (memcmp(record->complete[i].name, alias, len) == 0) {
+		if (memcmp(record->complete[i - 1].name, alias, len) == 0) {
 			anchor_idx = i;
+			break;
 		}
 	}
 
-	if (anchor_idx >= record->complete_count) {
+	if (anchor_idx == 0) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
 				"Load: No anchor found for alias: '%s'\n",
 				alias);
 		return CYAML_ERR_INVALID_ALIAS;
 	}
+
+	anchor_idx -= 1;
 
 	cyaml__log(ctx->config, CYAML_LOG_INFO,
 			"Load: Found alias for anchor: '%s'\n", alias);
