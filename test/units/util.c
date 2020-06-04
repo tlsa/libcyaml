@@ -84,7 +84,7 @@ static bool test_util_strdup(
 	char *copy;
 
 	/* Create test allocation */
-	copy = cyaml__strdup(config, orig);
+	copy = cyaml__strdup(config, orig, NULL);
 	if (copy == NULL) {
 		return ttest_fail(&tc, "Memory allocation failed.");
 	}

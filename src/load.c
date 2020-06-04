@@ -353,7 +353,7 @@ static cyaml_err_t cyaml__handle_anchor(
 
 	anchor->start = record->events_count;
 	anchor->end = record->events_count;
-	anchor->name = cyaml__strdup(ctx->config, anchor_name);
+	anchor->name = cyaml__strdup(ctx->config, anchor_name, NULL);
 	if (anchor->name == NULL) {
 		return CYAML_ERR_OOM;
 	}
