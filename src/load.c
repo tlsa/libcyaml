@@ -480,6 +480,8 @@ static cyaml_err_t cyaml__record_stack_pop(
 			continue;
 		}
 
+		record->progress[i].end = event_index;
+
 		err = cyaml__anchor_recording_complete(ctx, i);
 		if (err != CYAML_OK) {
 			return err;
@@ -509,20 +511,6 @@ static cyaml_err_t cyaml__update_anchor_recordings(
 		const yaml_event_t *event)
 {
 	cyaml_err_t err;
-	cyaml_event_ctx_t *e_ctx = &ctx->event_ctx;
-	cyaml_event_record_t *record = &e_ctx->record;
-
-	for (uint32_t i = 0; i < record->progress_count; i++) {
-		if (record->progress[i].start == event_index) {
-			continue;
-		}
-
-		record->progress[i].end++;
-		cyaml__log(ctx->config, CYAML_LOG_DEBUG,
-				"Load:   Update '%s' end to index %"PRIu32"\n",
-				record->progress[i].name,
-				record->progress[i].end);
-	}
 
 	switch (cyaml__get_event_type(event)) {
 	case CYAML_EVT_SEQ_START: /* Fall through. */
