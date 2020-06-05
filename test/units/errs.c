@@ -4816,7 +4816,7 @@ static bool test_err_load_alloc_oom_2(
 		"  - &a1 {"
 		"      kind: cat,\n"
 		"      sound: meow,\n"
-		"      position: &a2 [ 1, 2, 1],\n"
+		"      position: &a2 [ 1, &my_value 2, 1],\n"
 		"      flags: &a3 [\n"
 		"        first,\n"
 		"        &a4 second,\n"
@@ -4838,13 +4838,15 @@ static bool test_err_load_alloc_oom_2(
 		"  - kind: snake\n"
 		"    sound: *a5\n"
 		"    position: *a6\n"
-		"    flags: *a7\n";
+		"    flags: *a7\n"
+		"    value: *my_value\n";
 	struct animal_s {
 		char *kind;
 		char *sound;
 		int **position;
 		unsigned position_count;
 		enum test_f *flags;
+		int value;
 	};
 	struct target_struct {
 		struct animal_s **animal;
@@ -4864,6 +4866,8 @@ static bool test_err_load_alloc_oom_2(
 		CYAML_FIELD_FLAGS("flags",
 				CYAML_FLAG_STRICT | CYAML_FLAG_POINTER,
 				struct animal_s, flags, strings, 4),
+		CYAML_FIELD_INT("value", CYAML_FLAG_OPTIONAL,
+				struct animal_s, value),
 		CYAML_FIELD_END
 	};
 	static const struct cyaml_schema_value animal_entry_schema = {
