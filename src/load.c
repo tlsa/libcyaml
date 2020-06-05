@@ -410,54 +410,11 @@ static cyaml_err_t cyaml__record_stack_push(
 }
 
 /**
- * Handle an anchor recording completing.
- *
- * Moves the anchor data from the progress array to the complete array.
- *
- * \param[in] ctx           The CYAML loading context.
- * \param[in] progress_idx  Index of the anchor in the progress array to move.
- * \return \ref CYAML_OK on success, or appropriate error otherwise.
- */
-static cyaml_err_t cyaml__anchor_recording_complete(
-		cyaml_ctx_t *ctx,
-		uint32_t progress_idx)
-{
-	uint32_t after;
-	cyaml_err_t err;
-	cyaml_event_ctx_t *e_ctx = &ctx->event_ctx;
-	cyaml_event_record_t *record = &e_ctx->record;
-
-	err = cyaml__new_anchor(ctx,
-			&record->complete_count,
-			&record->complete);
-	if (err != CYAML_OK) {
-		return err;
-	}
-
-	record->complete[record->complete_count - 1] =
-			record->progress[progress_idx];
-
-	after = record->progress_count - progress_idx - 1;
-
-	if (after != 0) {
-		memmove(record->progress + progress_idx,
-			record->progress + progress_idx + 1,
-			after * sizeof(*record->progress));
-	}
-	record->progress_count--;
-
-	cyaml__log(ctx->config, CYAML_LOG_DEBUG,
-			"Load:   Finish recording events for '%s'\n",
-			record->complete[record->complete_count - 1].name);
-
-	return CYAML_OK;
-}
-
-/**
  * Pop a recording stack context entry.
  *
  * Any actively recording anchors are checked, and if this event
- * ends the anchor, the anchor recording is terminated.
+ * ends the anchor, the anchor recording is moved from the progress
+ * array to the complete array.
  *
  * \param[in] ctx          The CYAML loading context.
  * \param[in] event_index  The current event's index in the recording.
@@ -467,6 +424,7 @@ static cyaml_err_t cyaml__record_stack_pop(
 		cyaml_ctx_t *ctx,
 		uint32_t event_index)
 {
+	uint32_t index;
 	uint32_t stack;
 	cyaml_err_t err;
 	cyaml_event_ctx_t *e_ctx = &ctx->event_ctx;
@@ -474,18 +432,26 @@ static cyaml_err_t cyaml__record_stack_pop(
 
 	assert(record->stack_count > 0);
 
+	index = record->progress_count - 1;
 	stack = record->stack[record->stack_count - 1];
-	for (uint32_t i = 0; i < record->progress_count; i++) {
-		if (record->progress[i].start != stack) {
-			continue;
-		}
 
-		record->progress[i].end = event_index;
+	if (record->progress[index].start == stack) {
+		record->progress[index].end = event_index;
 
-		err = cyaml__anchor_recording_complete(ctx, i);
+		err = cyaml__new_anchor(ctx,
+				&record->complete_count,
+				&record->complete);
 		if (err != CYAML_OK) {
 			return err;
 		}
+
+		cyaml__log(ctx->config, CYAML_LOG_DEBUG,
+				"Load:   Finish recording events for '%s'\n",
+				record->progress[index].name);
+
+		record->complete[record->complete_count - 1] =
+				record->progress[index];
+		record->progress_count--;
 	}
 
 	record->stack_count--;
