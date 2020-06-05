@@ -90,9 +90,9 @@ typedef struct cyaml_state {
  */
 typedef struct cyaml_anchor {
 	char *name;     /**< Anchor name. */
+	size_t len;     /**< Length of anchor name. */
 	uint32_t start; /**< Index into \ref cyaml_event_ctx_t events array. */
 	uint32_t end;   /**< Index into \ref cyaml_event_ctx_t events array. */
-	bool recording; /**< Whether the anchor is being actively recorded. */
 } cyaml_anchor_t;
 
 /**
@@ -103,18 +103,18 @@ typedef struct cyaml_anchor {
  * order to end anchor recordings with the correct end event.
  */
 typedef struct cyaml_event_record {
-	cyaml_anchor_t *anchors; /**< Array of anchor details or NULL. */
+	/** Array of recorded anchor details or NULL. */
+	cyaml_anchor_t *complete;
+	/** Array of recording anchor details or NULL. */
+	cyaml_anchor_t *progress;
 	yaml_event_t *data;      /**< Array of anchor-referenced events. */
 	uint32_t *events;        /**< Array of event data indices. */
 	uint32_t *stack;         /**< Stack of start event array indices. */
-	uint32_t anchors_count;  /**< Number of anchor details in `anchors`. */
+	uint32_t complete_count; /**< Number of anchor details in `complete`. */
+	uint32_t progress_count; /**< Number of anchor details in `progress`. */
 	uint32_t events_count;   /**< Number of events in events array. */
 	uint32_t stack_count;    /**< Number of entries in the event stack. */
 	uint32_t data_count;     /**< Number of recorded libyaml events. */
-	/**
-	 * Number of anchors we're actively recording events for.
-	 */
-	uint32_t recording_count;
 } cyaml_event_record_t;
 
 /**
@@ -238,33 +238,70 @@ static cyaml_err_t cyaml__handle_alias(
 		cyaml_ctx_t *ctx,
 		const yaml_event_t *event)
 {
+	size_t len;
 	uint32_t anchor_idx;
 	cyaml_event_ctx_t *e_ctx = &ctx->event_ctx;
 	cyaml_event_replay_t *replay = &e_ctx->replay;
 	const cyaml_event_record_t *record = &e_ctx->record;
 	const char *alias = cyaml__get_yaml_event_alias(event);
 
-	anchor_idx = record->anchors_count;
-	for (uint32_t i = 0; i < record->anchors_count; i++) {
-		if (record->anchors[i].recording == false &&
-		    strcmp(record->anchors[i].name, alias) == 0) {
+	len = strlen(alias);
+
+	anchor_idx = 0;
+	for (uint32_t i = record->complete_count; i > 0; i--) {
+		if (record->complete[i - 1].len != len) {
+			continue;
+		}
+		if (memcmp(record->complete[i - 1].name, alias, len) == 0) {
 			anchor_idx = i;
+			break;
 		}
 	}
 
-	if (anchor_idx >= record->anchors_count) {
+	if (anchor_idx == 0) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
 				"Load: No anchor found for alias: '%s'\n",
 				alias);
 		return CYAML_ERR_INVALID_ALIAS;
 	}
 
+	anchor_idx -= 1;
+
 	cyaml__log(ctx->config, CYAML_LOG_INFO,
 			"Load: Found alias for anchor: '%s'\n", alias);
 
 	replay->active = true;
 	replay->anchor_idx = anchor_idx;
-	replay->event_idx = record->anchors[anchor_idx].start;
+	replay->event_idx = record->complete[anchor_idx].start;
+
+	return CYAML_OK;
+}
+
+/**
+ * Create new anchor entry at the end of an anchors array.
+ *
+ * \param[in]      ctx            The CYAML loading context.
+ * \param[in,out]  anchors_count  Count of anchors in array. Updated on success.
+ * \param[in,out]  anchors        Anchors array, updated on success.
+ * \return \ref CYAML_OK on success, or appropriate error otherwise.
+ */
+static cyaml_err_t cyaml__new_anchor(
+		cyaml_ctx_t *ctx,
+		uint32_t *anchors_count,
+		cyaml_anchor_t **anchors)
+{
+	size_t anchors_size;
+	cyaml_anchor_t *temp;
+
+	anchors_size = *anchors_count * sizeof(**anchors);
+	temp = cyaml__realloc(ctx->config, *anchors, anchors_size,
+			anchors_size + sizeof(**anchors), true);
+	if (temp == NULL) {
+		return CYAML_ERR_OOM;
+	}
+
+	*anchors = temp;
+	(*anchors_count)++;
 
 	return CYAML_OK;
 }
@@ -288,11 +325,9 @@ static cyaml_err_t cyaml__handle_anchor(
 		const yaml_event_t *event,
 		bool *is_anchor_out)
 {
-	bool recording;
-	size_t anchors_size;
-	uint32_t anchors_count;
+	cyaml_err_t err;
+	cyaml_anchor_t *anchor;
 	const char *anchor_name;
-	cyaml_anchor_t *anchors;
 	cyaml_event_ctx_t *e_ctx = &ctx->event_ctx;
 	cyaml_event_record_t *record = &e_ctx->record;
 
@@ -305,27 +340,31 @@ static cyaml_err_t cyaml__handle_anchor(
 	cyaml__log(ctx->config, CYAML_LOG_INFO,
 			"Load: Found anchor: '%s'\n", anchor_name);
 
-	anchors_count = record->anchors_count;
-	anchors_size = anchors_count * sizeof(*anchors);
-	anchors = cyaml__realloc(ctx->config, record->anchors,
-			anchors_size, anchors_size + sizeof(*anchors),
-			true);
-	if (anchors == NULL) {
-		return CYAML_ERR_OOM;
+	if (cyaml__get_event_type(event) == CYAML_EVT_SEQ_START ||
+	    cyaml__get_event_type(event) == CYAML_EVT_MAP_START) {
+		/* Start of multi-event recording. */
+		err = cyaml__new_anchor(ctx,
+				&record->progress_count,
+				&record->progress);
+		if (err != CYAML_OK) {
+			return err;
+		}
+		anchor = record->progress + record->progress_count - 1;
+	} else {
+		/* Single event anchor */
+		err = cyaml__new_anchor(ctx,
+				&record->complete_count,
+				&record->complete);
+		if (err != CYAML_OK) {
+			return err;
+		}
+		anchor = record->complete + record->complete_count - 1;
 	}
 
-	recording = cyaml__get_event_type(event) == CYAML_EVT_SEQ_START ||
-	            cyaml__get_event_type(event) == CYAML_EVT_MAP_START;
-
-	record->anchors_count++;
-	record->anchors = anchors;
-	record->recording_count += recording;
-
-	anchors[anchors_count].recording = recording;
-	anchors[anchors_count].start = record->events_count;
-	anchors[anchors_count].end = record->events_count;
-	anchors[anchors_count].name = cyaml__strdup(ctx->config, anchor_name);
-	if (anchors[anchors_count].name == NULL) {
+	anchor->start = record->events_count;
+	anchor->end = record->events_count;
+	anchor->name = cyaml__strdup(ctx->config, anchor_name, &anchor->len);
+	if (anchor->name == NULL) {
 		return CYAML_ERR_OOM;
 	}
 
@@ -374,37 +413,45 @@ static cyaml_err_t cyaml__record_stack_push(
  * Pop a recording stack context entry.
  *
  * Any actively recording anchors are checked, and if this event
- * ends the anchor, the anchor recording is terminated.
+ * ends the anchor, the anchor recording is moved from the progress
+ * array to the complete array.
  *
  * \param[in] ctx          The CYAML loading context.
  * \param[in] event_index  The current event's index in the recording.
+ * \return \ref CYAML_OK on success, or appropriate error otherwise.
  */
-static void cyaml__record_stack_pop(
+static cyaml_err_t cyaml__record_stack_pop(
 		cyaml_ctx_t *ctx,
 		uint32_t event_index)
 {
+	uint32_t index;
 	uint32_t stack;
+	cyaml_err_t err;
 	cyaml_event_ctx_t *e_ctx = &ctx->event_ctx;
 	cyaml_event_record_t *record = &e_ctx->record;
 
 	assert(record->stack_count > 0);
 
+	index = record->progress_count - 1;
 	stack = record->stack[record->stack_count - 1];
-	for (uint32_t i = 0; i < record->anchors_count; i++) {
-		if (!record->anchors[i].recording) {
-			continue;
-		}
 
-		if (record->anchors[i].start != stack) {
-			continue;
-		}
+	if (record->progress[index].start == stack) {
+		record->progress[index].end = event_index;
 
-		record->anchors[i].recording = false;
-		record->recording_count--;
+		err = cyaml__new_anchor(ctx,
+				&record->complete_count,
+				&record->complete);
+		if (err != CYAML_OK) {
+			return err;
+		}
 
 		cyaml__log(ctx->config, CYAML_LOG_DEBUG,
 				"Load:   Finish recording events for '%s'\n",
-				record->anchors[i].name);
+				record->progress[index].name);
+
+		record->complete[record->complete_count - 1] =
+				record->progress[index];
+		record->progress_count--;
 	}
 
 	record->stack_count--;
@@ -412,6 +459,8 @@ static void cyaml__record_stack_pop(
 			"Load:   Pop recording stack entry for %s\n",
 			cyaml__libyaml_event_type_str(
 				&record->data[record->events[event_index]]));
+
+	return CYAML_OK;
 }
 
 /**
@@ -428,23 +477,6 @@ static cyaml_err_t cyaml__update_anchor_recordings(
 		const yaml_event_t *event)
 {
 	cyaml_err_t err;
-	cyaml_event_ctx_t *e_ctx = &ctx->event_ctx;
-	cyaml_event_record_t *record = &e_ctx->record;
-
-	for (uint32_t i = 0; i < record->anchors_count; i++) {
-		if (!record->anchors[i].recording) {
-			continue;
-		}
-		if (record->anchors[i].start == event_index) {
-			continue;
-		}
-
-		record->anchors[i].end++;
-		cyaml__log(ctx->config, CYAML_LOG_DEBUG,
-				"Load:   Update '%s' end to index %"PRIu32"\n",
-				record->anchors[i].name,
-				record->anchors[i].end);
-	}
 
 	switch (cyaml__get_event_type(event)) {
 	case CYAML_EVT_SEQ_START: /* Fall through. */
@@ -456,7 +488,10 @@ static cyaml_err_t cyaml__update_anchor_recordings(
 		break;
 	case CYAML_EVT_SEQ_END: /* Fall through. */
 	case CYAML_EVT_MAP_END:
-		cyaml__record_stack_pop(ctx, event_index);
+		err = cyaml__record_stack_pop(ctx, event_index);
+		if (err != CYAML_OK) {
+			return err;
+		}
 		break;
 	default:
 		break;
@@ -488,7 +523,7 @@ static cyaml_err_t cyaml__handle_record(
 	cyaml_event_record_t *record = &e_ctx->record;
 
 	if (replayed_event) {
-		if (e_ctx->record.recording_count == 0) {
+		if (e_ctx->record.progress_count == 0) {
 			return CYAML_OK;
 		}
 
@@ -507,7 +542,7 @@ static cyaml_err_t cyaml__handle_record(
 			return err;
 		}
 
-		if (e_ctx->record.recording_count == 0 &&
+		if (e_ctx->record.progress_count == 0 &&
 				event_has_anchor == false) {
 			return CYAML_OK;
 		}
@@ -572,7 +607,7 @@ static void cyaml__handle_replay(
 	const cyaml_event_record_t *record = &e_ctx->record;
 	const yaml_event_t *replay_event = record->data +
 			record->events[replay->event_idx];
-	const cyaml_anchor_t *replay_anchor = record->anchors +
+	const cyaml_anchor_t *replay_anchor = record->complete +
 			replay->anchor_idx;
 
 	assert(replay->active);
@@ -626,10 +661,15 @@ static void cyaml__free_recording(
 	cyaml_event_ctx_t *e_ctx = &ctx->event_ctx;
 	cyaml_event_record_t *record = &e_ctx->record;
 
-	for (uint32_t i = 0; i < record->anchors_count; i++) {
-		cyaml__free(ctx->config, record->anchors[i].name);
+	for (uint32_t i = 0; i < record->progress_count; i++) {
+		cyaml__free(ctx->config, record->progress[i].name);
 	}
-	cyaml__free(ctx->config, record->anchors);
+	cyaml__free(ctx->config, record->progress);
+
+	for (uint32_t i = 0; i < record->complete_count; i++) {
+		cyaml__free(ctx->config, record->complete[i].name);
+	}
+	cyaml__free(ctx->config, record->complete);
 
 	for (uint32_t i = 0; i < record->data_count; i++) {
 		yaml_event_delete(&record->data[i]);
