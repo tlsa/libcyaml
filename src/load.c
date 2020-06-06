@@ -2154,6 +2154,33 @@ static cyaml_err_t cyaml__doc_end(
 }
 
 /**
+ * Check the field against the schema for the current mapping key.
+ *
+ * \param[in]  ctx  The CYAML loading context.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__map_key_check_field(
+		const cyaml_ctx_t *ctx)
+{
+	const cyaml_schema_value_t *schema = ctx->state->schema;
+	const cyaml_schema_field_t *field = schema->mapping.fields +
+			ctx->state->mapping.fields_idx;
+
+	if (field->value.type != CYAML_IGNORE) {
+		if (cyaml__mapping_bitfieid_check(ctx) == true) {
+			cyaml__log(ctx->config, CYAML_LOG_ERROR,
+				"Load: Mapping field already seen: %s\n",
+					field->key);
+			return CYAML_ERR_UNEXPECTED_EVENT;
+		}
+	}
+
+	cyaml__mapping_bitfieid_set(ctx);
+
+	return CYAML_OK;
+}
+
+/**
  * YAML loading handler for new mapping fields in the
  * \ref CYAML_STATE_IN_MAP_KEY state.
  *
@@ -2193,13 +2220,10 @@ static cyaml_err_t cyaml__map_key(
 		return cyaml__consume_ignored_value(ctx, cyaml_event);
 	}
 
-	if (cyaml__mapping_bitfieid_check(ctx) == true) {
-		cyaml__log(ctx->config, CYAML_LOG_ERROR,
-				"Load: Mapping field already seen: %s\n", key);
-		return CYAML_ERR_UNEXPECTED_EVENT;
+	err = cyaml__map_key_check_field(ctx);
+	if (err != CYAML_OK) {
+		return err;
 	}
-
-	cyaml__mapping_bitfieid_set(ctx);
 
 	/* Toggle mapping sub-state to value */
 	ctx->state->state = CYAML_STATE_IN_MAP_VALUE;

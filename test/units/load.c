@@ -5277,6 +5277,57 @@ static bool test_load_no_log(
 }
 
 /**
+ * Test loading with duplicate ignored mapping fields.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_duplicate_ignored(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	int value = 90;
+	static const unsigned char yaml[] =
+		"ignore: 90\n"
+		"ignore: 90\n"
+		"test_int: 90\n";
+	struct target_struct {
+		int test_value_int;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_INT("test_int", CYAML_FLAG_DEFAULT,
+				struct target_struct, test_value_int),
+		CYAML_FIELD_IGNORE("ignore", CYAML_FLAG_DEFAULT),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->test_value_int != value) {
+		return ttest_fail(&tc, "Incorrect value");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading a sequence with arbitrary C struct member name for entry count.
  *
  * \param[in]  report  The test report context.
@@ -6586,6 +6637,7 @@ bool load_tests(
 	ttest_heading(rc, "Load tests: various");
 
 	pass &= test_load_no_log(rc, &config);
+	pass &= test_load_duplicate_ignored(rc, &config);
 	pass &= test_load_schema_top_level_scalar(rc, &config);
 	pass &= test_load_schema_top_level_string(rc, &config);
 	pass &= test_load_schema_top_level_sequence(rc, &config);
