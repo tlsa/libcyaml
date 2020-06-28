@@ -3476,7 +3476,7 @@ static bool test_save_sequence_null_values_int(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
-	static const unsigned char ref[] =
+	static const unsigned char ref1[] =
 		"---\n"
 		"- 7\n"
 		"- 6\n"
@@ -3485,6 +3485,18 @@ static bool test_save_sequence_null_values_int(
 		"- 3\n"
 		"- 2\n"
 		"- \n"
+		"- 0\n"
+		"...\n";
+	/* As of libyaml 0.2.5, trailing spaces are not emitted. */
+	static const unsigned char ref2[] =
+		"---\n"
+		"- 7\n"
+		"- 6\n"
+		"- 5\n"
+		"-\n"
+		"- 3\n"
+		"- 2\n"
+		"-\n"
 		"- 0\n"
 		"...\n";
 	static const int d[] = { 7, 6, 5, 4, 3, 2, 1, 0 };
@@ -3515,11 +3527,12 @@ static bool test_save_sequence_null_values_int(
 		return ttest_fail(&tc, cyaml_strerror(err));
 	}
 
-	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+	if ((len != YAML_LEN(ref1) || memcmp(ref1, buffer, len) != 0) &&
+	    (len != YAML_LEN(ref2) || memcmp(ref2, buffer, len) != 0)) {
 		return ttest_fail(&tc, "Bad data:\n"
 				"EXPECTED (%zu):\n\n%.*s\n\n"
 				"GOT (%zu):\n\n%.*s\n",
-				YAML_LEN(ref), YAML_LEN(ref), ref,
+				YAML_LEN(ref1), YAML_LEN(ref1), ref1,
 				len, len, buffer);
 	}
 
