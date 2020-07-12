@@ -879,17 +879,20 @@ static cyaml_err_t cyaml__mapping_bitfieid_create(
 		cyaml_ctx_t *ctx,
 		cyaml_state_t *state)
 {
-	cyaml_bitfield_t *bitfield;
 	unsigned count = state->mapping.fields_count;
-	size_t size = ((count + CYAML_BITFIELD_BITS - 1) / CYAML_BITFIELD_BITS)
-			* sizeof(*bitfield);
 
-	bitfield = cyaml__alloc(ctx->config, size, true);
-	if (bitfield == NULL) {
-		return CYAML_ERR_OOM;
+	if (count != 0) {
+		cyaml_bitfield_t *bitfield;
+		size_t size = ((count + CYAML_BITFIELD_BITS - 1) /
+				CYAML_BITFIELD_BITS) * sizeof(*bitfield);
+
+		bitfield = cyaml__alloc(ctx->config, size, true);
+		if (bitfield == NULL) {
+			return CYAML_ERR_OOM;
+		}
+
+		state->mapping.fields_set = bitfield;
 	}
-
-	state->mapping.fields_set = bitfield;
 
 	return CYAML_OK;
 }

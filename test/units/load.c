@@ -5057,6 +5057,56 @@ static bool test_load_mapping_only_optional_fields(
 }
 
 /**
+ * Test loading a mapping with only optional fields.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_without_any_fields(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct target_struct {
+		int i;
+	};
+	static const unsigned char yaml[] =
+		"{}\n";
+	struct target_struct *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt == NULL) {
+		return ttest_fail(&tc, "Should have allocated empty structure");
+	}
+
+	if (data_tgt->i != 0) {
+		return ttest_fail(&tc, "Value should be initialied to 0");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading a mapping with unknown keys ignored by config.
  *
  * \param[in]  report  The test report context.
@@ -6642,6 +6692,7 @@ bool load_tests(
 	pass &= test_load_schema_top_level_string(rc, &config);
 	pass &= test_load_schema_top_level_sequence(rc, &config);
 	pass &= test_load_multiple_documents_ignored(rc, &config);
+	pass &= test_load_mapping_without_any_fields(rc, &config);
 	pass &= test_load_mapping_with_multiple_fields(rc, &config);
 	pass &= test_load_mapping_with_optional_fields(rc, &config);
 	pass &= test_load_mapping_only_optional_fields(rc, &config);
