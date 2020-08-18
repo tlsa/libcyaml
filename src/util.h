@@ -129,7 +129,7 @@ static inline const char * cyaml__type_to_str(cyaml_type_e type)
 static inline void cyaml__log(
 		const cyaml_config_t *cfg,
 		cyaml_log_t level,
-		char *fmt, ...)
+		const char *fmt, ...)
 {
 	if (level >= cfg->log_level && cfg->log_fn != NULL) {
 		va_list args;
