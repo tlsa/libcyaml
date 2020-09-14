@@ -4865,7 +4865,7 @@ static bool test_load_mapping_with_optional_fields(
 		const cyaml_config_t *config)
 {
 	long values[] = { 4, 3, 2, 1 };
-	struct target_struct {
+	const struct target_struct {
 		char *a;
 		char b[10];
 		int c;
@@ -4880,12 +4880,12 @@ static bool test_load_mapping_with_optional_fields(
 		long *k;
 		unsigned k_count;
 	} data = {
-		.a = "Hello",
+		.a = (char *) "Hello",
 		.b = "World!",
 		.c = 0,
 		.d = { 0, 0, 0, 0 },
 		.e = values,
-		.f = "Required!",
+		.f = (char *) "Required!",
 		.g = NULL,
 		.h = "\0",
 		.i = 9876,
