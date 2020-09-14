@@ -1770,11 +1770,11 @@ static bool test_save_mapping_entry_sequence_string_ptr(
 		uint32_t seq_count;
 	} data = {
 		.seq = {
-			"This",
-			"is",
-			"merely",
-			"a",
-			"test", },
+			(char *) "This",
+			(char *) "is",
+			(char *) "merely",
+			(char *) "a",
+			(char *) "test", },
 		.seq_count = CYAML_ARRAY_LEN(data.seq),
 	};
 	static const struct cyaml_schema_value entry_schema = {
