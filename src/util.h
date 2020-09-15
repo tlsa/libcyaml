@@ -220,6 +220,32 @@ static inline int64_t cyaml_sign_pad(uint64_t raw, size_t size)
 #define CYAML_FIELDS_IDX_NONE 0xffff
 
 /**
+ * Lookup an enum string by value.
+ *
+ * \param[in]  schema        The schema for the enum value to search.
+ * \param[in]  lookup_value  The value to search for in the enum schema.
+ * \param[out] str_out       Returns the string on success.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static inline cyaml_err_t cyaml__schema_get_string_for_value(
+		const cyaml_schema_value_t *schema,
+		int64_t lookup_value,
+		const char **str_out)
+{
+	assert(schema->type == CYAML_ENUM);
+
+	for (uint32_t i = 0; i < schema->enumeration.count; i++) {
+		const cyaml_strval_t *str = &schema->enumeration.strings[i];
+		if (str->val == lookup_value) {
+			*str_out = str->str;
+			return CYAML_OK;
+		}
+	}
+
+	return CYAML_ERR_INVALID_VALUE;
+}
+
+/**
  * Get the offset to a mapping field by key in a mapping schema array.
  *
  * \param[in]  cfg     The client's CYAML library config.
