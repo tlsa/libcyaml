@@ -308,7 +308,8 @@ static cyaml_err_t cyaml__stack_push(
 
 	switch (state) {
 	case CYAML_STATE_IN_MAP_KEY:
-		assert(schema->type == CYAML_MAPPING);
+		assert(schema->type == CYAML_UNION ||
+		       schema->type == CYAML_MAPPING);
 		s.mapping.field = schema->mapping.fields;
 		break;
 	default:
@@ -994,6 +995,7 @@ static cyaml_err_t cyaml__write_value(
 	case CYAML_FLAGS:
 		err = cyaml__write_flags_value(ctx, schema, data);
 		break;
+	case CYAML_UNION: /**< Fall through. */
 	case CYAML_MAPPING:
 		err = cyaml__stack_push(ctx, CYAML_STATE_IN_MAP_KEY,
 				schema, data);
@@ -1140,6 +1142,71 @@ static cyaml_err_t cyaml__write_mapping_field(
 }
 
 /**
+ * Get union field index.
+ *
+ * \param[in]  ctx      The CYAML saving context.
+ * \param[out] idx_out  Returns the union's field on success.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__get_union_field_index(
+		cyaml_ctx_t *ctx,
+		uint16_t *idx_out)
+{
+	const cyaml_schema_value_t *union_schema = ctx->state->schema;
+	int64_t union_discriminant;
+
+	for (unsigned i = ctx->stack_idx - 1; i > 0; i--) {
+		const cyaml_schema_value_t *s = (ctx->stack + i)->schema;
+		const cyaml_schema_field_t *f;
+		const char *field_str;
+		uint16_t field_idx;
+		uint16_t disc_idx;
+		cyaml_err_t err;
+
+		if (s->type != CYAML_MAPPING && s != union_schema) {
+			continue;
+		}
+
+		disc_idx = cyaml__get_mapping_field_idx(ctx->config, s,
+				union_schema->mapping.union_discriminant);
+		f = s->mapping.fields + disc_idx;
+		if (disc_idx == CYAML_FIELDS_IDX_NONE ||
+				f->value.type != CYAML_ENUM ||
+				f->value.flags & CYAML_FLAG_POINTER) {
+			continue;
+		}
+
+		/* Read in the discriminant from the client data. */
+		union_discriminant = cyaml_sign_pad(cyaml_data_read(
+				f->value.data_size,
+				(ctx->stack + i)->data + f->data_offset, &err),
+				f->value.data_size);
+		if (err != CYAML_OK) {
+			return err;
+		}
+
+		/*Search enum for this value. */
+		err = cyaml__schema_get_string_for_value(&f->value,
+				union_discriminant, &field_str);
+		if (err != CYAML_OK) {
+			return err;
+		}
+
+		/* Find corresponding mapping field index. */
+		field_idx = cyaml__get_mapping_field_idx(ctx->config,
+				union_schema, field_str);
+		if (field_idx == CYAML_FIELDS_IDX_NONE) {
+			return CYAML_ERR_INVALID_KEY;
+		}
+
+		*idx_out = field_idx;
+		return CYAML_OK;
+	}
+
+	return CYAML_ERR_UNION_DISC_NOT_FOUND;
+}
+
+/**
  * YAML saving handler for the \ref CYAML_STATE_IN_MAP_KEY and \ref
  * CYAML_STATE_IN_MAP_VALUE states.
  *
@@ -1150,10 +1217,32 @@ static cyaml_err_t cyaml__write_mapping(
 		cyaml_ctx_t *ctx)
 {
 	const cyaml_schema_field_t *field = ctx->state->mapping.field;
+	uint32_t stack_idx = ctx->stack_idx;
 	cyaml_err_t err = CYAML_OK;
+
+	if (field != NULL) {
+		if (ctx->state->schema->type == CYAML_UNION &&
+		    ctx->state->schema->mapping.union_discriminant != NULL) {
+			uint16_t idx;
+
+			err = cyaml__get_union_field_index(ctx, &idx);
+			if (err != CYAML_OK) {
+				return err;
+			}
+
+			field += idx;
+		}
+	}
 
 	if (field != NULL && field->key != NULL) {
 		err = cyaml__write_mapping_field(ctx, field);
+		if (err != CYAML_OK) {
+			return err;
+		}
+
+		if (ctx->stack[stack_idx - 1].schema->type == CYAML_UNION) {
+			ctx->stack[stack_idx - 1].mapping.field = NULL;
+		}
 	} else {
 		err = cyaml__stack_pop(ctx, true);
 	}
