@@ -15,7 +15,6 @@
 #include <inttypes.h>
 #include <stdbool.h>
 #include <assert.h>
-#include <limits.h>
 
 #include <yaml.h>
 
@@ -571,28 +570,6 @@ static const char * cyaml__get_double(
 	sprintf(string, "%.16e", value);
 
 	return string;
-}
-
-/**
- * Pad a signed value that's smaller than 64-bit to an int64_t.
- *
- * This sets all the bits in the padded region.
- *
- * \param[in]  raw   Contains a signed value of size bytes.
- * \param[in]  size  Number of bytes used in raw.
- * \return Value padded to 64-bit signed.
- */
-static int64_t cyaml_sign_pad(uint64_t raw, size_t size)
-{
-	uint64_t sign_bit = (size == 0) ?
-			UINT64_MAX : ((uint64_t)1) << (size * CHAR_BIT - 1);
-	unsigned padding = ((unsigned)(sizeof(raw) - size)) * CHAR_BIT;
-
-	if ((sign_bit & raw) && (padding != 0)) {
-		raw |= (((uint64_t)1 << padding) - 1) << (size * CHAR_BIT);
-	}
-
-	return (int64_t)raw;
 }
 
 /**
