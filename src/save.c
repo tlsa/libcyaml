@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: ISC
  *
- * Copyright (C) 2018 Michael Drake <tlsa@netsurf-browser.org>
+ * Copyright (C) 2018-2020 Michael Drake <tlsa@netsurf-browser.org>
  */
 
 /**
@@ -1083,6 +1083,63 @@ static cyaml_err_t cyaml__write_doc(
 }
 
 /**
+ * Write a mapping field.
+ *
+ * \param[in]  ctx    The CYAML saving context.
+ * \param[in]  field  The field to write.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__write_mapping_field(
+		cyaml_ctx_t *ctx,
+		const cyaml_schema_field_t *field)
+{
+	cyaml_err_t err = CYAML_OK;
+	uint64_t seq_count = 0;
+
+	if (field->value.type == CYAML_IGNORE) {
+		ctx->state->mapping.field++;
+		return CYAML_OK;
+	}
+
+	if ((field->value.flags & CYAML_FLAG_OPTIONAL) &&
+	    (field->value.flags & CYAML_FLAG_POINTER)) {
+		const void *ptr = cyaml_data_read_pointer(
+				ctx->state->data + field->data_offset);
+		if (ptr == NULL) {
+			ctx->state->mapping.field++;
+			return CYAML_OK;
+		}
+	}
+
+	err = cyaml__emit_scalar(ctx, NULL, field->key, YAML_STR_TAG);
+	if (err != CYAML_OK) {
+		return err;
+	}
+
+	/* Advance the field before writing value, since writing the
+	 * value can put a new state entry on the stack. */
+	ctx->state->mapping.field++;
+
+	if (field->value.type == CYAML_SEQUENCE) {
+		seq_count = cyaml_data_read(field->count_size,
+				ctx->state->data + field->count_offset,
+				&err);
+		if (err != CYAML_OK) {
+			return err;
+		}
+		cyaml__log(ctx->config, CYAML_LOG_INFO,
+				"Save: Sequence entry count: %u\n",
+				seq_count);
+
+	} else if (field->value.type == CYAML_SEQUENCE_FIXED) {
+		seq_count = field->value.sequence.min;
+	}
+
+	return cyaml__write_value(ctx, &field->value,
+			ctx->state->data + field->data_offset, seq_count);
+}
+
+/**
  * YAML saving handler for the \ref CYAML_STATE_IN_MAP_KEY and \ref
  * CYAML_STATE_IN_MAP_VALUE states.
  *
@@ -1096,51 +1153,7 @@ static cyaml_err_t cyaml__write_mapping(
 	cyaml_err_t err = CYAML_OK;
 
 	if (field != NULL && field->key != NULL) {
-		uint64_t seq_count = 0;
-
-		if (field->value.type == CYAML_IGNORE) {
-			ctx->state->mapping.field++;
-			return CYAML_OK;
-		}
-
-		if ((field->value.flags & CYAML_FLAG_OPTIONAL) &&
-		    (field->value.flags & CYAML_FLAG_POINTER)) {
-			const void *ptr = cyaml_data_read_pointer(
-					ctx->state->data + field->data_offset);
-			if (ptr == NULL) {
-				ctx->state->mapping.field++;
-				return CYAML_OK;
-			}
-		}
-
-		err = cyaml__emit_scalar(ctx, NULL, field->key, YAML_STR_TAG);
-		if (err != CYAML_OK) {
-			return err;
-		}
-
-		/* Advance the field before writing value, since writing the
-		 * value can put a new state entry on the stack. */
-		ctx->state->mapping.field++;
-
-		if (field->value.type == CYAML_SEQUENCE) {
-			seq_count = cyaml_data_read(field->count_size,
-					ctx->state->data + field->count_offset,
-					&err);
-			if (err != CYAML_OK) {
-				return err;
-			}
-			cyaml__log(ctx->config, CYAML_LOG_INFO,
-					"Save: Sequence entry count: %u\n",
-					seq_count);
-
-		} else if (field->value.type == CYAML_SEQUENCE_FIXED) {
-			seq_count = field->value.sequence.min;
-		}
-
-		err = cyaml__write_value(ctx,
-				&field->value,
-				ctx->state->data + field->data_offset,
-				seq_count);
+		err = cyaml__write_mapping_field(ctx, field);
 	} else {
 		err = cyaml__stack_pop(ctx, true);
 	}
