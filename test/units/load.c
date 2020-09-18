@@ -4,6 +4,7 @@
  * Copyright (C) 2017-2019 Michael Drake <tlsa@netsurf-browser.org>
  */
 
+#include <inttypes.h>
 #include <stdbool.h>
 #include <assert.h>
 #include <string.h>
@@ -1845,6 +1846,152 @@ static bool test_load_mapping_entry_mapping_ptr(
 
 	if (memcmp(data_tgt->test_value_mapping, &value, sizeof(value)) != 0) {
 		return ttest_fail(&tc, "Incorrect value");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a union without a discriminant, to an internal structure.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_entry_union_no_disc(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	union value_s {
+		uint8_t a;
+		uint64_t b;
+	} value;
+	static const unsigned char yaml[] =
+		"union:\n"
+		"    b: 1234567890\n";
+	struct target_struct {
+		union value_s test_value_union;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field test_union_schema[] = {
+		CYAML_FIELD_INT("a", CYAML_FLAG_DEFAULT, union value_s, a),
+		CYAML_FIELD_INT("b", CYAML_FLAG_DEFAULT, union value_s, b),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UNION("union", CYAML_FLAG_DEFAULT,
+				struct target_struct, test_value_union,
+				test_union_schema, NULL),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	memset(&value, 0, sizeof(value));
+	value.b = 1234567890;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->test_value_union.b != value.b) {
+		return ttest_fail(&tc, "Incorrect value: "
+				"(Got: %"PRIu64", expected: %"PRIu64")",
+				data_tgt->test_value_union.b, value.b);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a union with a discriminant, to an internal structure.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_entry_union_with_disc(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	union value_s {
+		uint8_t a;
+		uint64_t b;
+	} value;
+	enum test_enum {
+		TEST_DISC_A,
+		TEST_DISC_B,
+		TEST_DISC__COUNT,
+	} discriminant = TEST_DISC_B;
+	static const unsigned char yaml[] =
+		"union:\n"
+		"    b: 1234567890\n";
+	struct target_struct {
+		union value_s test_value_union;
+		enum test_enum discriminant;
+	} *data_tgt = NULL;
+	static const cyaml_strval_t strings[TEST_DISC__COUNT] = {
+		[TEST_DISC_A] = { "a", 0 },
+		[TEST_DISC_B] = { "b", 1 },
+	};
+	static const struct cyaml_schema_field test_union_schema[] = {
+		CYAML_FIELD_INT("a", CYAML_FLAG_DEFAULT, union value_s, a),
+		CYAML_FIELD_INT("b", CYAML_FLAG_DEFAULT, union value_s, b),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UNION("union", CYAML_FLAG_DEFAULT,
+				struct target_struct, test_value_union,
+				test_union_schema,
+				"discriminant"),
+		CYAML_FIELD_ENUM("discriminant", CYAML_FLAG_OPTIONAL,
+				struct target_struct, discriminant,
+				strings, TEST_DISC__COUNT),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	memset(&value, 0, sizeof(value));
+	value.b = 1234567890;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->discriminant != discriminant) {
+		return ttest_fail(&tc, "Incorrect discriminant: "
+				"(Got: %i, expected: %i)",
+				data_tgt->discriminant, discriminant);
+	}
+
+	if (data_tgt->test_value_union.b != value.b) {
+		return ttest_fail(&tc, "Incorrect value: "
+				"(Got: %"PRIu64", expected: %"PRIu64")",
+				data_tgt->test_value_union.b, value.b);
 	}
 
 	return ttest_pass(&tc);
@@ -6696,6 +6843,10 @@ bool load_tests(
 	pass &= test_load_mapping_entry_flags_empty(rc, &config);
 	pass &= test_load_mapping_entry_bitfield_ptr(rc, &config);
 	pass &= test_load_mapping_entry_flags_sparse(rc, &config);
+	pass &= test_load_mapping_entry_union_no_disc(rc, &config);
+	pass &= test_load_mapping_entry_union_with_disc(rc, &config);
+//	pass &= test_load_mapping_entry_union_ptr_no_disc(rc, &config);
+//	pass &= test_load_mapping_entry_union_ptr_with_disc(rc, &config);
 
 	ttest_heading(rc, "Load single entry mapping tests: sequences");
 
