@@ -1,0 +1,24 @@
+creator: Michael
+elements:
+- circle:
+    radius: 5
+    centre:
+      x: 10
+      y: 10
+- polygon:
+    points:
+    - x: 2
+      y: 7
+    - x: 8
+      y: 4
+    - x: 2
+      y: 3
+    - x: 2
+      y: 3
+    - x: 9
+      y: 10
+- text:
+    string: Hello!
+    position:
+      x: 2
+      y: 25

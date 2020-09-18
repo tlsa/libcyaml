@@ -158,12 +158,15 @@ install: $(BUILDDIR)/$(LIB_SH_MAJ) $(BUILDDIR)/$(LIB_STATIC) $(BUILDDIR)/$(LIB_P
 	$(INSTALL) -d $(DESTDIR)$(PREFIX)/$(LIBDIR)/pkgconfig
 	$(INSTALL) -m 644 $(BUILDDIR)/$(LIB_PKGCON) $(DESTDIR)$(PREFIX)/$(LIBDIR)/pkgconfig/$(LIB_PKGCON)
 
-examples: $(BUILDDIR)/planner $(BUILDDIR)/numerical
+examples: $(BUILDDIR)/planner $(BUILDDIR)/numerical $(BUILDDIR)/diagram
 
 $(BUILDDIR)/planner: examples/planner/main.c $(BUILDDIR)/$(LIB_STATIC)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 $(BUILDDIR)/numerical: examples/numerical/main.c $(BUILDDIR)/$(LIB_STATIC)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+$(BUILDDIR)/diagram: examples/diagram/main.c $(BUILDDIR)/$(LIB_STATIC)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 .PHONY: all test test-quiet test-verbose test-debug \
