@@ -1315,6 +1315,9 @@ static cyaml_err_t cyaml__read_int(
 
 	if (end == value || errno == ERANGE ||
 	    temp < min || temp > max) {
+		cyaml__log(ctx->config, CYAML_LOG_ERROR,
+				"Load: Invalid INT value: '%s'\n",
+				value);
 		return CYAML_ERR_INVALID_VALUE;
 	}
 
@@ -1324,11 +1327,13 @@ static cyaml_err_t cyaml__read_int(
 /**
  * Helper to read a number into a uint64_t.
  *
+ * \param[in]  ctx    The CYAML loading context.
  * \param[in]  value  String containing scaler value.
  * \param[in]  out    The place to write the value in the output data.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
 static inline cyaml_err_t cyaml__read_uint64_t(
+		const cyaml_ctx_t *ctx,
 		const char *value,
 		uint64_t *out)
 {
@@ -1339,6 +1344,9 @@ static inline cyaml_err_t cyaml__read_uint64_t(
 	temp = strtoull(value, &end, 0);
 
 	if (end == value || errno == ERANGE) {
+		cyaml__log(ctx->config, CYAML_LOG_ERROR,
+				"Load: Invalid uint64_t value: '%s'\n",
+				value);
 		return CYAML_ERR_INVALID_VALUE;
 	}
 
@@ -1371,13 +1379,16 @@ static cyaml_err_t cyaml__read_uint(
 		return CYAML_ERR_INVALID_DATA_SIZE;
 	}
 
-	err = cyaml__read_uint64_t(value, &temp);
+	err = cyaml__read_uint64_t(ctx, value, &temp);
 	if (err != CYAML_OK) {
 		return err;
 	}
 
 	max = (~(uint64_t)0) >> ((8 - schema->data_size) * 8);
 	if (temp > max) {
+		cyaml__log(ctx->config, CYAML_LOG_ERROR,
+				"Load: Invalid UINT value: '%s'\n",
+				value);
 		return CYAML_ERR_INVALID_VALUE;
 	}
 
@@ -1401,7 +1412,7 @@ static cyaml_err_t cyaml__read_bool(
 {
 	bool temp = true;
 	static const char * const false_strings[] = {
-		"false", "no", "disable", "0",
+		"false", "no", "off", "disable", "0",
 	};
 
 	CYAML_UNUSED(ctx);
@@ -1443,11 +1454,14 @@ static cyaml_err_t cyaml__read_enum(
 
 	if (schema->flags & CYAML_FLAG_STRICT) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
-				"Load: Invalid enumeration value: %s\n", value);
+				"Load: Invalid ENUM value: %s\n", value);
 		return CYAML_ERR_INVALID_VALUE;
 
 	}
 
+	cyaml__log(ctx->config, CYAML_LOG_DEBUG,
+			"Load: Attempt numerical fallback for ENUM: "
+			"'%s'\n", value);
 	return cyaml__read_int(ctx, schema, value, data);
 }
 
@@ -1478,6 +1492,8 @@ static cyaml_err_t cyaml__read_float_f(
 	temp = strtof(value, &end);
 
 	if (end == value || errno == ERANGE) {
+		cyaml__log(ctx->config, CYAML_LOG_ERROR,
+				"Load: Invalid FLOAT value: %s\n", value);
 		return CYAML_ERR_INVALID_VALUE;
 	}
 
@@ -1513,6 +1529,8 @@ static cyaml_err_t cyaml__read_float_d(
 	temp = strtod(value, &end);
 
 	if (end == value || errno == ERANGE) {
+		cyaml__log(ctx->config, CYAML_LOG_ERROR,
+				"Load: Invalid FLOAT value: %s\n", value);
 		return CYAML_ERR_INVALID_VALUE;
 	}
 
@@ -1594,8 +1612,14 @@ static cyaml_err_t cyaml__read_string(
 	if (schema->string.min > schema->string.max) {
 		return CYAML_ERR_BAD_MIN_MAX_SCHEMA;
 	} else if (str_len < schema->string.min) {
+		cyaml__log(ctx->config, CYAML_LOG_ERROR,
+				"Load: STRING length < %"PRIu32": %s\n",
+				schema->string.min, value);
 		return CYAML_ERR_STRING_LENGTH_MIN;
 	} else if (str_len > schema->string.max) {
+		cyaml__log(ctx->config, CYAML_LOG_ERROR,
+				"Load: STRING length > %"PRIu32": %s\n",
+				schema->string.max, value);
 		return CYAML_ERR_STRING_LENGTH_MAX;
 	}
 
@@ -1821,7 +1845,7 @@ static cyaml_err_t cyaml__set_bitval(
 
 	switch (cyaml__get_event_type(event)) {
 	case CYAML_EVT_SCALAR:
-		err = cyaml__read_uint64_t(
+		err = cyaml__read_uint64_t(ctx,
 				(const char *)event->data.scalar.value, &value);
 		if (err != CYAML_OK) {
 			return err;
