@@ -1412,7 +1412,7 @@ static cyaml_err_t cyaml__read_bool(
 {
 	bool temp = true;
 	static const char * const false_strings[] = {
-		"false", "no", "disable", "0",
+		"false", "no", "off", "disable", "0",
 	};
 
 	CYAML_UNUSED(ctx);
