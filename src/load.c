@@ -2233,7 +2233,7 @@ static cyaml_err_t cyaml__map_key(
 		cyaml_event_t cyaml_event;
 		if (!(ctx->config->flags &
 				CYAML_CFG_IGNORE_UNKNOWN_KEYS)) {
-			cyaml__log(ctx->config, CYAML_LOG_DEBUG,
+			cyaml__log(ctx->config, CYAML_LOG_ERROR,
 					"Load: Unexpected key: %s\n", key);
 			return CYAML_ERR_INVALID_KEY;
 		}
