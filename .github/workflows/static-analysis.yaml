@@ -16,19 +16,12 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
       with:
-        # We must fetch at least the immediate parents so that if this is
-        # a pull request then we can checkout the head.
-        fetch-depth: 2
+        fetch-depth: 1
 
     - name: apt-get install packages
       run: sudo apt-get update -qq &&
            sudo apt-get install --no-install-recommends -y
                libyaml-dev
-
-    # If this run was triggered by a pull request event, then checkout
-    # the head of the pull request instead of the merge commit.
-    - run: git checkout HEAD^2
-      if: ${{ github.event_name == 'pull_request' }}
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
@@ -54,17 +47,14 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
 
     - name: apt-get install packages
       run: sudo apt-get update -qq &&
            sudo apt-get install --no-install-recommends -y
                libyaml-dev
                clang-tools
-
-    # If this run was triggered by a pull request event, then checkout
-    # the head of the pull request instead of the merge commit.
-    - run: git checkout HEAD^2
-      if: ${{ github.event_name == 'pull_request' }}
 
     - name: scan-build
       run: |
