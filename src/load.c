@@ -639,7 +639,6 @@ static void cyaml__handle_replay(
  * object.
  *
  * \param[in]  ctx    The CYAML loading context.
- * \return \ref CYAML_OK on success, or appropriate error otherwise.
  */
 static void cyaml__delete_yaml_event(
 		cyaml_ctx_t *ctx)
