@@ -15,6 +15,7 @@
 #include "../../src/util.h"
 
 #include "ttest.h"
+#include "test.h"
 
 /**
  * Test cyaml memory functions.

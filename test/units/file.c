@@ -11,6 +11,7 @@
 #include <cyaml/cyaml.h>
 
 #include "ttest.h"
+#include "test.h"
 
 /**
  * Unit test context data.

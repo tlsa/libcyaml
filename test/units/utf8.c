@@ -13,6 +13,7 @@
 #include "../../src/utf8.h"
 
 #include "ttest.h"
+#include "test.h"
 
 /** Helper macro to squash unused variable warnings. */
 #define UNUSED(_x) ((void)(_x))

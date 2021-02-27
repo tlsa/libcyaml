@@ -11,6 +11,7 @@
 #include <cyaml/cyaml.h>
 
 #include "ttest.h"
+#include "test.h"
 
 /** Macro to squash unused variable compiler warnings. */
 #define UNUSED(_x) ((void)(_x))
