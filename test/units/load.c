@@ -13,6 +13,7 @@
 
 #include "../../src/data.h"
 #include "ttest.h"
+#include "test.h"
 
 /** Macro to squash unused variable compiler warnings. */
 #define UNUSED(_x) ((void)(_x))
@@ -1767,12 +1768,13 @@ static bool test_load_mapping_entry_mapping(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
 	memset(&value, 0, sizeof(value));
 	value.a = 123;
 	value.b = 9999;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -1830,12 +1832,13 @@ static bool test_load_mapping_entry_mapping_ptr(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
 	memset(&value, 0, sizeof(value));
 	value.a = 123;
 	value.b = 9999;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -2410,6 +2413,7 @@ static bool test_load_mapping_entry_sequence_mapping(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
 	memset(ref, 0, sizeof(ref));
 	ref[0].a = 123;
@@ -2419,7 +2423,7 @@ static bool test_load_mapping_entry_sequence_mapping(
 	ref[2].a = 1;
 	ref[2].b = 765;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -5356,9 +5360,10 @@ static bool test_load_no_log(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
 	cfg.log_fn = NULL;
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -5540,9 +5545,10 @@ static bool test_load_enum_insensitive(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
 	cfg.flags |= CYAML_CFG_CASE_INSENSITIVE;
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -5593,9 +5599,10 @@ static bool test_load_flags_insensitive(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
 	cfg.flags |= CYAML_CFG_CASE_INSENSITIVE;
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -5665,9 +5672,10 @@ static bool test_load_mapping_fields_cfg_insensitive_1(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
 	cfg.flags |= CYAML_CFG_CASE_INSENSITIVE;
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -5749,9 +5757,10 @@ static bool test_load_mapping_fields_cfg_insensitive_2(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
 	cfg.flags |= CYAML_CFG_CASE_INSENSITIVE;
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -5833,9 +5842,10 @@ static bool test_load_mapping_fields_cfg_insensitive_3(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
 	cfg.flags |= CYAML_CFG_CASE_INSENSITIVE;
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -5918,9 +5928,10 @@ static bool test_load_mapping_fields_value_sensitive_1(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
 	cfg.flags |= CYAML_CFG_CASE_INSENSITIVE;
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -6004,9 +6015,10 @@ static bool test_load_mapping_fields_value_insensitive_1(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
 	cfg.flags |= CYAML_CFG_CASE_INSENSITIVE;
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);

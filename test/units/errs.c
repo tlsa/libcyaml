@@ -12,6 +12,7 @@
 #include <cyaml/cyaml.h>
 
 #include "ttest.h"
+#include "test.h"
 
 /** Macro to squash unused variable compiler warnings. */
 #define UNUSED(_x) ((void)(_x))
@@ -243,10 +244,11 @@ static bool test_err_load_null_mem_fn(
 		.schema = NULL,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
 	cfg.mem_fn = NULL;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, NULL,
 			(cyaml_data_t **) NULL, NULL);
@@ -294,10 +296,11 @@ static bool test_err_save_null_mem_fn(
 		.config = &cfg,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
 	cfg.mem_fn = NULL;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
 
 	err = cyaml_save_data(&buffer, &len, &cfg, &top_schema, &data, 0);
 	if (err != CYAML_ERR_BAD_CONFIG_NULL_MEMFN) {
@@ -2445,9 +2448,10 @@ static bool test_err_save_schema_invalid_value_null_ptr(
 		.config = &cfg,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
 	cfg.flags |= CYAML_CFG_STYLE_BLOCK;
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
 
 	err = cyaml_save_data(&buffer, &len, &cfg, &top_schema, data,
 			CYAML_ARRAY_LEN(data));
@@ -5310,10 +5314,11 @@ static bool test_err_load_flag_value_alias(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
 	cfg.flags |= CYAML_CFG_NO_ALIAS;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -5380,10 +5385,11 @@ static bool test_err_load_bitfield_value_alias_1(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
 	cfg.flags |= CYAML_CFG_NO_ALIAS;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -5450,10 +5456,11 @@ static bool test_err_load_bitfield_value_alias_2(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
 	cfg.flags |= CYAML_CFG_NO_ALIAS;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -5509,10 +5516,11 @@ static bool test_err_load_mapping_key_alias(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
 	cfg.flags |= CYAML_CFG_NO_ALIAS;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -5568,10 +5576,11 @@ static bool test_err_load_mapping_value_alias_1(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
 	cfg.flags |= CYAML_CFG_NO_ALIAS;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -5624,10 +5633,11 @@ static bool test_err_load_mapping_value_alias_2(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
 	cfg.flags |= CYAML_CFG_NO_ALIAS | CYAML_CFG_IGNORE_UNKNOWN_KEYS;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -5677,10 +5687,11 @@ static bool test_err_load_mapping_value_alias_3(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
 	cfg.flags |= CYAML_CFG_NO_ALIAS;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);

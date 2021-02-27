@@ -13,6 +13,7 @@
 
 #include "../../src/data.h"
 #include "ttest.h"
+#include "test.h"
 
 /** Macro to squash unused variable compiler warnings. */
 #define UNUSED(_x) ((void)(_x))
@@ -3518,9 +3519,10 @@ static bool test_save_sequence_null_values_int(
 		.config = &cfg,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
 	cfg.flags |= CYAML_CFG_STYLE_BLOCK;
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
 
 	err = cyaml_save_data(&buffer, &len, &cfg, &top_schema, data,
 			CYAML_ARRAY_LEN(data));
@@ -3580,9 +3582,10 @@ static bool test_save_sequence_null_str_values_int(
 		.config = &cfg,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
 	cfg.flags |= CYAML_CFG_STYLE_BLOCK;
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
 
 	err = cyaml_save_data(&buffer, &len, &cfg, &top_schema, data,
 			CYAML_ARRAY_LEN(data));
@@ -3682,9 +3685,10 @@ static bool test_save_sequence_config_flow_style(
 		.config = &cfg,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
 	cfg.flags |= CYAML_CFG_STYLE_FLOW;
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
 
 	err = cyaml_save_data(&buffer, &len, &cfg, &top_schema, data, 3);
 	if (err != CYAML_OK) {
@@ -3735,9 +3739,10 @@ static bool test_save_sequence_config_block_style(
 		.config = &cfg,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
 	cfg.flags |= CYAML_CFG_STYLE_BLOCK;
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
 
 	err = cyaml_save_data(&buffer, &len, &cfg, &top_schema, data, 3);
 	if (err != CYAML_OK) {

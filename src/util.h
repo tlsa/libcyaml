@@ -15,14 +15,6 @@
 #include "cyaml/cyaml.h"
 #include "utf8.h"
 
-/** Compile time assertion macro. */
-#define cyaml_static_assert(e) \
-{ \
-	enum { \
-		cyaml_static_assert_check = 1 / (!!(e)) \
-	}; \
-}
-
 /** Macro to squash unused variable compiler warnings. */
 #define CYAML_UNUSED(_x) ((void)(_x))
 
@@ -37,7 +29,7 @@ static inline bool cyaml__host_is_little_endian(void)
 {
 	static const uint16_t test = 1;
 
-	return ((uint8_t *) &test)[0] == 1;
+	return ((const uint8_t *) &test)[0] == 1;
 }
 
 /**

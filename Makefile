@@ -56,7 +56,10 @@ LIBYAML_LIBS := $(if $(PKG_CONFIG),$(shell $(PKG_CONFIG) --libs $(LIBYAML)),-lya
 
 INCLUDE = -I include
 CFLAGS += $(INCLUDE) $(VERSION_FLAGS) $(LIBYAML_CFLAGS)
-CFLAGS += -std=c11 -Wall -Wextra -pedantic -Wconversion -Wwrite-strings
+CFLAGS += -std=c11 -Wall -Wextra -pedantic \
+		-Wconversion -Wwrite-strings -Wcast-align -Wpointer-arith \
+		-Winit-self -Wshadow -Wstrict-prototypes -Wmissing-prototypes \
+		-Wredundant-decls -Wundef -Wvla -Wdeclaration-after-statement
 LDFLAGS += $(LIBYAML_LIBS)
 LDFLAGS_SHARED += -Wl,-soname=$(LIB_SH_MAJ) -shared
 
