@@ -58,8 +58,9 @@ static inline void cyaml_data_write_pointer(
 {
 	/* Refuse to build on platforms where sizeof pointer would
 	 * lead to \ref CYAML_ERR_INVALID_DATA_SIZE. */
-	cyaml_static_assert(sizeof(char *) >  0);
-	cyaml_static_assert(sizeof(char *) <= sizeof(uint64_t));
+	static_assert(sizeof(char *) >  0, "Incompatible pointer size.");
+	static_assert(sizeof(char *) <= sizeof(uint64_t),
+			"Incompatible pointer size.");
 
 	CYAML_UNUSED(cyaml_data_write((uint64_t)ptr, sizeof(ptr), data_target));
 
@@ -115,8 +116,9 @@ static inline uint8_t * cyaml_data_read_pointer(
 
 	/* Refuse to build on platforms where sizeof pointer would
 	 * lead to \ref CYAML_ERR_INVALID_DATA_SIZE. */
-	cyaml_static_assert(sizeof(char *) >  0);
-	cyaml_static_assert(sizeof(char *) <= sizeof(uint64_t));
+	static_assert(sizeof(char *) >  0, "Incompatible pointer size.");
+	static_assert(sizeof(char *) <= sizeof(uint64_t),
+			"Incompatible pointer size.");
 
 	return (void *)cyaml_data_read(sizeof(char *), data, &err);
 }

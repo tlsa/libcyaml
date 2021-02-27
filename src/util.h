@@ -15,14 +15,6 @@
 #include "cyaml/cyaml.h"
 #include "utf8.h"
 
-/** Compile time assertion macro. */
-#define cyaml_static_assert(e) \
-{ \
-	enum { \
-		cyaml_static_assert_check = 1 / (!!(e)) \
-	}; \
-}
-
 /** Macro to squash unused variable compiler warnings. */
 #define CYAML_UNUSED(_x) ((void)(_x))
 
