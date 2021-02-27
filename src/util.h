@@ -29,7 +29,7 @@ static inline bool cyaml__host_is_little_endian(void)
 {
 	static const uint16_t test = 1;
 
-	return ((uint8_t *) &test)[0] == 1;
+	return ((const uint8_t *) &test)[0] == 1;
 }
 
 /**
