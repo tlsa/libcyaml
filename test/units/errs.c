@@ -2885,7 +2885,7 @@ static bool test_err_save_schema_bad_bitfield(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_load_schema_invalid_value_float_range(
+static bool test_err_load_schema_invalid_value_float_range1(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
@@ -2895,7 +2895,152 @@ static bool test_err_load_schema_invalid_value_float_range(
 		float a;
 	} *data_tgt = NULL;
 	static const struct cyaml_schema_field mapping_schema[] = {
-		CYAML_FIELD_FLOAT("a", CYAML_FLAG_DEFAULT,
+		CYAML_FIELD_FLOAT("a",
+				CYAML_FLAG_DEFAULT | CYAML_FLAG_STRICT,
+				struct target_struct, a),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading when schema expects float but value is out of range.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_invalid_value_float_range2(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"a: -3.5e+38\n";
+	struct target_struct {
+		float a;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_FLOAT("a",
+				CYAML_FLAG_DEFAULT | CYAML_FLAG_STRICT,
+				struct target_struct, a),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading when schema expects float but value is out of range.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_invalid_value_float_range3(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"a: 1.55331e-40f\n";
+	struct target_struct {
+		float a;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_FLOAT("a",
+				CYAML_FLAG_DEFAULT | CYAML_FLAG_STRICT,
+				struct target_struct, a),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading when schema expects float but value is out of range.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_invalid_value_float_range4(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"a: -1.55331e-40f\n";
+	struct target_struct {
+		float a;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_FLOAT("a",
+				CYAML_FLAG_DEFAULT | CYAML_FLAG_STRICT,
 				struct target_struct, a),
 		CYAML_FIELD_END
 	};
@@ -2979,17 +3124,66 @@ static bool test_err_load_schema_invalid_value_float_invalid(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
-static bool test_err_load_schema_invalid_value_double_range(
+static bool test_err_load_schema_invalid_value_double_range1(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
 	static const unsigned char yaml[] =
-		"a: 1.8e+308\n";
+		"a: 1.8e+4999\n";
 	struct target_struct {
 		double a;
 	} *data_tgt = NULL;
 	static const struct cyaml_schema_field mapping_schema[] = {
-		CYAML_FIELD_FLOAT("a", CYAML_FLAG_DEFAULT,
+		CYAML_FIELD_FLOAT("a",
+				CYAML_FLAG_DEFAULT | CYAML_FLAG_STRICT,
+				struct target_struct, a),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading when schema expects double but value is out of range.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_invalid_value_double_range2(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"a: -1.8e+4999\n";
+	struct target_struct {
+		double a;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_FLOAT("a",
+				CYAML_FLAG_DEFAULT | CYAML_FLAG_STRICT,
 				struct target_struct, a),
 		CYAML_FIELD_END
 	};
@@ -5909,13 +6103,17 @@ bool errs_tests(
 	pass &= test_err_load_schema_invalid_value_int_range_3(rc, &config);
 	pass &= test_err_load_schema_invalid_value_int_range_4(rc, &config);
 	pass &= test_err_load_schema_invalid_value_int_range_5(rc, &config);
-	pass &= test_err_load_schema_invalid_value_float_range(rc, &config);
-	pass &= test_err_load_schema_invalid_value_double_range(rc, &config);
 	pass &= test_err_load_schema_invalid_value_uint_range_1(rc, &config);
 	pass &= test_err_load_schema_invalid_value_uint_range_2(rc, &config);
 	pass &= test_err_load_schema_invalid_value_uint_range_3(rc, &config);
 	pass &= test_err_load_schema_invalid_value_uint_range_4(rc, &config);
 	pass &= test_err_load_schema_invalid_value_uint_range_5(rc, &config);
+	pass &= test_err_load_schema_invalid_value_float_range1(rc, &config);
+	pass &= test_err_load_schema_invalid_value_float_range2(rc, &config);
+	pass &= test_err_load_schema_invalid_value_float_range3(rc, &config);
+	pass &= test_err_load_schema_invalid_value_float_range4(rc, &config);
+	pass &= test_err_load_schema_invalid_value_double_range1(rc, &config);
+	pass &= test_err_load_schema_invalid_value_double_range2(rc, &config);
 	pass &= test_err_load_schema_invalid_value_float_invalid(rc, &config);
 	pass &= test_err_load_schema_invalid_value_double_invalid(rc, &config);
 

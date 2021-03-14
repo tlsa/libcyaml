@@ -18,6 +18,8 @@
 #include <assert.h>
 #include <limits.h>
 #include <errno.h>
+#include <float.h>
+#include <math.h>
 
 #include <yaml.h>
 
@@ -1490,10 +1492,31 @@ static cyaml_err_t cyaml__read_float_f(
 	errno = 0;
 	temp = strtof(value, &end);
 
-	if (end == value || errno == ERANGE) {
+	if (end == value) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
 				"Load: Invalid FLOAT value: %s\n", value);
 		return CYAML_ERR_INVALID_VALUE;
+
+	} else if (errno == ERANGE) {
+		cyaml_log_t level = CYAML_LOG_ERROR;
+
+		if (!cyaml__flag_check_all(schema->flags, CYAML_FLAG_STRICT)) {
+			level = CYAML_LOG_NOTICE;
+		}
+
+		if (temp == HUGE_VALF || temp == -HUGE_VALF) {
+			cyaml__log(ctx->config, level,
+				"Load: FLOAT overflow: %s\n", value);
+
+		} else {
+			assert(temp < FLT_MIN || temp > FLT_MAX);
+			cyaml__log(ctx->config, level,
+				"Load: FLOAT underflow: %s\n", value);
+		}
+
+		if (cyaml__flag_check_all(schema->flags, CYAML_FLAG_STRICT)) {
+			return CYAML_ERR_INVALID_VALUE;
+		}
 	}
 
 	memcpy(data, &temp, sizeof(temp));
@@ -1527,10 +1550,24 @@ static cyaml_err_t cyaml__read_float_d(
 	errno = 0;
 	temp = strtod(value, &end);
 
-	if (end == value || errno == ERANGE) {
+	if (end == value) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
 				"Load: Invalid FLOAT value: %s\n", value);
 		return CYAML_ERR_INVALID_VALUE;
+
+	} else if (errno == ERANGE) {
+		cyaml_log_t level = CYAML_LOG_ERROR;
+
+		if (!cyaml__flag_check_all(schema->flags, CYAML_FLAG_STRICT)) {
+			level = CYAML_LOG_NOTICE;
+		}
+
+		cyaml__log(ctx->config, level,
+				"Load: FLOAT overflow/overflow: %s\n", value);
+
+		if (cyaml__flag_check_all(schema->flags, CYAML_FLAG_STRICT)) {
+			return CYAML_ERR_INVALID_VALUE;
+		}
 	}
 
 	memcpy(data, &temp, sizeof(temp));

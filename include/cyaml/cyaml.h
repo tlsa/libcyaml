@@ -183,7 +183,10 @@ typedef enum cyaml_flag {
 	 * * For \ref CYAML_ENUM, the value becomes the value of the enum.
 	 *   The numerical value is treated as signed.
 	 * * For \ref CYAML_FLAGS, the values are bitwise ORed together.
-	 *   The numerical values are treated as unsigned,
+	 *   The numerical values are treated as unsigned.
+	 *
+	 * For \ref CYAML_FLOAT types, in strict mode floating point values
+	 * that would cause overflow or underflow are not permitted.
 	 */
 	CYAML_FLAG_STRICT   = (1 << 4),
 	/**

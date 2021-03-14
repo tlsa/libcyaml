@@ -389,6 +389,56 @@ static bool test_load_mapping_entry_float(
 }
 
 /**
+ * Test loading a floating point value as a float.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_entry_float_underflow(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	float value = 1.55331e-40f;
+	static const unsigned char yaml[] =
+		"test_fp: 1.55331e-40\n";
+	struct target_struct {
+		float test_value_fp;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_FLOAT("test_fp", CYAML_FLAG_DEFAULT,
+				struct target_struct, test_value_fp),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->test_value_fp != value) {
+		return ttest_fail(&tc, "Incorrect value: "
+				"expected: %e, got: %e",
+				value, data_tgt->test_value_fp);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading a floating point value as a pointer to float.
  *
  * \param[in]  report  The test report context.
@@ -473,6 +523,57 @@ static bool test_load_mapping_entry_double(
 
 	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
 
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->test_value_fp != value) {
+		return ttest_fail(&tc, "Incorrect value: "
+				"expected: %lf, got: %lf",
+				value, data_tgt->test_value_fp);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a floating point value as a double.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_entry_double_underflow(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	double value = 1.79769e+308;
+	static const unsigned char yaml[] =
+		"test_fp: 1.79769e+309\n";
+	struct target_struct {
+		double test_value_fp;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_FLOAT("test_fp", CYAML_FLAG_DEFAULT,
+				struct target_struct, test_value_fp),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	value *= 10;
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
 	if (err != CYAML_OK) {
@@ -6694,6 +6795,8 @@ bool load_tests(
 	pass &= test_load_mapping_entry_enum_fallback(rc, &config);
 	pass &= test_load_mapping_entry_bool_true_ptr(rc, &config);
 	pass &= test_load_mapping_entry_bool_false_ptr(rc, &config);
+	pass &= test_load_mapping_entry_float_underflow(rc, &config);
+	pass &= test_load_mapping_entry_double_underflow(rc, &config);
 	pass &= test_load_mapping_entry_string_ptr_empty(rc, &config);
 	pass &= test_load_mapping_entry_string_ptr_null_str(rc, &config);
 	pass &= test_load_mapping_entry_string_ptr_null_empty(rc, &config);
