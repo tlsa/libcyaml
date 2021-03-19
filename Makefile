@@ -133,11 +133,11 @@ $(BUILDDIR)/$(LIB_SH_MAJ): $(LIB_OBJ_SHARED)
 	$(CC) -o $@ $^ $(LDFLAGS) $(LDFLAGS_COV) $(LDFLAGS_SHARED)
 
 $(LIB_OBJ_STATIC): $(BUILDDIR_STATIC)/%.o : %.c
-	@$(MKDIR) $(BUILDDIR_STATIC)/src
+	@$(MKDIR) $(dir $@)
 	$(CC) $(CFLAGS) $(CFLAGS_COV) -c -o $@ $<
 
 $(LIB_OBJ_SHARED): $(BUILDDIR_SHARED)/%.o : %.c
-	@$(MKDIR) $(BUILDDIR_SHARED)/src
+	@$(MKDIR) $(dir $@)
 	$(CC) $(CFLAGS) -fPIC $(CFLAGS_COV) -c -o $@ $<
 
 docs:
@@ -180,5 +180,5 @@ $(BUILDDIR)/test/units/cyaml-shared: $(TEST_OBJ) $(BUILDDIR)/$(LIB_SH_MAJ)
 	$(CC) $(LDFLAGS_COV) -o $@ $^ $(LDFLAGS)
 
 $(TEST_OBJ): $(BUILDDIR)/%.o : %.c
-	@$(MKDIR) $(BUILDDIR)/test/units
+	@$(MKDIR) $(dir $@)
 	$(CC) $(CFLAGS) $(CFLAGS_COV) -c -o $@ $<
