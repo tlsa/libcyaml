@@ -60,6 +60,7 @@ CFLAGS += -std=c11 -Wall -Wextra -pedantic \
 		-Wconversion -Wwrite-strings -Wcast-align -Wpointer-arith \
 		-Winit-self -Wshadow -Wstrict-prototypes -Wmissing-prototypes \
 		-Wredundant-decls -Wundef -Wvla -Wdeclaration-after-statement
+CFLAGS += -MMD -MP
 LDFLAGS += $(LIBYAML_LIBS)
 LDFLAGS_SHARED += -Wl,-soname=$(LIB_SH_MAJ) -shared
 
@@ -88,8 +89,11 @@ BUILDDIR_STATIC = $(BUILDDIR)/static
 LIB_SRC_FILES = mem.c free.c load.c save.c util.c utf8.c
 LIB_SRC := $(addprefix src/,$(LIB_SRC_FILES))
 LIB_OBJ = $(patsubst %.c,%.o, $(addprefix $(BUILDDIR)/,$(LIB_SRC)))
+LIB_DEP = $(patsubst %.c,%.d, $(addprefix $(BUILDDIR)/,$(LIB_SRC)))
 LIB_OBJ_SHARED = $(patsubst $(BUILDDIR)%,$(BUILDDIR_SHARED)%,$(LIB_OBJ))
 LIB_OBJ_STATIC = $(patsubst $(BUILDDIR)%,$(BUILDDIR_STATIC)%,$(LIB_OBJ))
+LIB_DEP_SHARED = $(patsubst $(BUILDDIR)%,$(BUILDDIR_SHARED)%,$(LIB_DEP))
+LIB_DEP_STATIC = $(patsubst $(BUILDDIR)%,$(BUILDDIR_STATIC)%,$(LIB_DEP))
 
 LIB_PATH = LD_LIBRARY_PATH=$(BUILDDIR)
 
@@ -97,6 +101,7 @@ TEST_SRC_FILES = units/free.c units/load.c units/test.c units/util.c \
 		units/errs.c units/file.c units/save.c units/utf8.c
 TEST_SRC := $(addprefix test/,$(TEST_SRC_FILES))
 TEST_OBJ = $(patsubst %.c,%.o, $(addprefix $(BUILDDIR)/,$(TEST_SRC)))
+TEST_DEP = $(patsubst %.c,%.d, $(addprefix $(BUILDDIR)/,$(TEST_SRC)))
 
 TEST_BINS = \
 		$(BUILDDIR)/test/units/cyaml-shared \
@@ -133,11 +138,11 @@ $(BUILDDIR)/$(LIB_SH_MAJ): $(LIB_OBJ_SHARED)
 	$(CC) -o $@ $^ $(LDFLAGS) $(LDFLAGS_COV) $(LDFLAGS_SHARED)
 
 $(LIB_OBJ_STATIC): $(BUILDDIR_STATIC)/%.o : %.c
-	@$(MKDIR) $(BUILDDIR_STATIC)/src
+	@$(MKDIR) $(dir $@)
 	$(CC) $(CFLAGS) $(CFLAGS_COV) -c -o $@ $<
 
 $(LIB_OBJ_SHARED): $(BUILDDIR_SHARED)/%.o : %.c
-	@$(MKDIR) $(BUILDDIR_SHARED)/src
+	@$(MKDIR) $(dir $@)
 	$(CC) $(CFLAGS) -fPIC $(CFLAGS_COV) -c -o $@ $<
 
 docs:
@@ -169,6 +174,8 @@ $(BUILDDIR)/planner: examples/planner/main.c $(BUILDDIR)/$(LIB_STATIC)
 $(BUILDDIR)/numerical: examples/numerical/main.c $(BUILDDIR)/$(LIB_STATIC)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+-include $(LIB_DEP_SHARED) $(LIB_DEP_STATIC) $(TEST_DEP)
+
 .PHONY: all test test-quiet test-verbose test-debug \
 		valgrind valgrind-quiet valgrind-verbose valgrind-debug \
 		clean coverage docs install examples check
@@ -180,5 +187,5 @@ $(BUILDDIR)/test/units/cyaml-shared: $(TEST_OBJ) $(BUILDDIR)/$(LIB_SH_MAJ)
 	$(CC) $(LDFLAGS_COV) -o $@ $^ $(LDFLAGS)
 
 $(TEST_OBJ): $(BUILDDIR)/%.o : %.c
-	@$(MKDIR) $(BUILDDIR)/test/units
+	@$(MKDIR) $(dir $@)
 	$(CC) $(CFLAGS) $(CFLAGS_COV) -c -o $@ $<
