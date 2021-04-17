@@ -62,7 +62,7 @@ name:
 data:
 ```
 
-The the first field is just a simple scalar value (it's neither
+The first field is just a simple scalar value (it's neither
 a mapping nor a sequence).  The second field has a sequence value.
 
 We'll start by defining the CYAML schema for the "data" sequence,
