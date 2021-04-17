@@ -55,7 +55,14 @@ Then we need to define a CYAML schema to describe these to LibCYAML.
 > in conjunction with this guide.
 
 At the top level of the YAML is a mapping with two fields, "name" and
-"data".  The the first field is just a simple scalar value (it's neither
+"data". 
+
+```yaml
+name:
+data:
+```
+
+The the first field is just a simple scalar value (it's neither
 a mapping nor a sequence).  The second field has a sequence value.
 
 We'll start by defining the CYAML schema for the "data" sequence,
@@ -82,12 +89,10 @@ field in the mapping.
 ```c
 /* CYAML mapping schema fields array for the top level mapping. */
 static const cyaml_schema_field_t top_mapping_schema[] = {
-	CYAML_FIELD_STRING_PTR("name", CYAML_FLAG_POINTER,
-			struct numbers, name,
-			0, CYAML_UNLIMITED),
-	CYAML_FIELD_SEQUENCE("data", CYAML_FLAG_POINTER,
-			struct numbers, data, &data_entry,
-			0, CYAML_UNLIMITED),
+	CYAML_FIELD_STRING_PTR(
+		"name", CYAML_FLAG_POINTER, struct numbers, name, 0, CYAML_UNLIMITED),
+	CYAML_FIELD_SEQUENCE(
+		"data", CYAML_FLAG_POINTER, struct numbers, data, &data_entry, 0, CYAML_UNLIMITED),
 	CYAML_FIELD_END
 };
 ```
@@ -109,8 +114,8 @@ the LibCYAML.
 ```c
 /* CYAML value schema for the top level mapping. */
 static const cyaml_schema_value_t top_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
-			struct numbers, top_mapping_schema),
+	CYAML_VALUE_MAPPING(
+		CYAML_FLAG_POINTER, struct numbers, top_mapping_schema),
 };
 ```
 
