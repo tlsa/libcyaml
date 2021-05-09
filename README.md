@@ -82,6 +82,12 @@ To run the tests under `valgrind`, a similar set of targets is available:
     make valgrind-verbose
     make valgrind-debug
 
+To run a single test or a subset of tests, use the `TESTLIST` variable, which
+expects a space and/or comma separated list of test names:
+
+    make test-debug TESTLIST=test_load_mapping_without_any_fields
+    make valgrind-debug TESTLIST="test_load_no_log test_util_state_invalid"
+
 To generate a test coverage report, `gcovr` is required:
 
     make coverage

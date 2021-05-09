@@ -28,8 +28,10 @@ static bool test_util_memory_funcs(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
-	ttest_ctx_t tc = ttest_start(report, __func__, NULL, NULL);
+	ttest_ctx_t tc;
 	unsigned char *mem, *tmp;
+
+	if (!ttest_start(report, __func__, NULL, NULL, &tc)) return true;
 
 	/* Create test allocation */
 	mem = cyaml__alloc(config, 0xff, true);
@@ -80,9 +82,11 @@ static bool test_util_strdup(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
-	ttest_ctx_t tc = ttest_start(report, __func__, NULL, NULL);
+	ttest_ctx_t tc;
 	const char *orig = "Hello!";
 	char *copy;
+
+	if (!ttest_start(report, __func__, NULL, NULL, &tc)) return true;
 
 	/* Create test allocation */
 	copy = cyaml__strdup(config, orig, NULL);
@@ -112,10 +116,12 @@ static bool test_util_strdup_len(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
 {
-	ttest_ctx_t tc = ttest_start(report, __func__, NULL, NULL);
+	ttest_ctx_t tc;
 	const char *orig = "Hello!";
 	char *copy;
 	size_t len;
+
+	if (!ttest_start(report, __func__, NULL, NULL, &tc)) return true;
 
 	/* Create test allocation */
 	copy = cyaml__strdup(config, orig, &len);
@@ -148,7 +154,9 @@ static bool test_util_strdup_len(
 static bool test_util_state_invalid(
 		ttest_report_ctx_t *report)
 {
-	ttest_ctx_t tc = ttest_start(report, __func__, NULL, NULL);
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, NULL, NULL, &tc)) return true;
 
 	if (strcmp(cyaml__state_to_str(CYAML_STATE__COUNT),
 			"<invalid>") != 0) {
@@ -172,7 +180,9 @@ static bool test_util_state_invalid(
 static bool test_util_err_success_zero(
 		ttest_report_ctx_t *report)
 {
-	ttest_ctx_t tc = ttest_start(report, __func__, NULL, NULL);
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, NULL, NULL, &tc)) return true;
 
 	if (CYAML_OK != 0) {
 		return ttest_fail(&tc, "CYAML_OK value not zero");
@@ -190,7 +200,9 @@ static bool test_util_err_success_zero(
 static bool test_util_err_strings_valid(
 		ttest_report_ctx_t *report)
 {
-	ttest_ctx_t tc = ttest_start(report, __func__, NULL, NULL);
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, NULL, NULL, &tc)) return true;
 
 	if (cyaml_strerror(CYAML_OK) == NULL) {
 		return ttest_fail(&tc, "CYAML_OK string is NULL");
@@ -227,7 +239,9 @@ static bool test_util_err_strings_valid(
 static bool test_util_err_strings_invalid(
 		ttest_report_ctx_t *report)
 {
-	ttest_ctx_t tc = ttest_start(report, __func__, NULL, NULL);
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, NULL, NULL, &tc)) return true;
 
 	if (strcmp(cyaml_strerror(CYAML_ERR__COUNT),
 			"Invalid error code") != 0) {

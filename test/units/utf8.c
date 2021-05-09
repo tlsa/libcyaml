@@ -50,7 +50,9 @@ static bool test_utf8_get_codepoint(
 		char name[sizeof(__func__) + 32];
 		sprintf(name, "%s_%u", __func__, i);
 
-		tc = ttest_start(report, name, NULL, NULL);
+		if (!ttest_start(report, name, NULL, NULL, &tc)) {
+			continue;
+		}
 
 		l = t[i].l;
 		c = cyaml_utf8_get_codepoint((uint8_t *)t[i].s, &l);
@@ -97,7 +99,9 @@ static bool test_utf8_strcmp_same(
 		char name[sizeof(__func__) + 32];
 		sprintf(name, "%s_%u", __func__, i);
 
-		tc = ttest_start(report, name, NULL, NULL);
+		if (!ttest_start(report, name, NULL, NULL, &tc)) {
+			continue;
+		}
 
 		if (cyaml_utf8_casecmp(strings[i], strings[i]) != 0) {
 			pass &= ttest_fail(&tc, "Failed to match: %s",
@@ -183,7 +187,9 @@ static bool test_utf8_strcmp_matches(
 		char name[sizeof(__func__) + 32];
 		sprintf(name, "%s_%u", __func__, i);
 
-		tc = ttest_start(report, name, NULL, NULL);
+		if (!ttest_start(report, name, NULL, NULL, &tc)) {
+			continue;
+		}
 
 		if (cyaml_utf8_casecmp(pairs[i].a, pairs[i].b) != 0) {
 			pass &= ttest_fail(&tc, "Failed to match strings: "
@@ -226,7 +232,9 @@ static bool test_utf8_strcmp_mismatches(
 		char name[sizeof(__func__) + 32];
 		sprintf(name, "%s_%u", __func__, i);
 
-		tc = ttest_start(report, name, NULL, NULL);
+		if (!ttest_start(report, name, NULL, NULL, &tc)) {
+			continue;
+		}
 
 		if (cyaml_utf8_casecmp(pairs[i].a, pairs[i].b) == 0) {
 			pass &= ttest_fail(&tc, "Failed to detect mismatch: "

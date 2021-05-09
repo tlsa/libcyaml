@@ -69,8 +69,11 @@ static bool test_file_load_bad_path(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_file("/cyaml/path/shouldn't/exist.yaml",
 			config, &top_schema, (cyaml_data_t **) &data_tgt, NULL);
@@ -108,8 +111,11 @@ static bool test_file_save_bad_path(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_file("/cyaml/path/shouldn't/exist.yaml",
 			config, &top_schema, data, 0);
@@ -179,8 +185,11 @@ static bool test_file_load_basic(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_file("test/data/basic.yaml", config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -250,8 +259,11 @@ static bool test_file_load_save_basic(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_file("test/data/basic.yaml", config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -328,8 +340,11 @@ static bool test_file_load_basic_invalid(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_file("test/data/basic.yaml", config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -376,8 +391,11 @@ static bool test_file_save_basic_invalid(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_file("build/save.yaml", config, &top_schema, &data, 0);
 	if (err != CYAML_ERR_INVALID_DATA_SIZE) {
