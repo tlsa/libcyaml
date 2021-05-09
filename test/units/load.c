@@ -5502,7 +5502,7 @@ static bool test_load_mapping_without_any_fields(
 	}
 
 	if (data_tgt->i != 0) {
-		return ttest_fail(&tc, "Value should be initialied to 0");
+		return ttest_fail(&tc, "Value should be initialised to 0");
 	}
 
 	return ttest_pass(&tc);
