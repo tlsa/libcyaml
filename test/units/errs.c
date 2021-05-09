@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
 
 #include <cyaml/cyaml.h>
@@ -6008,6 +6009,236 @@ static bool test_err_load_incomplete_alias(
 	return ttest_pass(&tc);
 }
 
+/** Structure for log messages checking. */
+struct log_check {
+	unsigned string_count_expected; /**< Number of expected log messages. */
+	const char *const *strings;     /**< Array of expected log messages. */
+	unsigned string_count;          /**< Number of log messages captured. */
+	bool error;                     /**< Whether a logging error has been found. */
+};
+
+/**
+ * Initialise a log check structure for a given log string vector.
+ *
+ * \param[in]  lc    The log check structure to initialise.
+ * \param[in]  strv  A string vector containing expected log messages.
+ * \return true on success, false otherwise.
+ */
+static inline bool log_check_init(
+		struct log_check *lc,
+		const char *const *strv)
+{
+	if (lc == NULL) {
+		return false;
+	}
+
+	lc->string_count_expected = 0;
+	lc->string_count = 0;
+	lc->strings = strv;
+	lc->error = false;
+
+	while (strv[lc->string_count_expected] != NULL) {
+		lc->string_count_expected++;
+	}
+
+	return true;
+}
+
+static struct log_check lc;
+
+/**
+ * CYAML log function, for checking logs.
+ *
+ * Uses the lc static state.
+ *
+ * \param[in] level  Log level of message to log.
+ * \param[in] ctx    Client's private logging context.
+ * \param[in] fmt    Format string for message to log.
+ * \param[in] args   Additional arguments used by fmt.
+ */
+static void cyaml_log_check(
+		cyaml_log_t level,
+		void *ctx,
+		const char *fmt,
+		va_list args)
+{
+	int ret;
+	size_t len;
+	char buffer[128];
+
+	(void)(ctx);
+
+	if (level < CYAML_LOG_ERROR) {
+		/* We only care that critical log messages emerge. */
+		return;
+	}
+
+	ret = vsnprintf(buffer, sizeof(buffer), fmt, args);
+	if (ret <= 0) {
+		fprintf(stderr, "TEST ERROR: Logging error\n");
+		return;
+	}
+	len = (unsigned)ret;
+	if (len >= sizeof(buffer)) {
+		fprintf(stderr, "TEST ERROR: Buffer too small\n");
+		assert(len < sizeof(buffer));
+		return;
+	}
+
+	if (lc.string_count >= lc.string_count_expected) {
+		fprintf(stderr, "ERROR: More log messages than expected\n");
+		fprintf(stderr, "     got: %s", buffer);
+		lc.error |= true;
+		goto out;
+	}
+
+	if (strcmp(lc.strings[lc.string_count], buffer) != 0) {
+		fprintf(stderr, "ERROR: Unexpected log message\n");
+		fprintf(stderr, "     got: %s", buffer);
+		fprintf(stderr, "expected: %s", lc.strings[lc.string_count]);
+		lc.error |= true;
+		goto out;
+	}
+
+out:
+	lc.string_count++;
+}
+
+/**
+ * Check that the logging contains the expected information.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_log(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	enum test_f {
+		NONE   = 0,
+		FIRST  = (1 << 0),
+		SECOND = (1 << 1),
+		THIRD  = (1 << 2),
+		FOURTH = (1 << 3),
+	};
+	static const char * const expected_log[] = {
+		"Load: Invalid INT value: 'foo'\n",
+		"Load: Backtrace:\n",
+		"  in sequence entry '2' (line: 5, column: 26)\n",
+		"  in mapping field 'position' (line: 5, column: 17)\n",
+		"  in sequence entry '1' (line: 2, column: 5)\n",
+		"  in mapping field 'animals' (line: 23, column: 3)\n",
+		NULL
+	};
+	static const cyaml_strval_t strings[] = {
+		{ "first",  (1 << 0) },
+		{ "second", (1 << 1) },
+		{ "third",  (1 << 2) },
+		{ "fourth", (1 << 3) },
+	};
+	cyaml_config_t cfg = *config;
+	static const unsigned char yaml[] =
+		"anchors:\n"
+		"  - &a1 {\n"
+		"      kind: cat,\n"
+		"      sound: meow,\n"
+		"      position: &a2 [ 1, &my_value foo, 1],\n"
+		"      flags: &a3 [\n"
+		"        first,\n"
+		"        &a4 second,\n"
+		"        third,\n"
+		"        fourth,\n"
+		"      ]\n"
+		"    }\n"
+		"  - kind: snake\n"
+		"    sound: &a5 hiss\n"
+		"    position: &a6 [ 3, 1, 0]\n"
+		"    flags: &a7 [\n"
+		"      first,\n"
+		"      second,\n"
+		"      third,\n"
+		"      fourth,\n"
+		"    ]\n"
+		"animals:\n"
+		"  - *a1\n"
+		"  - kind: snake\n"
+		"    sound: *a5\n"
+		"    position: *a6\n"
+		"    flags: *a7\n"
+		"    value: *my_value\n";
+	struct animal_s {
+		char *kind;
+		char *sound;
+		int **position;
+		unsigned position_count;
+		enum test_f *flags;
+		int value;
+	};
+	struct target_struct {
+		struct animal_s **animal;
+		uint32_t animal_count;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_value position_entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_POINTER, int),
+	};
+	static const struct cyaml_schema_field animal_schema[] = {
+		CYAML_FIELD_STRING_PTR("kind", CYAML_FLAG_POINTER,
+				struct animal_s, kind, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_STRING_PTR("sound", CYAML_FLAG_POINTER,
+				struct animal_s, sound, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_SEQUENCE("position", CYAML_FLAG_POINTER,
+				struct animal_s, position,
+				&position_entry_schema, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_FLAGS("flags",
+				CYAML_FLAG_STRICT | CYAML_FLAG_POINTER,
+				struct animal_s, flags, strings, 4),
+		CYAML_FIELD_INT("value", CYAML_FLAG_OPTIONAL,
+				struct animal_s, value),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value animal_entry_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER, **(data_tgt->animal),
+				animal_schema),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_IGNORE("anchors", CYAML_FLAG_OPTIONAL),
+		CYAML_FIELD_SEQUENCE("animals", CYAML_FLAG_POINTER,
+				struct target_struct, animal,
+				&animal_entry_schema, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = &cfg,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+
+	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+
+	log_check_init(&lc, expected_log);
+	cfg.log_fn = cyaml_log_check;
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err == CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (lc.error == true) {
+		return ttest_fail(&tc, "Unexpected log message");
+	}
+	if (lc.string_count_expected > lc.string_count) {
+		return ttest_fail(&tc, "Missing log message(s)");
+	}
+
+	return ttest_pass(&tc);
+}
+
 /**
  * Run the CYAML error unit tests.
  *
@@ -6154,6 +6385,7 @@ bool errs_tests(
 
 	ttest_heading(rc, "Memory allocation handling tests");
 
+	pass &= test_err_load_log(rc, &config);
 	pass &= test_err_free_null(rc, &config);
 	pass &= test_err_load_alloc_oom_1(rc, &config);
 	pass &= test_err_load_alloc_oom_2(rc, &config);
