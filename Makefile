@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: ISC
 #
-# Copyright (C) 2017-2020 Michael Drake <tlsa@netsurf-browser.org>
+# Copyright (C) 2017-2021 Michael Drake <tlsa@netsurf-browser.org>
 
 # CYAML's versioning is <MAJOR>.<MINOR>.<PATCH>[-DEVEL]
 # Master branch will always be DEVEL.  The release process will be to make

@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: ISC
  *
- * Copyright (c) 2017-2019 Michael Drake <tlsa@netsurf-browser.org>
+ * Copyright (c) 2017-2021 Michael Drake <tlsa@netsurf-browser.org>
  */
 
 /**
