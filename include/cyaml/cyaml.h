@@ -79,12 +79,12 @@ typedef enum cyaml_type {
 	CYAML_MAPPING,
 	/**
 	 * Value is a bit field.  Values of this type require an array of value
-	 * definitions in the schema entry.  If the bitfield is used to store
+	 * definitions in the schema entry.  If the bit field is used to store
 	 * only single-bit flags, it may be better to use \ref CYAML_FLAGS
 	 * instead.
 	 *
 	 * In the YAML, a \ref CYAML_FLAGS value must be presented as a
-	 * mapping of bitfield entry names to their numerical values.
+	 * mapping of bit field entry names to their numerical values.
 	 */
 	CYAML_BITFIELD,
 	/**
@@ -278,7 +278,7 @@ typedef struct cyaml_strval {
  */
 typedef struct cyaml_bitdef {
 	const char *name; /**< String representing the value's name. */
-	uint8_t offset;   /**< Bit offset to value in bitfield. */
+	uint8_t offset;   /**< Bit offset to value in bit field. */
 	uint8_t bits;     /**< Maximum bits available for value. */
 } cyaml_bitdef_t;
 
@@ -349,7 +349,7 @@ typedef struct cyaml_schema_value {
 		} mapping;
 		/** \ref CYAML_BITFIELD type-specific schema data. */
 		struct {
-			/** Array of bit definitions for the bitfield. */
+			/** Array of bit definitions for the bit field. */
 			const struct cyaml_bitdef *bitdefs;
 			/** Entry count for bitdefs array. */
 			uint32_t count;
@@ -533,7 +533,7 @@ typedef enum cyaml_err {
 	CYAML_ERR_BAD_MIN_MAX_SCHEMA,    /**< Schema minimum exceeds maximum. */
 	CYAML_ERR_BAD_PARAM_SEQ_COUNT,   /**< Bad seq_count param for schema. */
 	CYAML_ERR_BAD_PARAM_NULL_DATA,   /**< Client gave NULL data argument. */
-	CYAML_ERR_BAD_BITVAL_IN_SCHEMA,  /**< Bit value beyond bitfield size. */
+	CYAML_ERR_BAD_BITVAL_IN_SCHEMA,  /**< Bit value beyond bit field size. */
 	CYAML_ERR_SEQUENCE_ENTRIES_MIN,  /**< Too few sequence entries. */
 	CYAML_ERR_SEQUENCE_ENTRIES_MAX,  /**< Too many sequence entries. */
 	CYAML_ERR_SEQUENCE_FIXED_COUNT,  /**< Mismatch between min and max. */
@@ -852,7 +852,7 @@ typedef enum cyaml_err {
  *
  * \param[in]  _flags         Any behavioural flags relevant to this value.
  * \param[in]  _type          The C type for this value.
- * \param[in]  _bitvals       Array of bitfield value data for the bitfield.
+ * \param[in]  _bitvals       Array of bit field value data for the bit field.
  * \param[in]  _bitvals_count Number of entries in _bitvals.
  */
 #define CYAML_VALUE_BITFIELD( \
@@ -868,13 +868,13 @@ typedef enum cyaml_err {
 /**
  * Mapping schema helper macro for keys with \ref CYAML_BITFIELD type.
  *
- * Use this for bitfield types contained in structs.
+ * Use this for bit field types contained in structs.
  *
  * \param[in]  _key        String defining the YAML mapping key for this value.
  * \param[in]  _flags      Any behavioural flags relevant to this value.
  * \param[in]  _structure  The structure corresponding to the mapping.
  * \param[in]  _member     The member in _structure for this mapping value.
- * \param[in]  _bitvals       Array of bitfield value data for the bitfield.
+ * \param[in]  _bitvals       Array of bit field value data for the bit field.
  * \param[in]  _bitvals_count Number of entries in _bitvals.
  */
 #define CYAML_FIELD_BITFIELD( \
@@ -892,13 +892,13 @@ typedef enum cyaml_err {
 /**
  * Mapping schema helper macro for keys with \ref CYAML_BITFIELD type.
  *
- * Use this for pointers to bitfied types.
+ * Use this for pointers to bit field types.
  *
  * \param[in]  _key        String defining the YAML mapping key for this value.
  * \param[in]  _flags      Any behavioural flags relevant to this value.
  * \param[in]  _structure  The structure corresponding to the mapping.
  * \param[in]  _member     The member in _structure for this mapping value.
- * \param[in]  _bitvals       Array of bitfield value data for the bitfield.
+ * \param[in]  _bitvals       Array of bit field value data for the bit field.
  * \param[in]  _bitvals_count Number of entries in _bitvals.
  */
 #define CYAML_FIELD_BITFIELD_PTR( \
