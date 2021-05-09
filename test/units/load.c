@@ -82,8 +82,11 @@ static bool test_load_mapping_entry_int_pos(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -130,8 +133,11 @@ static bool test_load_mapping_entry_int_neg(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -178,8 +184,11 @@ static bool test_load_mapping_entry_int_pos_ptr(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -226,8 +235,11 @@ static bool test_load_mapping_entry_int_neg_ptr(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -274,8 +286,11 @@ static bool test_load_mapping_entry_uint(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -322,8 +337,11 @@ static bool test_load_mapping_entry_uint_ptr(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -370,8 +388,11 @@ static bool test_load_mapping_entry_float(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -420,8 +441,11 @@ static bool test_load_mapping_entry_float_underflow(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -470,8 +494,11 @@ static bool test_load_mapping_entry_float_ptr(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -520,8 +547,11 @@ static bool test_load_mapping_entry_double(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -570,8 +600,11 @@ static bool test_load_mapping_entry_double_underflow(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	value *= 10;
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
@@ -621,8 +654,11 @@ static bool test_load_mapping_entry_double_ptr(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -671,8 +707,11 @@ static bool test_load_mapping_entry_bool_true(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -719,8 +758,11 @@ static bool test_load_mapping_entry_bool_false(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -767,8 +809,11 @@ static bool test_load_mapping_entry_bool_true_ptr(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -815,8 +860,11 @@ static bool test_load_mapping_entry_bool_false_ptr(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -874,8 +922,11 @@ static bool test_load_mapping_entry_enum(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -933,8 +984,11 @@ static bool test_load_mapping_entry_enum_ptr(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -993,8 +1047,11 @@ static bool test_load_mapping_entry_enum_sparse(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -1053,8 +1110,11 @@ static bool test_load_mapping_entry_enum_fallback(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -1101,8 +1161,11 @@ static bool test_load_mapping_entry_string(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -1160,8 +1223,11 @@ static bool test_load_mapping_entry_string_ptr(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -1209,8 +1275,11 @@ static bool test_load_mapping_entry_string_ptr_empty(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -1259,8 +1328,11 @@ static bool test_load_mapping_entry_string_ptr_null_str(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -1308,8 +1380,11 @@ static bool test_load_mapping_entry_string_ptr_null_empty(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -1358,8 +1433,11 @@ static bool test_load_mapping_entry_ignore_deep(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -1404,8 +1482,11 @@ static bool test_load_mapping_entry_ignore_scalar(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -1473,8 +1554,11 @@ static bool test_load_mapping_entry_flags(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -1544,8 +1628,11 @@ static bool test_load_mapping_entry_flags_ptr(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -1612,8 +1699,11 @@ static bool test_load_mapping_entry_flags_empty(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -1682,8 +1772,11 @@ static bool test_load_mapping_entry_flags_sparse(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -1745,8 +1838,11 @@ static bool test_load_mapping_entry_bitfield(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -1808,8 +1904,11 @@ static bool test_load_mapping_entry_bitfield_ptr(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -1875,7 +1974,9 @@ static bool test_load_mapping_entry_mapping(
 	value.a = 123;
 	value.b = 9999;
 
-	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -1939,7 +2040,9 @@ static bool test_load_mapping_entry_mapping_ptr(
 	value.a = 123;
 	value.b = 9999;
 
-	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -1997,8 +2100,11 @@ static bool test_load_mapping_entry_sequence_int(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -2072,8 +2178,11 @@ static bool test_load_mapping_entry_sequence_enum(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -2139,8 +2248,11 @@ static bool test_load_mapping_entry_sequence_uint(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -2208,8 +2320,11 @@ static bool test_load_mapping_entry_sequence_bool(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -2297,8 +2412,11 @@ static bool test_load_mapping_entry_sequence_flags(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -2369,8 +2487,11 @@ static bool test_load_mapping_entry_sequence_string(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -2440,8 +2561,11 @@ static bool test_load_mapping_entry_sequence_string_ptr(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -2524,7 +2648,9 @@ static bool test_load_mapping_entry_sequence_mapping(
 	ref[2].a = 1;
 	ref[2].b = 765;
 
-	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -2599,8 +2725,11 @@ static bool test_load_mapping_entry_sequence_mapping_ptr(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -2675,8 +2804,11 @@ static bool test_load_mapping_entry_sequence_sequence_fixed_int(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -2756,8 +2888,11 @@ static bool test_load_mapping_entry_sequence_sequence_fixed_ptr_int(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -2850,8 +2985,11 @@ static bool test_load_mapping_entry_sequence_sequence_fixed_flat_int(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -2926,8 +3064,11 @@ static bool test_load_mapping_entry_sequence_ptr_int(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -3001,8 +3142,11 @@ static bool test_load_mapping_entry_sequence_ptr_enum(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -3068,8 +3212,11 @@ static bool test_load_mapping_entry_sequence_ptr_uint(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -3137,8 +3284,11 @@ static bool test_load_mapping_entry_sequence_ptr_bool(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -3226,8 +3376,11 @@ static bool test_load_mapping_entry_sequence_ptr_flags(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -3298,8 +3451,11 @@ static bool test_load_mapping_entry_sequence_ptr_string(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -3370,8 +3526,11 @@ static bool test_load_mapping_entry_sequence_ptr_string_ptr(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -3448,8 +3607,11 @@ static bool test_load_mapping_entry_sequence_ptr_mapping(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -3530,8 +3692,11 @@ static bool test_load_mapping_entry_sequence_ptr_mapping_ptr(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -3607,8 +3772,11 @@ static bool test_load_mapping_entry_sequence_ptr_sequence_fixed_int(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -3689,8 +3857,11 @@ static bool test_load_mapping_entry_sequence_ptr_sequence_fixed_ptr_int(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -3784,8 +3955,11 @@ static bool test_load_mapping_entry_sequence_ptr_sequence_fixed_flat_int(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -3859,8 +4033,11 @@ static bool test_load_sequence_null_str_values_int(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &value, &count);
@@ -3937,8 +4114,11 @@ static bool test_load_sequence_null_values_int(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &value, &count);
@@ -4016,8 +4196,11 @@ static bool test_load_sequence_null_str_values_uint(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &value, &count);
@@ -4113,8 +4296,11 @@ static bool test_load_sequence_null_str_values_mapping(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &value, &count);
@@ -4193,8 +4379,11 @@ static bool test_load_mapping_entry_sequence_count_1(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -4261,8 +4450,11 @@ static bool test_load_mapping_entry_sequence_count_2(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -4329,8 +4521,11 @@ static bool test_load_mapping_entry_sequence_count_3(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -4397,8 +4592,11 @@ static bool test_load_mapping_entry_sequence_count_4(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -4465,8 +4663,11 @@ static bool test_load_mapping_entry_sequence_count_5(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -4533,8 +4734,11 @@ static bool test_load_mapping_entry_sequence_count_6(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -4601,8 +4805,11 @@ static bool test_load_mapping_entry_sequence_count_7(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -4669,8 +4876,11 @@ static bool test_load_mapping_entry_sequence_count_8(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -4717,8 +4927,11 @@ static bool test_load_schema_top_level_scalar(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &value, NULL);
@@ -4760,8 +4973,11 @@ static bool test_load_schema_top_level_string(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &value, NULL);
@@ -4811,8 +5027,11 @@ static bool test_load_schema_top_level_sequence(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &value, &count);
@@ -4864,8 +5083,11 @@ static bool test_load_schema_top_level_sequence_fixed(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &value, NULL);
@@ -4920,8 +5142,11 @@ static bool test_load_multiple_documents_ignored(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -4990,8 +5215,11 @@ static bool test_load_mapping_with_multiple_fields(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -5110,8 +5338,11 @@ static bool test_load_mapping_with_optional_fields(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -5205,8 +5436,11 @@ static bool test_load_mapping_only_optional_fields(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -5251,8 +5485,11 @@ static bool test_load_mapping_without_any_fields(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -5323,8 +5560,11 @@ static bool test_load_mapping_ignored_unknown_keys(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	cfg.flags |= CYAML_CFG_IGNORE_UNKNOWN_KEYS;
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
@@ -5390,8 +5630,11 @@ static bool test_load_sequence_without_max_entries(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -5464,7 +5707,9 @@ static bool test_load_no_log(
 	ttest_ctx_t tc;
 
 	cfg.log_fn = NULL;
-	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -5527,8 +5772,11 @@ static bool test_load_duplicate_ignored(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -5586,8 +5834,11 @@ static bool test_load_schema_sequence_entry_count_member(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -5649,7 +5900,9 @@ static bool test_load_enum_insensitive(
 	ttest_ctx_t tc;
 
 	cfg.flags |= CYAML_CFG_CASE_INSENSITIVE;
-	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -5703,7 +5956,9 @@ static bool test_load_flags_insensitive(
 	ttest_ctx_t tc;
 
 	cfg.flags |= CYAML_CFG_CASE_INSENSITIVE;
-	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -5776,7 +6031,9 @@ static bool test_load_mapping_fields_cfg_insensitive_1(
 	ttest_ctx_t tc;
 
 	cfg.flags |= CYAML_CFG_CASE_INSENSITIVE;
-	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -5861,7 +6118,9 @@ static bool test_load_mapping_fields_cfg_insensitive_2(
 	ttest_ctx_t tc;
 
 	cfg.flags |= CYAML_CFG_CASE_INSENSITIVE;
-	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -5946,7 +6205,9 @@ static bool test_load_mapping_fields_cfg_insensitive_3(
 	ttest_ctx_t tc;
 
 	cfg.flags |= CYAML_CFG_CASE_INSENSITIVE;
-	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -6032,7 +6293,9 @@ static bool test_load_mapping_fields_value_sensitive_1(
 	ttest_ctx_t tc;
 
 	cfg.flags |= CYAML_CFG_CASE_INSENSITIVE;
-	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -6119,7 +6382,9 @@ static bool test_load_mapping_fields_value_insensitive_1(
 	ttest_ctx_t tc;
 
 	cfg.flags |= CYAML_CFG_CASE_INSENSITIVE;
-	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -6184,8 +6449,11 @@ static bool test_load_unused_anchor(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -6244,8 +6512,11 @@ static bool test_load_anchor_scalar_int(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -6304,8 +6575,11 @@ static bool test_load_anchor_scalar_string(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -6373,8 +6647,11 @@ static bool test_load_anchor_multiple_scalars(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -6456,8 +6733,11 @@ static bool test_load_anchor_mapping(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -6526,8 +6806,11 @@ static bool test_load_anchor_sequence(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -6624,8 +6907,11 @@ static bool test_load_anchor_deep_mapping_sequence(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
@@ -6714,8 +7000,11 @@ static bool test_load_anchor_updated_anchor(
 		.schema = &top_schema,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);

@@ -7,6 +7,8 @@
 #ifndef TTEST_H
 #define TTEST_H
 
+#include <string.h>
+
 /**
  * Test cleanup client callback.
  *
@@ -26,6 +28,10 @@ typedef void (*ttest_cleanup_fn)(void *data);
  * of utilisation.
  */
 typedef struct ttest_report_ctx {
+	/** Space/comma separated list of tests to run. */
+	const char *test_list;
+	size_t test_list_len;
+
 	bool quiet;      /**< Whether to print only the report summary. */
 	unsigned tests;  /**< Number of tests started. */
 	unsigned todo;   /**< Number of tests marked as unimplemented. */
@@ -49,17 +55,61 @@ typedef struct ttest_ctx {
 /**
  * Initialise a tlsa-test report context.
  *
- * \param[in]  quiet  Whether report should be a minimal summary.
+ * \param[in]  test_list  Space/comma separated list of tests to run.
+ * \param[in]  quiet      Whether report should be a minimal summary.
  * \return initialised tlsa-test report context.
  */
 static inline ttest_report_ctx_t ttest_init(
+		const char *test_list,
 		bool quiet)
 {
 	ttest_report_ctx_t rc = {
+		.test_list = test_list,
+		.test_list_len = 0,
 		.quiet = quiet,
 	};
 
+	if (test_list != NULL) {
+		rc.test_list_len = strlen(test_list);
+	}
+
 	return rc;
+}
+
+/**
+ * Determine whether test of given name should be run.
+ *
+ * \param[in]  report  The tlsa-test report context.
+ * \param[in]  name    The name of the test to consider.
+ * \return true if test should be run, false otherwise.
+ */
+static inline bool ttest__run_test(
+		ttest_report_ctx_t *report,
+		const char *name)
+{
+	size_t len;
+	size_t pos = 0;
+	size_t name_len;
+
+	if (report->test_list == NULL || report->test_list_len == 0) {
+		return true;
+	}
+
+	name_len = strlen(name);
+	while (pos < report->test_list_len) {
+		/* Skip commas and spaces. */
+		pos += strspn(report->test_list + pos, ", ");
+
+		len = strcspn(report->test_list + pos, ", ");
+		if (len == name_len) {
+			if (memcmp(report->test_list + pos, name, len) == 0) {
+				return true;
+			}
+		}
+		pos += len;
+	}
+
+	return false;
 }
 
 /**
@@ -72,14 +122,17 @@ static inline ttest_report_ctx_t ttest_init(
  * \param[in]  name          Name for this unit test.
  * \param[in]  cleanup       Cleanup function to call on test completion.
  * \param[in]  cleanup_data  Pointer to client cleanup context.
- * \return Returns the unit test context.  The test context must be passed to
- *         the test completion function.
+ * \param[out] test_ctx_out  Returns the unit test context on success.
+ *                           The test context must be passed to the test
+ *                           completion function.
+ * \return true if the test should be started, false otherwise.
  */
-static inline ttest_ctx_t ttest_start(
+static inline bool ttest_start(
 		ttest_report_ctx_t *report,
 		const char *name,
 		ttest_cleanup_fn cleanup,
-		void *cleanup_data)
+		void *cleanup_data,
+		ttest_ctx_t *test_ctx_out)
 {
 	ttest_ctx_t tc = {
 		.name = name,
@@ -88,9 +141,14 @@ static inline ttest_ctx_t ttest_start(
 		.cleanup_data = cleanup_data,
 	};
 
+	if (!ttest__run_test(report, name)) {
+		return false;
+	}
+
 	report->tests++;
 
-	return tc;
+	*test_ctx_out = tc;
+	return true;
 }
 
 /**
@@ -203,10 +261,12 @@ static inline void ttest_heading(
 		const ttest_report_ctx_t *tr,
 		const char *heading)
 {
-	if (!tr->quiet) {
-		ttest_divider();
-		fprintf(stderr, "TEST: %s\n", heading);
-		ttest_divider();
+	if (tr->test_list == NULL || tr->test_list_len == 0) {
+		if (!tr->quiet) {
+			ttest_divider();
+			fprintf(stderr, "TEST: %s\n", heading);
+			ttest_divider();
+		}
 	}
 }
 

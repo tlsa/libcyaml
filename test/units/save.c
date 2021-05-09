@@ -79,8 +79,11 @@ static bool test_save_mapping_entry_uint(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -135,8 +138,11 @@ static bool test_save_mapping_entry_float(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -191,8 +197,11 @@ static bool test_save_mapping_entry_double(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -247,8 +256,11 @@ static bool test_save_mapping_entry_string(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -303,8 +315,11 @@ static bool test_save_mapping_entry_int_pos(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -359,8 +374,11 @@ static bool test_save_mapping_entry_int_neg(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -415,8 +433,11 @@ static bool test_save_mapping_entry_int_64(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -471,8 +492,11 @@ static bool test_save_mapping_entry_bool_true(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -527,8 +551,11 @@ static bool test_save_mapping_entry_bool_false(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -584,8 +611,11 @@ static bool test_save_mapping_entry_string_ptr(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -649,8 +679,11 @@ static bool test_save_mapping_entry_enum_strict(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -714,8 +747,11 @@ static bool test_save_mapping_entry_enum_number(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -785,8 +821,11 @@ static bool test_save_mapping_entry_enum_sparse(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -856,8 +895,11 @@ static bool test_save_mapping_entry_mapping(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -927,8 +969,11 @@ static bool test_save_mapping_entry_mapping_ptr(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -998,8 +1043,11 @@ static bool test_save_mapping_entry_flags_strict(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -1070,8 +1118,11 @@ static bool test_save_mapping_entry_flags_number(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -1143,8 +1194,11 @@ static bool test_save_mapping_entry_flags_sparse(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -1212,8 +1266,11 @@ static bool test_save_mapping_entry_bitfield(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -1281,8 +1338,11 @@ static bool test_save_mapping_entry_bitfield_sparse(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -1349,8 +1409,11 @@ static bool test_save_mapping_entry_sequence_int(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -1417,8 +1480,11 @@ static bool test_save_mapping_entry_sequence_uint(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -1494,8 +1560,11 @@ static bool test_save_mapping_entry_sequence_enum(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -1564,8 +1633,11 @@ static bool test_save_mapping_entry_sequence_bool(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -1654,8 +1726,11 @@ static bool test_save_mapping_entry_sequence_flags(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -1727,8 +1802,11 @@ static bool test_save_mapping_entry_sequence_string(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -1800,8 +1878,11 @@ static bool test_save_mapping_entry_sequence_string_ptr(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -1881,8 +1962,11 @@ static bool test_save_mapping_entry_sequence_mapping(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -1966,8 +2050,11 @@ static bool test_save_mapping_entry_sequence_mapping_ptr(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -2050,8 +2137,11 @@ static bool test_save_mapping_entry_sequence_sequence_fixed_int(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -2140,8 +2230,11 @@ static bool test_save_mapping_entry_sequence_sequence_fixed_ptr_int(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -2239,8 +2332,11 @@ static bool test_save_mapping_entry_sequence_sequence_fixed_flat_int(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -2308,8 +2404,11 @@ static bool test_save_mapping_entry_sequence_ptr_int(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -2377,8 +2476,11 @@ static bool test_save_mapping_entry_sequence_ptr_uint(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -2459,8 +2561,11 @@ static bool test_save_mapping_entry_sequence_ptr_enum(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -2533,8 +2638,11 @@ static bool test_save_mapping_entry_sequence_ptr_bool(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -2625,8 +2733,11 @@ static bool test_save_mapping_entry_sequence_ptr_flags(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -2699,8 +2810,11 @@ static bool test_save_mapping_entry_sequence_ptr_string(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -2774,8 +2888,11 @@ static bool test_save_mapping_entry_sequence_ptr_string_ptr(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -2857,8 +2974,11 @@ static bool test_save_mapping_entry_sequence_ptr_mapping(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -2944,8 +3064,11 @@ static bool test_save_mapping_entry_sequence_ptr_mapping_ptr(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -3029,8 +3152,11 @@ static bool test_save_mapping_entry_sequence_ptr_sequence_fixed_int(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -3120,8 +3246,11 @@ static bool test_save_mapping_entry_sequence_ptr_sequence_fixed_ptr_int(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -3220,8 +3349,11 @@ static bool test_save_mapping_entry_sequence_ptr_sequence_fixed_flat_int(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -3276,8 +3408,11 @@ static bool test_save_mapping_entry_optional_uint(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -3334,8 +3469,11 @@ static bool test_save_mapping_entry_optional_uint_ptr(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -3390,8 +3528,11 @@ static bool test_save_mapping_entry_optional_uint_ptr_null(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -3447,8 +3588,11 @@ static bool test_save_mapping_entry_ignored(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -3522,7 +3666,9 @@ static bool test_save_sequence_null_values_int(
 	ttest_ctx_t tc;
 
 	cfg.flags |= CYAML_CFG_STYLE_BLOCK;
-	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, &cfg, &top_schema, data,
 			CYAML_ARRAY_LEN(data));
@@ -3585,7 +3731,9 @@ static bool test_save_sequence_null_str_values_int(
 	ttest_ctx_t tc;
 
 	cfg.flags |= CYAML_CFG_STYLE_BLOCK;
-	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, &cfg, &top_schema, data,
 			CYAML_ARRAY_LEN(data));
@@ -3636,8 +3784,11 @@ static bool test_save_schema_top_level_sequence_fixed(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema, data, 0);
 	if (err != CYAML_OK) {
@@ -3688,7 +3839,9 @@ static bool test_save_sequence_config_flow_style(
 	ttest_ctx_t tc;
 
 	cfg.flags |= CYAML_CFG_STYLE_FLOW;
-	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, &cfg, &top_schema, data, 3);
 	if (err != CYAML_OK) {
@@ -3742,7 +3895,9 @@ static bool test_save_sequence_config_block_style(
 	ttest_ctx_t tc;
 
 	cfg.flags |= CYAML_CFG_STYLE_BLOCK;
-	tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, &cfg, &top_schema, data, 3);
 	if (err != CYAML_OK) {
@@ -3804,8 +3959,11 @@ static bool test_save_mapping_value_flow_style(
 		.config = &cfg,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -3870,8 +4028,11 @@ static bool test_save_mapping_value_block_style(
 		.config = config,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	err = cyaml_save_data(&buffer, &len, config, &top_schema,
 				&data, 0);
@@ -3925,8 +4086,11 @@ static bool test_save_no_document_delimiters(
 		.config = &cfg,
 	};
 	cyaml_err_t err;
+	ttest_ctx_t tc;
 
-	ttest_ctx_t tc = ttest_start(report, __func__, cyaml_cleanup, &td);
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
 
 	cfg.flags &= ~((unsigned)CYAML_CFG_DOCUMENT_DELIM);
 	err = cyaml_save_data(&buffer, &len, &cfg, &top_schema, &data, 0);

@@ -40,7 +40,9 @@ static bool test_free_null_data(
 		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
 				struct target_struct, mapping_schema),
 	};
-	ttest_ctx_t tc = ttest_start(report, __func__, NULL, NULL);
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, NULL, NULL, &tc)) return true;
 
 	err = cyaml_free(config, &top_schema, NULL, 0);
 	if (err != CYAML_OK) {
@@ -62,7 +64,9 @@ static bool test_free_null_config(
 		const cyaml_config_t *config)
 {
 	cyaml_err_t err;
-	ttest_ctx_t tc = ttest_start(report, __func__, NULL, NULL);
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, NULL, NULL, &tc)) return true;
 
 	UNUSED(config);
 
@@ -87,7 +91,9 @@ static bool test_free_null_mem_fn(
 {
 	cyaml_err_t err;
 	cyaml_config_t cfg = *config;
-	ttest_ctx_t tc = ttest_start(report, __func__, NULL, NULL);
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, NULL, NULL, &tc)) return true;
 
 	cfg.mem_fn = NULL;
 
@@ -111,7 +117,9 @@ static bool test_free_null_schema(
 		const cyaml_config_t *config)
 {
 	cyaml_err_t err;
-	ttest_ctx_t tc = ttest_start(report, __func__, NULL, NULL);
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, NULL, NULL, &tc)) return true;
 
 	err = cyaml_free(config, NULL, NULL, 0);
 	if (err != CYAML_ERR_BAD_PARAM_NULL_SCHEMA) {
