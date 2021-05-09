@@ -54,6 +54,10 @@ typedef enum cyaml_event {
 typedef struct cyaml_state {
 	/** Current load state machine state. */
 	enum cyaml_state_e state;
+
+	size_t line;   /**< Event start position in YAML source. */
+	size_t column; /**< Event start position in YAML source. */
+
 	/** Schema for the expected value in this state. */
 	const cyaml_schema_value_t *schema;
 	/** Anonymous union for schema type specific state. */
@@ -1000,6 +1004,7 @@ static inline bool cyaml__is_sequence(const cyaml_schema_value_t *schema)
  *
  * \param[in]  ctx     The CYAML loading context.
  * \param[in]  state   The CYAML load state we're pushing a stack entry for.
+ * \param[in]  event   The YAML event we're pushing a stack entry for.
  * \param[in]  schema  The CYAML schema for the value expected in state.
  * \param[in]  data    Pointer to where value's data should be written.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
@@ -1007,6 +1012,7 @@ static inline bool cyaml__is_sequence(const cyaml_schema_value_t *schema)
 static cyaml_err_t cyaml__stack_push(
 		cyaml_ctx_t *ctx,
 		enum cyaml_state_e state,
+		const yaml_event_t *event,
 		const cyaml_schema_value_t *schema,
 		cyaml_data_t *data)
 {
@@ -1064,6 +1070,11 @@ static cyaml_err_t cyaml__stack_push(
 	cyaml__log(ctx->config, CYAML_LOG_DEBUG,
 			"Load: PUSH[%u]: %s\n", ctx->stack_idx,
 			cyaml__state_to_str(state));
+
+	if (event != NULL) {
+		s.line = event->start_mark.line;
+		s.column = event->start_mark.column;
+	}
 
 	ctx->stack[ctx->stack_idx] = s;
 	ctx->state = ctx->stack + ctx->stack_idx;
@@ -1260,18 +1271,26 @@ static void cyaml__backtrace(
 			if (state->mapping.fields_idx !=
 					CYAML_FIELDS_IDX_NONE) {
 				cyaml__log(ctx->config, CYAML_LOG_ERROR,
-						"  in mapping field: %s\n",
+						"  in mapping field '%s' "
+						"(line: %zu, column: %zu)\n",
 						state->mapping.fields[
-						state->mapping.fields_idx].key);
+						state->mapping.fields_idx].key,
+						state->line + 1,
+						state->column + 1);
 			} else {
 				cyaml__log(ctx->config, CYAML_LOG_ERROR,
-						"  in mapping:\n");
+						"  in mapping "
+						"(line: %zu, column: %zu)\n",
+						state->line + 1,
+						state->column + 1);
 			}
 			break;
 		case CYAML_STATE_IN_SEQUENCE:
 			cyaml__log(ctx->config, CYAML_LOG_ERROR,
-					"  in sequence entry: %"PRIu32"\n",
-					state->sequence.count);
+					"  in sequence entry '%"PRIu32"' "
+					"(line: %zu, column: %zu)\n",
+					state->sequence.count,
+					state->line + 1, state->column + 1);
 			break;
 		default:
 			/** \todo \ref CYAML_STATE_IN_DOC handling for multi
@@ -2109,7 +2128,7 @@ static cyaml_err_t cyaml__read_value(
 		err = cyaml__read_flags_value(ctx, schema, data);
 		break;
 	case CYAML_MAPPING:
-		err = cyaml__stack_push(ctx, CYAML_STATE_IN_MAP_KEY,
+		err = cyaml__stack_push(ctx, CYAML_STATE_IN_MAP_KEY, event,
 				schema, data);
 		break;
 	case CYAML_BITFIELD:
@@ -2117,7 +2136,7 @@ static cyaml_err_t cyaml__read_value(
 		break;
 	case CYAML_SEQUENCE: /* Fall through. */
 	case CYAML_SEQUENCE_FIXED:
-		err = cyaml__stack_push(ctx, CYAML_STATE_IN_SEQUENCE,
+		err = cyaml__stack_push(ctx, CYAML_STATE_IN_SEQUENCE, event,
 				schema, data);
 		break;
 	case CYAML_IGNORE:
@@ -2142,7 +2161,7 @@ static cyaml_err_t cyaml__stream_start(
 		const yaml_event_t *event)
 {
 	CYAML_UNUSED(event);
-	return cyaml__stack_push(ctx, CYAML_STATE_IN_STREAM,
+	return cyaml__stack_push(ctx, CYAML_STATE_IN_STREAM, event,
 			ctx->state->schema, ctx->state->data);
 }
 
@@ -2165,7 +2184,7 @@ static cyaml_err_t cyaml__doc_start(
 		return CYAML_OK;
 	}
 	ctx->state->stream.doc_count++;
-	return cyaml__stack_push(ctx, CYAML_STATE_IN_DOC,
+	return cyaml__stack_push(ctx, CYAML_STATE_IN_DOC, event,
 			ctx->state->schema, ctx->state->data);
 }
 
@@ -2291,6 +2310,9 @@ static cyaml_err_t cyaml__map_key(
 	/* Toggle mapping sub-state to value */
 	ctx->state->state = CYAML_STATE_IN_MAP_VALUE;
 
+	ctx->state->line = event->start_mark.line;
+	ctx->state->column = event->start_mark.column;
+
 	return err;
 }
 
@@ -2339,6 +2361,9 @@ static cyaml_err_t cyaml__map_value(
 	 * to move. */
 	state->state = CYAML_STATE_IN_MAP_KEY;
 
+	ctx->state->line = event->start_mark.line;
+	ctx->state->column = event->start_mark.column;
+
 	return cyaml__read_value(ctx, &field->value, data, event);
 }
 
@@ -2358,6 +2383,9 @@ static cyaml_err_t cyaml__seq_entry(
 	cyaml_state_t *state = ctx->state;
 	uint8_t *value_data = state->data;
 	const cyaml_schema_value_t *schema = state->schema;
+
+	ctx->state->line = event->start_mark.line;
+	ctx->state->column = event->start_mark.column;
 
 	if (state->sequence.count + 1 > state->schema->sequence.max) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
@@ -2570,7 +2598,7 @@ static cyaml_err_t cyaml__load(
 		return err;
 	}
 
-	err = cyaml__stack_push(&ctx, CYAML_STATE_START, schema, &data);
+	err = cyaml__stack_push(&ctx, CYAML_STATE_START, NULL, schema, &data);
 	if (err != CYAML_OK) {
 		goto out;
 	}
