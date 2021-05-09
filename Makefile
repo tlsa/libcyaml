@@ -116,10 +116,10 @@ coverage: test-verbose
 	@gcovr -e 'test/.*' --html --html-details -o build/coverage.html -r .
 
 test test-quiet test-verbose test-debug: $(TEST_BINS)
-	@for i in $(^); do $(LIB_PATH) $$i $(subst test,,$(subst test-,--,$@)) || exit; done
+	@for i in $(^); do $(LIB_PATH) $$i $(subst test,,$(subst test-,--,$@)) "$(TESTLIST)" || exit; done
 
 valgrind valgrind-quiet valgrind-verbose valgrind-debug: $(TEST_BINS)
-	@for i in $(^); do $(LIB_PATH) $(VALGRIND) $$i $(subst valgrind,,$(subst valgrind-,--,$@)) || exit; done
+	@for i in $(^); do $(LIB_PATH) $(VALGRIND) $$i $(subst valgrind,,$(subst valgrind-,--,$@)) "$(TESTLIST)" || exit; done
 
 check: test
 
