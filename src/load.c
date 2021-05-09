@@ -1264,7 +1264,8 @@ static void cyaml__backtrace(
 	}
 
 	for (uint32_t idx = ctx->stack_idx - 1; idx != 0; idx--) {
-		cyaml_state_t *state = ctx->stack + idx;
+		const cyaml_state_t *state = ctx->stack + idx;
+
 		switch (state->state) {
 		case CYAML_STATE_IN_MAP_KEY: /* Fall through. */
 		case CYAML_STATE_IN_MAP_VALUE:
