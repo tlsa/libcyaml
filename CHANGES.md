@@ -1,6 +1,24 @@
 LibCYAML: Change Log
 ====================
 
+## LibCYAML v1.2.0
+
+* **Loading**:
+  * Allow mappings with zero fields in the schema.
+  * Improved logging of errors.
+  * `CYAML_BOOL` type now treats "Off" as false.
+  * Allow loading of float values that overflow or underflow unless
+    `CYAML_FLAG_STRICT` set.
+  * Added line and column numbers to backtraces.
+* **General**:
+  * Update tests to handle libyaml 0.2.5 output format change.
+  * Buildsystem improvements.
+  * Made public header C++ compatible.
+  * Test runner supports running individual tests.
+
+No changes are required for client applications to upgrade.
+
+
 ## LibCYAML v1.1.0
 
 * **Loading**:
