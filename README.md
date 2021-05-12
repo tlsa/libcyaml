@@ -1,7 +1,7 @@
 LibCYAML: Schema-based YAML parsing and serialisation
 =====================================================
 
-[![Build Status](https://github.com/tlsa/libcyaml/workflows/CI/badge.svg)](https://github.com/tlsa/libcyaml/actions) [![Code Coverage](https://codecov.io/gh/tlsa/libcyaml/branch/master/graph/badge.svg)](https://codecov.io/gh/tlsa/libcyaml) [![Code Quality](https://img.shields.io/lgtm/grade/cpp/g/tlsa/libcyaml.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/tlsa/libcyaml/alerts/)
+[![Build Status](https://github.com/tlsa/libcyaml/workflows/CI/badge.svg)](https://github.com/tlsa/libcyaml/actions) [![Code Coverage](https://codecov.io/gh/tlsa/libcyaml/branch/main/graph/badge.svg)](https://codecov.io/gh/tlsa/libcyaml) [![Code Quality](https://img.shields.io/lgtm/grade/cpp/g/tlsa/libcyaml.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/tlsa/libcyaml/alerts/)
 
 LibCYAML is a C library for reading and writing structured YAML documents.
 It is written in ISO C11 and licensed under the ISC licence.
@@ -101,7 +101,7 @@ internals, `doxygen` is required:
     make docs
 
 Alternatively, the read the API documentation directly from the
-[cyaml.h](https://github.com/tlsa/libcyaml/blob/master/include/cyaml/cyaml.h)
+[cyaml.h](https://github.com/tlsa/libcyaml/blob/main/include/cyaml/cyaml.h)
 header file.
 
 There is also a [tutorial](docs/guide.md).

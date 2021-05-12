@@ -2,10 +2,10 @@ name: Coverage
 on:
   pull_request:
     branches:
-    - master
+    - main
   push:
     branches:
-    - master
+    - main
 jobs:
   coverage:
     runs-on: ubuntu-latest

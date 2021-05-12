@@ -51,7 +51,7 @@ struct numbers {
 Then we need to define a CYAML schema to describe these to LibCYAML.
 
 > **Note**: Use the doxygen API documentation, or else the documentation in
-> [cyaml.h](https://github.com/tlsa/libcyaml/blob/master/include/cyaml/cyaml.h)
+> [cyaml.h](https://github.com/tlsa/libcyaml/blob/main/include/cyaml/cyaml.h)
 > in conjunction with this guide.
 
 At the top level of the YAML is a mapping with two fields, "name" and
