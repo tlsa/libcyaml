@@ -39,6 +39,8 @@ PREFIX ?= /usr/local
 LIBDIR ?= lib
 INCLUDEDIR ?= include
 
+Q ?= @
+
 CC ?= gcc
 AR ?= ar
 MKDIR =	mkdir -p
@@ -110,16 +112,16 @@ TEST_BINS = \
 all: $(BUILDDIR)/$(LIB_SH_MAJ) $(BUILDDIR)/$(LIB_STATIC) examples
 
 coverage: test-verbose
-	@$(MKDIR) $(BUILDDIR)
-	@gcovr -e 'test/.*' -r .
-	@gcovr -e 'test/.*' -x -o build/coverage.xml -r .
-	@gcovr -e 'test/.*' --html --html-details -o build/coverage.html -r .
+	$(Q)$(MKDIR) $(BUILDDIR)
+	$(Q)gcovr -e 'test/.*' -r .
+	$(Q)gcovr -e 'test/.*' -x -o build/coverage.xml -r .
+	$(Q)gcovr -e 'test/.*' --html --html-details -o build/coverage.html -r .
 
 test test-quiet test-verbose test-debug: $(TEST_BINS)
-	@for i in $(^); do $(LIB_PATH) $$i $(subst test,,$(subst test-,--,$@)) "$(TESTLIST)" || exit; done
+	$(Q)for i in $(^); do $(LIB_PATH) $$i $(subst test,,$(subst test-,--,$@)) "$(TESTLIST)" || exit; done
 
 valgrind valgrind-quiet valgrind-verbose valgrind-debug: $(TEST_BINS)
-	@for i in $(^); do $(LIB_PATH) $(VALGRIND) $$i $(subst valgrind,,$(subst valgrind-,--,$@)) "$(TESTLIST)" || exit; done
+	$(Q)for i in $(^); do $(LIB_PATH) $(VALGRIND) $$i $(subst valgrind,,$(subst valgrind-,--,$@)) "$(TESTLIST)" || exit; done
 
 check: test
 
@@ -138,11 +140,11 @@ $(BUILDDIR)/$(LIB_SH_MAJ): $(LIB_OBJ_SHARED)
 	$(CC) -o $@ $^ $(LDFLAGS) $(LDFLAGS_COV) $(LDFLAGS_SHARED)
 
 $(LIB_OBJ_STATIC): $(BUILDDIR_STATIC)/%.o : %.c
-	@$(MKDIR) $(dir $@)
+	$(Q)$(MKDIR) $(dir $@)
 	$(CC) $(CFLAGS) $(CFLAGS_COV) -c -o $@ $<
 
 $(LIB_OBJ_SHARED): $(BUILDDIR_SHARED)/%.o : %.c
-	@$(MKDIR) $(dir $@)
+	$(Q)$(MKDIR) $(dir $@)
 	$(CC) $(CFLAGS) -fPIC $(CFLAGS_COV) -c -o $@ $<
 
 docs:
@@ -187,5 +189,5 @@ $(BUILDDIR)/test/units/cyaml-shared: $(TEST_OBJ) $(BUILDDIR)/$(LIB_SH_MAJ)
 	$(CC) $(LDFLAGS_COV) -o $@ $^ $(LDFLAGS)
 
 $(TEST_OBJ): $(BUILDDIR)/%.o : %.c
-	@$(MKDIR) $(dir $@)
+	$(Q)$(MKDIR) $(dir $@)
 	$(CC) $(CFLAGS) $(CFLAGS_COV) -c -o $@ $<
