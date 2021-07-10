@@ -168,12 +168,11 @@ install: $(BUILDDIR)/$(LIB_SH_MAJ) $(BUILDDIR)/$(LIB_STATIC) $(BUILDDIR)/$(LIB_P
 	$(INSTALL) -d $(DESTDIR)$(PREFIX)/$(LIBDIR)/pkgconfig
 	$(INSTALL) -m 644 $(BUILDDIR)/$(LIB_PKGCON) $(DESTDIR)$(PREFIX)/$(LIBDIR)/pkgconfig/$(LIB_PKGCON)
 
-examples: $(BUILDDIR)/planner $(BUILDDIR)/numerical
+EXAMPLES = $(BUILDDIR)/planner $(BUILDDIR)/numerical
 
-$(BUILDDIR)/planner: examples/planner/main.c $(BUILDDIR)/$(LIB_STATIC)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+examples: $(EXAMPLES)
 
-$(BUILDDIR)/numerical: examples/numerical/main.c $(BUILDDIR)/$(LIB_STATIC)
+$(EXAMPLES): $(BUILDDIR)/% : examples/%/main.c $(BUILDDIR)/$(LIB_STATIC)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 -include $(LIB_DEP_SHARED) $(LIB_DEP_STATIC) $(TEST_DEP)
