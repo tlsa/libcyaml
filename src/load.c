@@ -27,6 +27,10 @@
 #include "data.h"
 #include "util.h"
 
+#define CYAML_METADATA_TABLE_RADIX 11
+#define CYAML_METADATA_TABLE_LEN (1u << CYAML_METADATA_TABLE_RADIX)
+#define CYAML_METADATA_TABLE_MASK (CYAML_METADATA_TABLE_LEN - 1)
+
 /** Identifies that no mapping schema entry was found for key. */
 #define CYAML_FIELDS_IDX_NONE 0xffff
 
@@ -47,6 +51,14 @@ typedef enum cyaml_event {
 	CYAML_EVT_MAP_END    = YAML_MAPPING_END_EVENT,
 	CYAML_EVT__COUNT,
 } cyaml_event_t;
+
+typedef struct cyaml_schema_metadata {
+	struct cyaml_schema_metadata *free;
+	struct cyaml_schema_metadata *next;
+	const cyaml_schema_value_t *schema;
+	size_t string_hash_count;
+	uint32_t string_hash[];
+} cyaml_schema_metadata_t;
 
 /**
  * A CYAML load state machine stack entry.
@@ -85,6 +97,8 @@ typedef struct cyaml_state {
 			uint8_t count_size;
 		} sequence;
 	};
+
+	const cyaml_schema_metadata_t *metadata;
 	uint8_t *data; /**< Pointer to output client data for this state. */
 } cyaml_state_t;
 
@@ -158,6 +172,7 @@ typedef struct cyaml_ctx {
 	uint32_t stack_max;     /**< Current stack allocation limit. */
 	unsigned seq_count;     /**< Top-level sequence count. */
 	yaml_parser_t *parser;  /**< Internal libyaml parser object. */
+	cyaml_schema_metadata_t **metadata;
 } cyaml_ctx_t;
 
 /**
@@ -780,19 +795,21 @@ static inline const yaml_event_t * cyaml__current_event(
 static inline uint16_t cyaml__get_mapping_field_idx(
 		const cyaml_config_t *cfg,
 		const cyaml_schema_value_t *schema,
+		const cyaml_schema_metadata_t *metadata,
 		const char *key)
 {
 	const cyaml_schema_field_t *fields = schema->mapping.fields;
-	uint16_t index = 0;
+	uint32_t strhash = cyaml__strhash(cfg, schema, key);
 
 	assert(schema->type == CYAML_MAPPING);
 
-	/* Step through each entry in the schema */
-	for (; fields->key != NULL; fields++) {
-		if (cyaml__strcmp(cfg, schema, fields->key, key) == 0) {
-			return index;
+	for (size_t i = 0; i < metadata->string_hash_count; i++) {
+		if (strhash != metadata->string_hash[i]) {
+			continue;
 		}
-		index++;
+		if (cyaml__strcmp(cfg, schema, fields[i].key, key) == 0) {
+			return (uint16_t)i;
+		}
 	}
 
 	return CYAML_FIELDS_IDX_NONE;
@@ -868,6 +885,173 @@ static uint16_t cyaml__get_mapping_field_count(
 	}
 
 	return (uint16_t)(entry - mapping_schema);
+}
+
+static size_t cyaml_schema_metadata__get_string_count(
+		const cyaml_schema_value_t *schema)
+{
+	switch (schema->type) {
+	case CYAML_ENUM:
+	case CYAML_FLAGS:
+		return schema->enumeration.count;
+	case CYAML_BITFIELD:
+		return schema->bitfield.count;
+	case CYAML_MAPPING:
+		return cyaml__get_mapping_field_count(schema->mapping.fields);
+	default:
+		break;
+	}
+
+	return 0;
+}
+
+static cyaml_err_t cyaml_schema_metadata_create(
+		const cyaml_ctx_t *ctx,
+		const cyaml_schema_value_t *schema,
+		struct cyaml_schema_metadata **metadata_out)
+{
+	size_t count = cyaml_schema_metadata__get_string_count(schema);
+	struct cyaml_schema_metadata *metadata;
+
+	if (count == 0) {
+		*metadata_out = NULL;
+		return CYAML_OK;
+	}
+
+	metadata = cyaml__alloc(ctx->config,
+			offsetof(struct cyaml_schema_metadata, string_hash) +
+			sizeof(*metadata->string_hash) * count, true);
+	if (metadata == NULL) {
+		return CYAML_ERR_OOM;
+	}
+
+	metadata->schema = schema;
+	metadata->string_hash_count = count;
+
+	for (size_t i = 0; i < count; i++) {
+		const char *string = NULL;
+
+		switch ((int)schema->type) {
+		case CYAML_ENUM:
+		case CYAML_FLAGS:
+			string = schema->enumeration.strings[i].str;
+			break;
+		case CYAML_BITFIELD:
+			string = schema->bitfield.bitdefs[i].name;
+			break;
+		case CYAML_MAPPING:
+			string = schema->mapping.fields[i].key;
+			break;
+		}
+
+		metadata->string_hash[i] = cyaml__strhash(ctx->config,
+				schema, string);
+	}
+
+	*metadata_out = metadata;
+	return CYAML_OK;
+}
+
+static cyaml_err_t cyaml_schema_metadata_init(
+		cyaml_ctx_t *ctx)
+{
+	struct cyaml_schema_metadata **table;
+	size_t count = CYAML_METADATA_TABLE_LEN + 1;
+
+	table = cyaml__alloc(ctx->config,
+			sizeof(*table) * count, true);
+	if (table == NULL) {
+		return CYAML_ERR_OOM;
+	}
+	ctx->metadata = table;
+
+	return CYAML_OK;
+}
+
+static void cyaml_schema_metadata_fini(
+		cyaml_ctx_t *ctx)
+{
+	if (ctx->metadata != NULL) {
+		struct cyaml_schema_metadata *metadata;
+
+		metadata = ctx->metadata[CYAML_METADATA_TABLE_LEN];
+		while (metadata != NULL) {
+			struct cyaml_schema_metadata *next = metadata->free;
+			cyaml__free(ctx->config, metadata);
+			metadata = next;
+		}
+
+		cyaml__free(ctx->config, ctx->metadata);
+		ctx->metadata = NULL;
+	}
+}
+
+static size_t cyaml_schema_metadata_get_slot(
+		const cyaml_schema_value_t *schema)
+{
+	uint32_t hash = cyaml__hash(CYAML_HASH_INIT,
+			(uint8_t *)&schema, sizeof(schema));
+
+	return hash & CYAML_METADATA_TABLE_MASK;
+}
+
+static struct cyaml_schema_metadata *cyaml_schema_metadata_lookup(
+		const cyaml_ctx_t *ctx,
+		const cyaml_schema_value_t *schema,
+		size_t slot)
+{
+	struct cyaml_schema_metadata *metadata = ctx->metadata[slot];
+
+	while (metadata != NULL) {
+		if (metadata->schema == schema) {
+			return metadata;
+		}
+		metadata = metadata->next;
+	}
+
+	return NULL;
+}
+
+static void yaml_schema_metadata_insert(
+		const cyaml_ctx_t *ctx,
+		struct cyaml_schema_metadata *metadata,
+		size_t slot)
+{
+	struct cyaml_schema_metadata *current = ctx->metadata[slot];
+	struct cyaml_schema_metadata *free;
+
+	metadata->next = current;
+	ctx->metadata[slot] = metadata;
+
+	free = ctx->metadata[CYAML_METADATA_TABLE_LEN];
+	metadata->free = free;
+	ctx->metadata[CYAML_METADATA_TABLE_LEN] = metadata;
+}
+
+static cyaml_err_t cyaml_schema_metadata_get(
+		const cyaml_ctx_t *ctx,
+		const cyaml_schema_value_t *schema,
+		const struct cyaml_schema_metadata **metadata_out)
+{
+	size_t slot = cyaml_schema_metadata_get_slot(schema);
+	struct cyaml_schema_metadata *metadata;
+
+	metadata = cyaml_schema_metadata_lookup(ctx, schema, slot);
+	if (metadata == NULL) {
+		cyaml_err_t err;
+
+		err = cyaml_schema_metadata_create(ctx, schema, &metadata);
+		if (err != CYAML_OK) {
+			return err;
+		}
+
+		if (metadata != NULL) {
+			yaml_schema_metadata_insert(ctx, metadata, slot);
+		}
+	}
+
+	*metadata_out = metadata;
+	return CYAML_OK;
 }
 
 /**
@@ -1024,6 +1208,11 @@ static cyaml_err_t cyaml__stack_push(
 	};
 
 	err = cyaml__stack_ensure(ctx);
+	if (err != CYAML_OK) {
+		return err;
+	}
+
+	err = cyaml_schema_metadata_get(ctx, schema, &s.metadata);
 	if (err != CYAML_OK) {
 		return err;
 	}
@@ -1463,9 +1652,22 @@ static cyaml_err_t cyaml__read_enum(
 		const char *value,
 		uint8_t *data)
 {
+	uint32_t strhash = cyaml__strhash(ctx->config, schema, value);
 	const cyaml_strval_t *strings = schema->enumeration.strings;
+	const cyaml_schema_metadata_t *metadata;
+	cyaml_err_t err;
+
+	err = cyaml_schema_metadata_get(ctx, schema, &metadata);
+	if (err != CYAML_OK) {
+		return err;
+	}
+
+	assert(metadata->string_hash_count == schema->enumeration.count);
 
 	for (uint32_t i = 0; i < schema->enumeration.count; i++) {
+		if (strhash != metadata->string_hash[i]) {
+			continue;
+		}
 		if (cyaml__strcmp(ctx->config, schema,
 				value, strings[i].str) == 0) {
 			return cyaml_data_write((uint32_t)strings[i].val,
@@ -1736,9 +1938,22 @@ static cyaml_err_t cyaml__set_flag(
 		const char *value,
 		uint64_t *flags_out)
 {
+	uint32_t strhash = cyaml__strhash(ctx->config, schema, value);
 	const cyaml_strval_t *strings = schema->enumeration.strings;
+	const cyaml_schema_metadata_t *metadata;
+	cyaml_err_t err;
+
+	err = cyaml_schema_metadata_get(ctx, schema, &metadata);
+	if (err != CYAML_OK) {
+		return err;
+	}
+
+	assert(metadata->string_hash_count == schema->enumeration.count);
 
 	for (uint32_t i = 0; i < schema->enumeration.count; i++) {
+		if (strhash != metadata->string_hash[i]) {
+			continue;
+		}
 		if (cyaml__strcmp(ctx->config, schema,
 				value, strings[i].str) == 0) {
 			*flags_out |= ((uint64_t)strings[i].val);
@@ -1844,11 +2059,25 @@ static cyaml_err_t cyaml__get_bitval_index(
 	const yaml_event_t *const event = cyaml__current_event(ctx);
 	const char *name = (const char *)event->data.scalar.value;
 	const cyaml_bitdef_t *bitdef = schema->bitfield.bitdefs;
+	const cyaml_schema_metadata_t *metadata;
+	uint32_t strhash;
+	cyaml_err_t err;
 	uint32_t i;
 
+	err = cyaml_schema_metadata_get(ctx, schema, &metadata);
+	if (err != CYAML_OK) {
+		return err;
+	}
+
+	assert(metadata->string_hash_count == schema->bitfield.count);
+
+	strhash = cyaml__strhash(ctx->config, schema, name);
 	for (i = 0; i < schema->bitfield.count; i++) {
 		if (bitdef[i].bits + bitdef[i].offset > schema->data_size * 8) {
 			return CYAML_ERR_BAD_BITVAL_IN_SCHEMA;
+		}
+		if (strhash != metadata->string_hash[i]) {
+			continue;
 		}
 		if (cyaml__strcmp(ctx->config, schema,
 				name, bitdef[i].name) == 0) {
@@ -2280,7 +2509,8 @@ static cyaml_err_t cyaml__map_key(
 
 	key = (const char *)event->data.scalar.value;
 	ctx->state->mapping.fields_idx = cyaml__get_mapping_field_idx(
-			ctx->config, ctx->state->schema, key);
+			ctx->config, ctx->state->schema,
+			ctx->state->metadata, key);
 	cyaml__log(ctx->config, CYAML_LOG_INFO, "Load: [%s]\n", key);
 
 	if (ctx->state->mapping.fields_idx == CYAML_FIELDS_IDX_NONE) {
@@ -2599,6 +2829,11 @@ static cyaml_err_t cyaml__load(
 		return err;
 	}
 
+	err = cyaml_schema_metadata_init(&ctx);
+	if (err != CYAML_OK) {
+		goto out;
+	}
+
 	err = cyaml__stack_push(&ctx, CYAML_STATE_START, NULL, schema, &data);
 	if (err != CYAML_OK) {
 		goto out;
@@ -2634,6 +2869,7 @@ out:
 	while (ctx.stack_idx > 0) {
 		cyaml__stack_pop(&ctx);
 	}
+	cyaml_schema_metadata_fini(&ctx);
 	cyaml__free(config, ctx.stack);
 	cyaml__delete_yaml_event(&ctx);
 	cyaml__free_recording(&ctx);

@@ -14,6 +14,7 @@
 #include <stdbool.h>
 
 #include "utf8.h"
+#include "util.h"
 
 /**
  * Get expected byte-length of UTF8 character.
@@ -256,4 +257,23 @@ int cyaml_utf8_casecmp(
 		s1 += len1;
 		s2 += len2;
 	}
+}
+
+/* Exported function, documented in utf8.h. */
+uint32_t cyaml_utf8_case_hash(const void * const str)
+{
+	uint32_t hash = 0x811c9dc5;
+	const uint8_t *s = str;
+
+	while (*s != '\0') {
+		unsigned len = cyaml_utf8_char_len(*s);
+		unsigned cp = cyaml_utf8_get_codepoint(s, &len);
+
+		cp = cyaml_utf8_to_lower(cp);
+		hash = cyaml__hash(hash, (uint8_t *)&cp, sizeof(cp));
+
+		s += len;
+	}
+
+	return hash;
 }

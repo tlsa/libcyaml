@@ -30,10 +30,10 @@ unsigned cyaml_utf8_get_codepoint(
 		unsigned *len);
 
 /**
- * Case insensitive comparason.
+ * Case insensitive comparison.
  *
  * \note This has some limitations and only performs case insensitive
- *       comparason over some sectons of unicode.
+ *       comparison over some sections of Unicode.
  *
  * \param[in]  str1  First string to be compared.
  * \param[in]  str2  Second string to be compared.
@@ -42,5 +42,7 @@ unsigned cyaml_utf8_get_codepoint(
 int cyaml_utf8_casecmp(
 		const void * const str1,
 		const void * const str2);
+
+uint32_t cyaml_utf8_case_hash(const void * const str);
 
 #endif
