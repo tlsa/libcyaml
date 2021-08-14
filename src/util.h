@@ -161,6 +161,16 @@ static inline bool cyaml__is_case_sensitive(
 }
 
 #define CYAML_HASH_INIT 0x811c9dc5
+static inline uint32_t cyaml__hash_string(uint32_t init, uint8_t *data)
+{
+	while (*data != '\0') {
+		init *= 0x01000193;
+		init ^= *data++;
+	}
+
+	return init;
+}
+
 static inline uint32_t cyaml__hash(uint32_t init, uint8_t *data, size_t len)
 {
 	while (len > 0) {
@@ -178,8 +188,7 @@ static inline uint32_t cyaml__strhash(
 		const void * const str)
 {
 	if (cyaml__is_case_sensitive(config, schema)) {
-		return cyaml__hash(CYAML_HASH_INIT,
-				(uint8_t *)str, strlen(str));
+		return cyaml__hash_string(CYAML_HASH_INIT, (uint8_t *)str);
 	}
 
 	return cyaml_utf8_case_hash(str);
