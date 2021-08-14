@@ -1355,9 +1355,6 @@ typedef void * (*cyaml_mem_fn_t)(
 
 /**
  * Client CYAML configuration data.
- *
- * \todo Should provide facility for client to provide its own custom
- *       allocation functions.
  */
 typedef struct cyaml_config {
 	/**
