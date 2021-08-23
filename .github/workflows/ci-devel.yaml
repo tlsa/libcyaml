@@ -1,10 +1,10 @@
 name: CI-devel
 on: [push]
 jobs:
-  gcc:
+  linux-gcc:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: apt-get install packages
       run: sudo apt-get update -qq &&
            sudo apt-get install --no-install-recommends -y
@@ -21,10 +21,10 @@ jobs:
       run: make valgrind-quiet
     - name: sanitize test
       run: make VARIANT=san test
-  clang:
+  linux-clang:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: apt-get install packages
       run: sudo apt-get update -qq &&
            sudo apt-get install --no-install-recommends -y
