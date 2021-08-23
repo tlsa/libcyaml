@@ -4,10 +4,10 @@ on:
     branches:
     - main
 jobs:
-  gcc:
+  linux-gcc:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: apt-get install packages
       run: sudo apt-get update -qq &&
            sudo apt-get install --no-install-recommends -y
@@ -24,10 +24,10 @@ jobs:
       run: make valgrind-quiet
     - name: sanitize test
       run: make VARIANT=san test
-  clang:
+  linux-clang:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: apt-get install packages
       run: sudo apt-get update -qq &&
            sudo apt-get install --no-install-recommends -y
@@ -44,3 +44,25 @@ jobs:
       run: make valgrind-quiet CC=clang
     - name: sanitize test
       run: make CC=clang VARIANT=san test
+  mac-gcc:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: brew install deps
+      run: brew update && brew install
+               libyaml
+    - name: build
+      run: make
+    - name: test
+      run: make test
+  mac-clang:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: brew install deps
+      run: brew update && brew install
+               libyaml
+    - name: build
+      run: make CC=clang
+    - name: test
+      run: make test CC=clang

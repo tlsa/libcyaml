@@ -26,6 +26,8 @@ else
 $(error VARIANT must be 'debug' (default), 'san', or 'release')
 endif
 
+UNAME_S := $(shell uname -s)
+
 LIB_NAME = libcyaml
 LIB_PKGCON = $(LIB_NAME).pc
 LIB_STATIC = $(LIB_NAME).a
@@ -64,7 +66,7 @@ CFLAGS += -std=c11 -Wall -Wextra -pedantic \
 		-Wredundant-decls -Wundef -Wvla -Wdeclaration-after-statement
 CFLAGS += -MMD -MP
 LDFLAGS += $(LIBYAML_LIBS)
-LDFLAGS_SHARED += -Wl,-soname=$(LIB_SH_MAJ) -shared
+LDFLAGS_SHARED = -Wl,-soname=$(LIB_SH_MAJ) -shared
 
 ifeq ($(VARIANT), debug)
 	CFLAGS += -O0 -g
@@ -98,6 +100,14 @@ LIB_DEP_SHARED = $(patsubst $(BUILDDIR)%,$(BUILDDIR_SHARED)%,$(LIB_DEP))
 LIB_DEP_STATIC = $(patsubst $(BUILDDIR)%,$(BUILDDIR_STATIC)%,$(LIB_DEP))
 
 LIB_PATH = LD_LIBRARY_PATH=$(BUILDDIR)
+
+ifeq ($(UNAME_S),Darwin)
+	LIB_SHARED = $(LIB_NAME).dylib
+	LIB_SH_MAJ = $(LIB_NAME).$(VERSION_MAJOR).dylib
+	LIB_SH_VER = $(LIB_NAME).$(VERSION_STR).dylib
+	LDFLAGS_SHARED = -dynamiclib -install_name "$(LIB_SH_MAJ)" -current_version $(VERSION_STR)
+	LIB_PATH = DYLD_FALLBACK_LIBRARY_PATH=$(BUILDDIR)
+endif
 
 TEST_SRC_FILES = units/free.c units/load.c units/test.c units/util.c \
 		units/errs.c units/file.c units/save.c units/utf8.c
