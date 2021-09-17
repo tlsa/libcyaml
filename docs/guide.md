@@ -134,7 +134,7 @@ static const cyaml_config_t config = {
 /* Where to store the loaded data */
 struct numbers *n;
 
-/* Load the file into p */
+/* Load the file into n */
 cyaml_err_t err = cyaml_load_file(argv[ARG_PATH_IN], &config,
 		&top_schema, (cyaml_data_t **)&n, NULL);
 if (err != CYAML_OK) {
