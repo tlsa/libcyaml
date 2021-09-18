@@ -1,6 +1,15 @@
 LibCYAML: Change Log
 ====================
 
+## LibCYAML v1.2.1
+
+* **General**
+  * Support for dynamic library build on Mac OS X.
+  * Ordered designated initialisers in public header for C++ compatibility.
+
+No changes are required for client applications to upgrade.
+
+
 ## LibCYAML v1.2.0
 
 * **Loading**:
