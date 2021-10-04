@@ -59,12 +59,12 @@ LIBYAML_CFLAGS := $(if $(PKG_CONFIG),$(shell $(PKG_CONFIG) --cflags $(LIBYAML)),
 LIBYAML_LIBS := $(if $(PKG_CONFIG),$(shell $(PKG_CONFIG) --libs $(LIBYAML)),-lyaml)
 
 INCLUDE = -I include
-CFLAGS += $(INCLUDE) $(VERSION_FLAGS) $(LIBYAML_CFLAGS)
+CPPFLAGS += $(VERSION_FLAGS) -MMD -MP
+CFLAGS += $(INCLUDE) $(LIBYAML_CFLAGS)
 CFLAGS += -std=c11 -Wall -Wextra -pedantic \
 		-Wconversion -Wwrite-strings -Wcast-align -Wpointer-arith \
 		-Winit-self -Wshadow -Wstrict-prototypes -Wmissing-prototypes \
 		-Wredundant-decls -Wundef -Wvla -Wdeclaration-after-statement
-CFLAGS += -MMD -MP
 LDFLAGS += $(LIBYAML_LIBS)
 LDFLAGS_SHARED = -Wl,-soname=$(LIB_SH_MAJ) -shared
 
@@ -151,11 +151,11 @@ $(BUILDDIR)/$(LIB_SH_MAJ): $(LIB_OBJ_SHARED)
 
 $(LIB_OBJ_STATIC): $(BUILDDIR_STATIC)/%.o : %.c
 	$(Q)$(MKDIR) $(dir $@)
-	$(CC) $(CFLAGS) $(CFLAGS_COV) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(CFLAGS_COV) -c -o $@ $<
 
 $(LIB_OBJ_SHARED): $(BUILDDIR_SHARED)/%.o : %.c
 	$(Q)$(MKDIR) $(dir $@)
-	$(CC) $(CFLAGS) -fPIC $(CFLAGS_COV) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -fPIC $(CFLAGS_COV) -c -o $@ $<
 
 docs:
 	$(MKDIR) build/docs/api
@@ -181,10 +181,10 @@ install: $(BUILDDIR)/$(LIB_SH_MAJ) $(BUILDDIR)/$(LIB_STATIC) $(BUILDDIR)/$(LIB_P
 examples: $(BUILDDIR)/planner $(BUILDDIR)/numerical
 
 $(BUILDDIR)/planner: examples/planner/main.c $(BUILDDIR)/$(LIB_STATIC)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 $(BUILDDIR)/numerical: examples/numerical/main.c $(BUILDDIR)/$(LIB_STATIC)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 -include $(LIB_DEP_SHARED) $(LIB_DEP_STATIC) $(TEST_DEP)
 
@@ -200,4 +200,4 @@ $(BUILDDIR)/test/units/cyaml-shared: $(TEST_OBJ) $(BUILDDIR)/$(LIB_SH_MAJ)
 
 $(TEST_OBJ): $(BUILDDIR)/%.o : %.c
 	$(Q)$(MKDIR) $(dir $@)
-	$(CC) $(CFLAGS) $(CFLAGS_COV) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(CFLAGS_COV) -c -o $@ $<
