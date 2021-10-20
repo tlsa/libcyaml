@@ -217,6 +217,35 @@ static inline yaml_mapping_style_t cyaml__get_emit_style_map(
 }
 
 /**
+ * Get the style to use for scalar values from value flags.
+ *
+ * \param[in]  ctx     The CYAML saving context.
+ * \return The libyaml scalar style to emit the value with.
+ */
+static inline yaml_scalar_style_t cyaml__get_emit_style_scalar(
+		const cyaml_schema_value_t *schema)
+{
+	/* Consult flags in order of decreasing priority. */
+	if (schema->flags & CYAML_FLAG_SCALAR_QUOTE_DOUBLE) {
+		return YAML_DOUBLE_QUOTED_SCALAR_STYLE;
+
+	} else if (schema->flags & CYAML_FLAG_SCALAR_QUOTE_SINGLE) {
+		return YAML_SINGLE_QUOTED_SCALAR_STYLE;
+
+	} else if (schema->flags & CYAML_FLAG_SCALAR_LITERAL) {
+		return YAML_LITERAL_SCALAR_STYLE;
+
+	} else if (schema->flags & CYAML_FLAG_SCALAR_FOLDED) {
+		return YAML_FOLDED_SCALAR_STYLE;
+
+	} else if (schema->flags & CYAML_FLAG_SCALAR_PLAIN) {
+		return YAML_PLAIN_SCALAR_STYLE;
+	}
+
+	return YAML_ANY_SCALAR_STYLE;
+}
+
+/**
  * Helper to discern whether to emit document delimiting marks.
  *
  * These are "---" for document start, and "..." for document end.
@@ -499,7 +528,7 @@ static cyaml_err_t cyaml__emit_scalar(
 			(yaml_char_t *)tag,
 			(yaml_char_t *)value,
 			(int)strlen(value),
-			1, 0, YAML_PLAIN_SCALAR_STYLE);
+			1, 0, cyaml__get_emit_style_scalar(schema));
 
 	return cyaml__emit_event_helper(ctx, ret, &event);
 }
