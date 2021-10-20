@@ -259,6 +259,63 @@ typedef enum cyaml_flag {
 	 *       \ref cyaml_strval strings.
 	 */
 	CYAML_FLAG_CASE_INSENSITIVE = (1 << 8),
+	/**
+	 * When saving, emit scalar value with plain style (no quotes).
+	 *
+	 * \note This is ignored if the value is non-scaler.
+	 *
+	 * \note In cases where conflicting scalar style flags are set, the
+	 *       the one with the highest precedence is used.  From lowest to
+	 *       highest precedence:
+	 *       \ref CYAML_FLAG_SCALAR_PLAIN,
+	 *       \ref CYAML_FLAG_SCALAR_FOLDED,
+	 *       \ref CYAML_FLAG_SCALAR_LITERAL,
+	 *       \ref CYAML_FLAG_SCALAR_QUOTE_SINGLE,
+	 *       \ref CYAML_FLAG_SCALAR_QUOTE_DOUBLE,
+	 *
+	 * If none of these are set, libyaml's default behaviour is used.
+	 */
+	CYAML_FLAG_SCALAR_PLAIN        = (1 <<  9),
+	/**
+	 * When saving, emit scalar value with folded style:
+	 *
+	 * ```yaml
+	 * string: >
+	 *   This string
+	 *   really has no line breaks!
+	 * ```
+	 *
+	 * See the notes for \ref CYAML_FLAG_SCALAR_PLAIN for applicability
+	 * and precedence.
+	 */
+	CYAML_FLAG_SCALAR_FOLDED       = (1 << 10),
+	/**
+	 * When saving, emit scalar value with literal style:
+	 *
+	 * ```yaml
+	 * string: |
+	 *   This is a
+	 *   multi-line string!
+	 * ```
+	 *
+	 * See the notes for \ref CYAML_FLAG_SCALAR_PLAIN for applicability
+	 * and precedence.
+	 */
+	CYAML_FLAG_SCALAR_LITERAL      = (1 << 11),
+	/**
+	 * When saving, emit scalar value with single quotes (`'`).
+	 *
+	 * See the notes for \ref CYAML_FLAG_SCALAR_PLAIN for applicability
+	 * and precedence.
+	 */
+	CYAML_FLAG_SCALAR_QUOTE_SINGLE = (1 << 12),
+	/**
+	 * When saving, emit scalar value with double quotes (`"`).
+	 *
+	 * See the notes for \ref CYAML_FLAG_SCALAR_PLAIN for applicability
+	 * and precedence.
+	 */
+	CYAML_FLAG_SCALAR_QUOTE_DOUBLE = (1 << 13),
 } cyaml_flag_e;
 
 /**
