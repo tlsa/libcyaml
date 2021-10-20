@@ -488,7 +488,7 @@ static cyaml_err_t cyaml__emit_scalar(
 	int ret;
 	yaml_event_t event;
 
-	if (schema == NULL) {
+	if (schema->type == CYAML_MAPPING) {
 		cyaml__log(ctx->config, CYAML_LOG_INFO, "Save: [%s]\n", value);
 	} else {
 		cyaml__log(ctx->config, CYAML_LOG_INFO,
@@ -1136,7 +1136,8 @@ static cyaml_err_t cyaml__write_mapping(
 			}
 		}
 
-		err = cyaml__emit_scalar(ctx, NULL, field->key, YAML_STR_TAG);
+		err = cyaml__emit_scalar(ctx, ctx->state->schema,
+				field->key, YAML_STR_TAG);
 		if (err != CYAML_OK) {
 			return err;
 		}
