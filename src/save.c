@@ -528,7 +528,7 @@ static cyaml_err_t cyaml__emit_scalar(
 			(yaml_char_t *)tag,
 			(yaml_char_t *)value,
 			(int)strlen(value),
-			1, 0, cyaml__get_emit_style_scalar(schema));
+			1, 1, cyaml__get_emit_style_scalar(schema));
 
 	return cyaml__emit_event_helper(ctx, ret, &event);
 }
