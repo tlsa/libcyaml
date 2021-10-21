@@ -845,6 +845,317 @@ static bool test_save_mapping_entry_enum_sparse(
 }
 
 /**
+ * Test saving a string pointer with plain style.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_mapping_entry_string_ptr_plain(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char ref[] =
+		"---\n"
+		"str: This is a test!!\n"
+		"...\n";
+	static const struct target_struct {
+		const char *test_string;
+	} data = {
+		.test_string = "This is a test!!",
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_STRING_PTR("str",
+				CYAML_FLAG_POINTER | CYAML_FLAG_SCALAR_PLAIN,
+				struct target_struct, test_string,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer;
+	size_t len;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving a string pointer with single quote style.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_mapping_entry_string_ptr_single(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char ref[] =
+		"---\n"
+		"str: 'This is a test!!'\n"
+		"...\n";
+	static const struct target_struct {
+		const char *test_string;
+	} data = {
+		.test_string = "This is a test!!",
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_STRING_PTR("str",
+				CYAML_FLAG_POINTER |
+				CYAML_FLAG_SCALAR_QUOTE_SINGLE,
+				struct target_struct, test_string,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer;
+	size_t len;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving a string pointer with double quote style.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_mapping_entry_string_ptr_double(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char ref[] =
+		"---\n"
+		"str: \"This is a test!!\"\n"
+		"...\n";
+	static const struct target_struct {
+		const char *test_string;
+	} data = {
+		.test_string = "This is a test!!",
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_STRING_PTR("str",
+				CYAML_FLAG_POINTER |
+				CYAML_FLAG_SCALAR_QUOTE_DOUBLE,
+				struct target_struct, test_string,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer;
+	size_t len;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving a string pointer with folded style.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_mapping_entry_string_ptr_folded(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char ref[] =
+		"---\n"
+		"str: >-\n"
+		"  This is a test!!\n"
+		"...\n";
+	static const struct target_struct {
+		const char *test_string;
+	} data = {
+		.test_string = "This is a test!!",
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_STRING_PTR("str",
+				CYAML_FLAG_POINTER |
+				CYAML_FLAG_SCALAR_FOLDED,
+				struct target_struct, test_string,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer;
+	size_t len;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving a string pointer with literal style.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_mapping_entry_string_ptr_literal(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char ref[] =
+		"---\n"
+		"str: |-\n"
+		"  This is a test!!\n"
+		"...\n";
+	static const struct target_struct {
+		const char *test_string;
+	} data = {
+		.test_string = "This is a test!!",
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_STRING_PTR("str",
+				CYAML_FLAG_POINTER |
+				CYAML_FLAG_SCALAR_LITERAL,
+				struct target_struct, test_string,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer;
+	size_t len;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test saving a mapping.
  *
  * \param[in]  report  The test report context.
@@ -4145,6 +4456,14 @@ bool save_tests(
 	pass &= test_save_mapping_entry_enum_strict(rc, &config);
 	pass &= test_save_mapping_entry_enum_number(rc, &config);
 	pass &= test_save_mapping_entry_enum_sparse(rc, &config);
+
+	ttest_heading(rc, "Save single entry mapping tests: scalar style");
+
+	pass &= test_save_mapping_entry_string_ptr_plain(rc, &config);
+	pass &= test_save_mapping_entry_string_ptr_single(rc, &config);
+	pass &= test_save_mapping_entry_string_ptr_double(rc, &config);
+	pass &= test_save_mapping_entry_string_ptr_folded(rc, &config);
+	pass &= test_save_mapping_entry_string_ptr_literal(rc, &config);
 
 	ttest_heading(rc, "Save single entry mapping tests: complex types");
 
