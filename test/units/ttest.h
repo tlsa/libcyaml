@@ -99,7 +99,6 @@ static inline bool ttest__run_test(
 	while (pos < report->test_list_len) {
 		/* Skip commas and spaces. */
 		pos += strspn(report->test_list + pos, ", ");
-
 		len = strcspn(report->test_list + pos, ", ");
 		if (len == name_len) {
 			if (memcmp(report->test_list + pos, name, len) == 0) {
