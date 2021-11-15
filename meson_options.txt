@@ -1,0 +1,15 @@
+option('build_examples',
+	type: 'boolean',
+	value: false,
+	description: 'Build examples'
+)
+option('build_tests',
+	type: 'boolean',
+	value: false,
+	description: 'Build tests'
+)
+option('build_docs',
+	type: 'boolean',
+	value: false,
+	description: 'Generate documentation'
+)

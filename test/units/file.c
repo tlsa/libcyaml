@@ -13,6 +13,12 @@
 #include "ttest.h"
 #include "test.h"
 
+#ifndef SAVE_FILE_DEST
+#define SAVE_FILE_DEST "build"
+#endif
+
+#define SAVE_FILE_PATH(filename) (SAVE_FILE_DEST "/" filename)
+
 /**
  * Unit test context data.
  */
@@ -271,7 +277,7 @@ static bool test_file_load_save_basic(
 		return ttest_fail(&tc, cyaml_strerror(err));
 	}
 
-	err = cyaml_save_file("build/load_save.yaml", config, &top_schema,
+	err = cyaml_save_file(SAVE_FILE_PATH("load_save.yaml"), config, &top_schema,
 				data_tgt, 0);
 	if (err != CYAML_OK) {
 		return ttest_fail(&tc, cyaml_strerror(err));
@@ -397,7 +403,7 @@ static bool test_file_save_basic_invalid(
 		return true;
 	}
 
-	err = cyaml_save_file("build/save.yaml", config, &top_schema, &data, 0);
+	err = cyaml_save_file(SAVE_FILE_PATH("save.yaml"), config, &top_schema, &data, 0);
 	if (err != CYAML_ERR_INVALID_DATA_SIZE) {
 		return ttest_fail(&tc, cyaml_strerror(err));
 	}

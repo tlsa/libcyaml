@@ -160,8 +160,14 @@ $(LIB_OBJ_SHARED): $(BUILDDIR_SHARED)/%.o : %.c
 docs:
 	$(MKDIR) build/docs/api
 	$(MKDIR) build/docs/devel
-	doxygen docs/api.doxygen.conf
-	doxygen docs/devel.doxygen.conf
+	sed \
+		-e 's#@OUTPUT_DIR@#build/docs/api#' \
+		-e 's#@INPUTS@#include README.md docs/guide.md#' \
+		docs/api.doxygen.conf.in | doxygen -
+	sed \
+		-e 's#@OUTPUT_DIR@#build/docs/devel#' \
+		-e 's#@INPUTS@#include src README.md docs/guide.md#' \
+		docs/devel.doxygen.conf.in | doxygen -
 
 clean:
 	rm -rf build/

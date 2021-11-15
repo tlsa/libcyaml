@@ -1,13 +1,13 @@
 # SPDX-License-Identifier: ISC
 
-# This generates documentation for developers using libcyaml.
+# This generates documentation for developers developing libcyaml.
 
-PROJECT_NAME           = "CYAML"
-OUTPUT_DIRECTORY       = "build/docs/api"
+PROJECT_NAME           = "CYAML Internals"
+OUTPUT_DIRECTORY       = @OUTPUT_DIR@
 OPTIMIZE_OUTPUT_FOR_C  = YES
-EXTRACT_STATIC         = NO
+EXTRACT_STATIC         = YES
 MARKDOWN_SUPPORT       = YES
-INPUT                  = include README.md docs/guide.md
+INPUT                  = @INPUTS@
 RECURSIVE              = YES
 USE_MDFILE_AS_MAINPAGE = README.md
 GENERATE_HTML          = YES
