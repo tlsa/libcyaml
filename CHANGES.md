@@ -1,9 +1,20 @@
 LibCYAML: Change Log
 ====================
 
+## LibCYAML v1.3.0
+
+* **Saving**:
+  * New flags allow control over scalar output style.
+    - For example to force single or double quote style.
+* **General**
+  * Buildsystem changes to allow use of CPPFLAGS from the environment.
+
+No changes are required for client applications to upgrade.
+
+
 ## LibCYAML v1.2.1
 
-* **General**
+* **General**:
   * Support for dynamic library build on Mac OS X.
   * Ordered designated initialisers in public header for C++ compatibility.
 
