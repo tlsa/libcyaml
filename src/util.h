@@ -18,6 +18,12 @@
 /** Macro to squash unused variable compiler warnings. */
 #define CYAML_UNUSED(_x) ((void)(_x))
 
+/** Macro to get a cyaml_schema_field_t container of a cyaml_schema_value_t */
+#define CYAML_FIELD_OF_VALUE(_value) \
+	(const cyaml_schema_field_t *)( \
+		(char *)_value - offsetof(cyaml_schema_field_t, value) \
+	)
+
 /**
  * Check whether the host is little endian.
  *
@@ -98,6 +104,7 @@ static inline const char * cyaml__type_to_str(cyaml_type_e type)
 		[CYAML_FLAGS]          = "FLAGS",
 		[CYAML_FLOAT]          = "FLOAT",
 		[CYAML_STRING]         = "STRING",
+		[CYAML_BINARY]         = "BINARY",
 		[CYAML_MAPPING]        = "MAPPING",
 		[CYAML_BITFIELD]       = "BITFIELD",
 		[CYAML_SEQUENCE]       = "SEQUENCE",

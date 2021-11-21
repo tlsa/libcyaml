@@ -26,6 +26,7 @@
 #include "mem.h"
 #include "data.h"
 #include "util.h"
+#include "base64.h"
 
 /** Identifies that no mapping schema entry was found for key. */
 #define CYAML_FIELDS_IDX_NONE 0xffff
@@ -492,6 +493,72 @@ static cyaml_err_t cyaml__store_string(
 	}
 
 	memcpy(location, value, str_len + 1);
+
+	return CYAML_OK;
+}
+
+/**
+ * Store a binary value to client data structure according to schema.
+ *
+ * \param[in]  ctx          The CYAML loading context.
+ * \param[in]  schema       The schema for the value to be stored.
+ * \param[in]  location     The place to write the value in the output data.
+ * \param[in]  decoded      The value to store.
+ * \param[in]  decoded_len  The length of the value to store.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__store_binary(
+		const cyaml_ctx_t *ctx,
+		const cyaml_schema_value_t *schema,
+		uint8_t *location,
+		const uint8_t *decoded,
+		size_t decoded_len,
+		const char *encoded,
+		size_t encoded_len)
+{
+	cyaml_validate_binary_fn_t validate_cb = schema->binary.validation_cb;
+	const cyaml_state_t *state = ctx->state;
+	const cyaml_schema_field_t *field;
+	cyaml_err_t err;
+
+	assert(schema->type == CYAML_BINARY);
+	assert(state->state == CYAML_STATE_IN_MAP_KEY);
+	assert(decoded == NULL || encoded == NULL);
+	assert(decoded != NULL || encoded != NULL);
+
+	if (schema->binary.min > schema->binary.max) {
+		return CYAML_ERR_BAD_MIN_MAX_SCHEMA;
+	} else if (decoded_len < schema->binary.min) {
+		cyaml__log(ctx->config, CYAML_LOG_ERROR,
+				"Load: BINARY length < %"PRIu32"\n",
+				schema->binary.min);
+		return CYAML_ERR_BASE64_MAX_LEN;
+	} else if (decoded_len > schema->binary.max) {
+		cyaml__log(ctx->config, CYAML_LOG_ERROR,
+				"Load: BINARY length > %"PRIu32"\n",
+				schema->binary.max);
+		return CYAML_ERR_BASE64_MAX_LEN;
+	}
+
+	if (encoded != NULL) {
+		cyaml_base64_decode(encoded, encoded_len, location);
+	} else {
+		memcpy(location, decoded, decoded_len);
+	}
+
+	if (validate_cb != NULL) {
+		if (!validate_cb(ctx->config->validation_ctx, schema,
+				location, decoded_len)) {
+			return CYAML_ERR_INVALID_VALUE;
+		}
+	}
+
+	field = CYAML_FIELD_OF_VALUE(schema);
+	err = cyaml_data_write(decoded_len, field->count_size,
+			state->data + field->count_offset);
+	if (err != CYAML_OK) {
+		return err;
+	}
 
 	return CYAML_OK;
 }
@@ -1348,6 +1415,9 @@ static cyaml_err_t cyaml__field_scalar_apply_default(
 		case CYAML_STRING:
 			size = strlen(schema->string.missing) + 1;
 			break;
+		case CYAML_BINARY:
+			size = schema->binary.missing_len;
+			break;
 		default:
 			size = schema->data_size;
 			break;
@@ -1392,6 +1462,11 @@ static cyaml_err_t cyaml__field_scalar_apply_default(
 	case CYAML_STRING:
 		return cyaml__store_string(ctx, schema, data,
 				schema->string.missing);
+	case CYAML_BINARY:
+		return cyaml__store_binary(ctx, schema, data,
+				schema->binary.missing,
+				schema->binary.missing_len,
+				NULL, 0);
 	default:
 		return CYAML_ERR_INTERNAL_ERROR;
 	}
@@ -1424,6 +1499,7 @@ static cyaml_err_t cyaml__field_apply_default(
 	case CYAML_FLAGS:  /* Fall through */
 	case CYAML_FLOAT:  /* Fall through */
 	case CYAML_STRING: /* Fall through */
+	case CYAML_BINARY: /* Fall through */
 	case CYAML_BITFIELD:
 		return cyaml__field_scalar_apply_default(ctx, field, data);
 	case CYAML_MAPPING:
@@ -1676,6 +1752,7 @@ static cyaml_err_t cyaml__validate_event_type_for_schema(
 		[CYAML_ENUM]           = CYAML_EVT_SCALAR,
 		[CYAML_FLOAT]          = CYAML_EVT_SCALAR,
 		[CYAML_STRING]         = CYAML_EVT_SCALAR,
+		[CYAML_BINARY]         = CYAML_EVT_SCALAR,
 		[CYAML_FLAGS]          = CYAML_EVT_SEQ_START,
 		[CYAML_MAPPING]        = CYAML_EVT_MAP_START,
 		[CYAML_BITFIELD]       = CYAML_EVT_MAP_START,
@@ -1727,6 +1804,7 @@ static cyaml_err_t cyaml__data_handle_pointer(
 		uint8_t **value_data_io)
 {
 	cyaml_state_t *state = ctx->state;
+	cyaml_err_t err;
 
 	if (schema->flags & CYAML_FLAG_POINTER) {
 		/* Need to create/extend an allocation. */
@@ -1741,6 +1819,22 @@ static cyaml_err_t cyaml__data_handle_pointer(
 			 * size from the event, plus trailing NULL. */
 			delta = strlen((const char *)
 					event->data.scalar.value) + 1;
+			break;
+		case CYAML_BINARY:
+			/* For binary data, we ask the decoder how big an
+			 * allocation it will need for the data. */
+			err = cyaml_base64_calc_decoded_size(
+					(const char *) event->data.scalar.value,
+					strlen((const char *)
+						event->data.scalar.value),
+					&delta);
+			if (err != CYAML_OK) {
+				return err;
+			}
+			if (delta < schema->binary.min ||
+			    delta > schema->binary.max) {
+				return CYAML_ERR_BASE64_MAX_LEN;
+			}
 			break;
 		case CYAML_SEQUENCE:
 			/* Sequence; could be extending allocation. */
@@ -2116,6 +2210,42 @@ static cyaml_err_t cyaml__read_scalar_value(
 }
 
 /**
+ * Read a value of type \ref CYAML_BINARY.
+ *
+ * \param[in]  ctx     The CYAML loading context.
+ * \param[in]  schema  The schema for the value to be read.
+ * \param[in]  event   The `libyaml` event providing the scalar value data.
+ * \param[in]  data    The place to write the value in the output data.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__read_binary_value(
+		const cyaml_ctx_t *ctx,
+		const cyaml_schema_value_t *schema,
+		const yaml_event_t *event,
+		cyaml_data_t *data)
+{
+	const char *value = (const char *)event->data.scalar.value;
+	size_t value_len = strlen(value);
+	size_t decoded_size;
+	cyaml_err_t err;
+
+	assert(ctx->state->state == CYAML_STATE_IN_MAP_KEY);
+
+	if (schema->data_size != 1) {
+		return CYAML_ERR_INVALID_DATA_SIZE;
+	}
+
+	err = cyaml_base64_calc_decoded_size(value, value_len, &decoded_size);
+	if (err != CYAML_OK) {
+		return err;
+	}
+
+	return cyaml__store_binary(ctx, schema, data,
+			NULL, decoded_size,
+			value, value_len);
+}
+
+/**
  * Set a flag in a \ref CYAML_FLAGS value.
  *
  * \param[in]      ctx        The CYAML loading context.
@@ -2486,6 +2616,12 @@ static cyaml_err_t cyaml__read_value(
 			cyaml__type_to_str(schema->type),
 			schema->flags & CYAML_FLAG_POINTER ? " (pointer)" : "");
 
+	if (schema->type == CYAML_BINARY) {
+		if (ctx->state->state != CYAML_STATE_IN_MAP_KEY) {
+			return CYAML_ERR_MAPPING_REQUIRED;
+		}
+	}
+
 	if (cyaml_event == CYAML_EVT_SCALAR) {
 		if (cyaml__string_is_null_ptr(schema,
 				(const char *)event->data.scalar.value)) {
@@ -2533,6 +2669,9 @@ static cyaml_err_t cyaml__read_value(
 	case CYAML_SEQUENCE_FIXED:
 		err = cyaml__stack_push(ctx, CYAML_STATE_IN_SEQUENCE, event,
 				schema, data);
+		break;
+	case CYAML_BINARY:
+		err = cyaml__read_binary_value(ctx, schema, event, data);
 		break;
 	case CYAML_IGNORE:
 		err = cyaml__consume_ignored_value(ctx, cyaml_event);
