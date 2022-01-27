@@ -1328,7 +1328,7 @@ static cyaml_err_t cyaml__read_int(
 		return CYAML_ERR_INVALID_DATA_SIZE;
 	}
 
-	max = (INT64_MAX >> ((8 - schema->data_size) * 8)) / 2;
+	max = (int64_t)((UINT64_MAX >> ((8 - schema->data_size) * 8)) / 2);
 	min = (-max) - 1;
 
 	errno = 0;
