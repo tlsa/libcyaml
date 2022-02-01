@@ -4,6 +4,7 @@
  * Copyright (C) 2017-2021 Michael Drake <tlsa@netsurf-browser.org>
  */
 
+#include <inttypes.h>
 #include <stdbool.h>
 #include <assert.h>
 #include <string.h>
@@ -3992,6 +3993,430 @@ static bool test_load_mapping_entry_sequence_ptr_sequence_fixed_flat_int(
 }
 
 /**
+ * Test integer limit.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_entry_int8_limit_neg(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	int64_t value = 127;
+	static const unsigned char yaml[] =
+		"val: 127\n";
+	struct target_struct {
+		int8_t val;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_INT("val", CYAML_FLAG_DEFAULT,
+				struct target_struct, val),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->val != value) {
+		return ttest_fail(&tc, "Incorrect value "
+				"(got %"PRIi8", expecting %"PRIi64")",
+				data_tgt->val, value);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test integer limit.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_entry_int8_limit_pos(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	int64_t value = -128;
+	static const unsigned char yaml[] =
+		"val: -128\n";
+	struct target_struct {
+		int8_t val;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_INT("val", CYAML_FLAG_DEFAULT,
+				struct target_struct, val),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->val != value) {
+		return ttest_fail(&tc, "Incorrect value "
+				"(got %"PRIi8", expecting %"PRIi64")",
+				data_tgt->val, value);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test integer limit.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_entry_int16_limit_neg(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	int64_t value = -32768;
+	static const unsigned char yaml[] =
+		"val: -32768\n";
+	struct target_struct {
+		int16_t val;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_INT("val", CYAML_FLAG_DEFAULT,
+				struct target_struct, val),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->val != value) {
+		return ttest_fail(&tc, "Incorrect value "
+				"(got %"PRIi16", expecting %"PRIi64")",
+				data_tgt->val, value);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test integer limit.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_entry_int16_limit_pos(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	int64_t value = 32767;
+	static const unsigned char yaml[] =
+		"val: 32767\n";
+	struct target_struct {
+		int16_t val;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_INT("val", CYAML_FLAG_DEFAULT,
+				struct target_struct, val),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->val != value) {
+		return ttest_fail(&tc, "Incorrect value "
+				"(got %"PRIi16", expecting %"PRIi64")",
+				data_tgt->val, value);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test integer limit.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_entry_int32_limit_neg(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	int64_t value = -2147483648;
+	static const unsigned char yaml[] =
+		"val: -2147483648\n";
+	struct target_struct {
+		int32_t val;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_INT("val", CYAML_FLAG_DEFAULT,
+				struct target_struct, val),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->val != value) {
+		return ttest_fail(&tc, "Incorrect value "
+				"(got %"PRIi32", expecting %"PRIi64")",
+				data_tgt->val, value);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test integer limit.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_entry_int32_limit_pos(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	int64_t value = 2147483647;
+	static const unsigned char yaml[] =
+		"val: 2147483647\n";
+	struct target_struct {
+		int32_t val;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_INT("val", CYAML_FLAG_DEFAULT,
+				struct target_struct, val),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->val != value) {
+		return ttest_fail(&tc, "Incorrect value "
+				"(got %"PRIi32", expecting %"PRIi64")",
+				data_tgt->val, value);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test integer limit.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_entry_int64_limit_neg(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	int64_t value = -9223372036854775807ll;
+	static const unsigned char yaml[] =
+		"val: -9223372036854775807\n";
+	struct target_struct {
+		int64_t val;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_INT("val", CYAML_FLAG_DEFAULT,
+				struct target_struct, val),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->val != value) {
+		return ttest_fail(&tc, "Incorrect value "
+				"(got %"PRIi64", expecting %"PRIi64")",
+				data_tgt->val, value);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test integer limit.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_entry_int64_limit_pos(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	int64_t value = 9223372036854775807;
+	static const unsigned char yaml[] =
+		"val: 9223372036854775807\n";
+	struct target_struct {
+		int64_t val;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_INT("val", CYAML_FLAG_DEFAULT,
+				struct target_struct, val),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->val != value) {
+		return ttest_fail(&tc, "Incorrect value "
+				"(got %"PRIi64", expecting %"PRIi64")",
+				data_tgt->val, value);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading sequence of pointers to integer values with NULLs.
  *
  * \param[in]  report  The test report context.
@@ -7130,6 +7555,17 @@ bool load_tests(
 	pass &= test_load_mapping_entry_sequence_ptr_sequence_fixed_int(rc, &config);
 	pass &= test_load_mapping_entry_sequence_ptr_sequence_fixed_ptr_int(rc, &config);
 	pass &= test_load_mapping_entry_sequence_ptr_sequence_fixed_flat_int(rc, &config);
+
+	ttest_heading(rc, "Test integer limits");
+
+	pass &= test_load_mapping_entry_int8_limit_neg(rc, &config);
+	pass &= test_load_mapping_entry_int8_limit_pos(rc, &config);
+	pass &= test_load_mapping_entry_int16_limit_neg(rc, &config);
+	pass &= test_load_mapping_entry_int16_limit_pos(rc, &config);
+	pass &= test_load_mapping_entry_int32_limit_neg(rc, &config);
+	pass &= test_load_mapping_entry_int32_limit_pos(rc, &config);
+	pass &= test_load_mapping_entry_int64_limit_neg(rc, &config);
+	pass &= test_load_mapping_entry_int64_limit_pos(rc, &config);
 
 	ttest_heading(rc, "Load tests: ptr sequence with null values");
 
