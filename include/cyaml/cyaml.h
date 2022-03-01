@@ -106,7 +106,13 @@ typedef enum cyaml_type {
 	 * - Values of this type do not need to be direct children of a mapping.
 	 * - The minimum and maximum entry count must be the same.  If not
 	 *   \ref CYAML_ERR_SEQUENCE_FIXED_COUNT will be returned.
-	 * - Thee offset and size of the count structure member is unused.
+	 * - Unlike with \ref CYAML_SEQUENCE, where the min and max are limits,
+	 *   here they are the actual entry count.
+	 * - Since values of this type represent a constant size array, the
+	 *   given entry count must not be \ref CYAML_UNLIMITED, because that
+	 *   would cause it to attempt a massive allocation, which on most
+	 *   systems would fail.
+	 * - The offset and size of the count structure member is unused.
 	 *   Because the count is a schema-defined constant, it does not need
 	 *   to be recorded.
 	 */
@@ -1281,6 +1287,11 @@ typedef enum cyaml_err {
 /**
  * Value schema helper macro for values with \ref CYAML_SEQUENCE_FIXED type.
  *
+ * Note that since this is a fixed size sequence, it must not be used with an
+ * excessive entry count. For example, passing \ref CYAML_UNLIMITED as the count
+ * to a \ref CYAML_SEQUENCE_FIXED with the \ref CYAML_FLAG_POINTER flag would
+ * cause an enormous allocation, which would fail on many systems.
+ *
  * \param[in]  _flags      Any behavioural flags relevant to this value.
  * \param[in]  _type       The C type of sequence **entries**.
  * \param[in]  _entry      Pointer to schema for the **entries** in sequence.
@@ -1299,6 +1310,11 @@ typedef enum cyaml_err {
 
 /**
  * Mapping schema helper macro for keys with \ref CYAML_SEQUENCE_FIXED type.
+ *
+ * Note that since this is a fixed size sequence, it must not be used with an
+ * excessive entry count. For example, passing \ref CYAML_UNLIMITED as the count
+ * to a \ref CYAML_SEQUENCE_FIXED with the \ref CYAML_FLAG_POINTER flag would
+ * cause an enormous allocation, which would fail on many systems.
  *
  * \param[in]  _key        String defining the YAML mapping key for this value.
  * \param[in]  _flags      Any behavioural flags relevant to this value.
