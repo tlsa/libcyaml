@@ -219,7 +219,7 @@ static inline yaml_mapping_style_t cyaml__get_emit_style_map(
 /**
  * Get the style to use for scalar values from value flags.
  *
- * \param[in]  ctx     The CYAML saving context.
+ * \param[in]  schema  The CYAML schema for the scaler value to be emitted.
  * \return The libyaml scalar style to emit the value with.
  */
 static inline yaml_scalar_style_t cyaml__get_emit_style_scalar(
