@@ -5697,6 +5697,7 @@ static bool test_load_mapping_with_optional_fields(
 		long j[4];
 		long *k;
 		unsigned k_count;
+		bool l;
 	} data = {
 		.a = (char *) "Hello",
 		.b = "World!",
@@ -5709,6 +5710,7 @@ static bool test_load_mapping_with_optional_fields(
 		.i = 9876,
 		.j = { 1, 2, 3, 4 },
 		.k = NULL,
+		.l = false,
 	};
 	static const unsigned char yaml[] =
 		"a: Hello\n"
@@ -5751,6 +5753,9 @@ static bool test_load_mapping_with_optional_fields(
 				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
 				struct target_struct, k, &sequence_entry,
 				0, CYAML_UNLIMITED),
+		CYAML_FIELD_BOOL("l",
+				CYAML_FLAG_OPTIONAL,
+				struct target_struct, l),
 		CYAML_FIELD_END
 	};
 	static const struct cyaml_schema_value top_schema = {
@@ -5821,6 +5826,10 @@ static bool test_load_mapping_with_optional_fields(
 	}
 	if (data_tgt->k != data.k) {
 		return ttest_fail(&tc, "Incorrect value for entry k");
+	}
+
+	if (data_tgt->l != data.l) {
+		return ttest_fail(&tc, "Incorrect value for entry l");
 	}
 
 	return ttest_pass(&tc);
