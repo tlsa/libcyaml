@@ -78,6 +78,7 @@ int main(int argc, char *argv[])
 	pass &= errs_tests(&rc, log_level, log_fn);
 	pass &= file_tests(&rc, log_level, log_fn);
 	pass &= save_tests(&rc, log_level, log_fn);
+	pass &= load_ex_tests(&rc, log_level, log_fn);
 
 	ttest_report(&rc);
 
