@@ -14,7 +14,7 @@
 
 #include <string.h>
 
-#include "cyaml/cyaml.h"
+#include "cyaml/cyaml_ex.h"
 
 /**
  * Helper for freeing using the client's choice of allocator routine.

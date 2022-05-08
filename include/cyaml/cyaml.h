@@ -570,6 +570,8 @@ typedef enum cyaml_cfg_flags {
 	 * memory is constrained.
 	 */
 	CYAML_CFG_NO_ALIAS            = (1 << 5),
+
+	CYAML_CFG_EXTENDED            = (1 << 6),
 } cyaml_cfg_flags_t;
 
 /**
@@ -638,7 +640,7 @@ typedef enum cyaml_err {
  * \param[in]  _structure  The structure corresponding to the mapping.
  * \param[in]  _member     The member in _structure for this mapping value.
  */
-#define CYAML_FIELD_INT( \
+#define CYAML_FIELD_INT_BASE( \
 		_key, _flags, _structure, _member) \
 { \
 	.key = _key, \
@@ -659,7 +661,7 @@ typedef enum cyaml_err {
  * \param[in]  _structure  The structure corresponding to the mapping.
  * \param[in]  _member     The member in _structure for this mapping value.
  */
-#define CYAML_FIELD_INT_PTR( \
+#define CYAML_FIELD_INT_PTR_BASE( \
 		_key, _flags, _structure, _member) \
 { \
 	.key = _key, \
@@ -692,7 +694,7 @@ typedef enum cyaml_err {
  * \param[in]  _structure  The structure corresponding to the mapping.
  * \param[in]  _member     The member in _structure for this mapping value.
  */
-#define CYAML_FIELD_UINT( \
+#define CYAML_FIELD_UINT_BASE( \
 		_key, _flags, _structure, _member) \
 { \
 	.key = _key, \
@@ -713,7 +715,7 @@ typedef enum cyaml_err {
  * \param[in]  _structure  The structure corresponding to the mapping.
  * \param[in]  _member     The member in _structure for this mapping value.
  */
-#define CYAML_FIELD_UINT_PTR( \
+#define CYAML_FIELD_UINT_PTR_BASE( \
 		_key, _flags, _structure, _member) \
 { \
 	.key = _key, \
@@ -746,7 +748,7 @@ typedef enum cyaml_err {
  * \param[in]  _structure  The structure corresponding to the mapping.
  * \param[in]  _member     The member in _structure for this mapping value.
  */
-#define CYAML_FIELD_BOOL( \
+#define CYAML_FIELD_BOOL_BASE( \
 		_key, _flags, _structure, _member) \
 { \
 	.key = _key, \
@@ -767,7 +769,7 @@ typedef enum cyaml_err {
  * \param[in]  _structure  The structure corresponding to the mapping.
  * \param[in]  _member     The member in _structure for this mapping value.
  */
-#define CYAML_FIELD_BOOL_PTR( \
+#define CYAML_FIELD_BOOL_PTR_BASE( \
 		_key, _flags, _structure, _member) \
 { \
 	.key = _key, \
@@ -808,7 +810,7 @@ typedef enum cyaml_err {
  * \param[in]  _strings       Array of string data for enumeration values.
  * \param[in]  _strings_count Number of entries in _strings.
  */
-#define CYAML_FIELD_ENUM( \
+#define CYAML_FIELD_ENUM_BASE( \
 		_key, _flags, _structure, _member, _strings, _strings_count) \
 { \
 	.key = _key, \
@@ -832,7 +834,7 @@ typedef enum cyaml_err {
  * \param[in]  _strings       Array of string data for enumeration values.
  * \param[in]  _strings_count Number of entries in _strings.
  */
-#define CYAML_FIELD_ENUM_PTR( \
+#define CYAML_FIELD_ENUM_PTR_BASE( \
 		_key, _flags, _structure, _member, _strings, _strings_count) \
 { \
 	.key = _key, \
@@ -874,7 +876,7 @@ typedef enum cyaml_err {
  * \param[in]  _strings       Array of string data for flag values.
  * \param[in]  _strings_count Number of entries in _strings.
  */
-#define CYAML_FIELD_FLAGS( \
+#define CYAML_FIELD_FLAGS_BASE( \
 		_key, _flags, _structure, _member, _strings, _strings_count) \
 { \
 	.key = _key, \
@@ -898,7 +900,7 @@ typedef enum cyaml_err {
  * \param[in]  _strings       Array of string data for flag values.
  * \param[in]  _strings_count Number of entries in _strings.
  */
-#define CYAML_FIELD_FLAGS_PTR( \
+#define CYAML_FIELD_FLAGS_PTR_BASE( \
 		_key, _flags, _structure, _member, _strings, _strings_count) \
 { \
 	.key = _key, \
@@ -940,7 +942,7 @@ typedef enum cyaml_err {
  * \param[in]  _bitvals       Array of bit field value data for the bit field.
  * \param[in]  _bitvals_count Number of entries in _bitvals.
  */
-#define CYAML_FIELD_BITFIELD( \
+#define CYAML_FIELD_BITFIELD_BASE( \
 		_key, _flags, _structure, _member, _bitvals, _bitvals_count) \
 { \
 	.key = _key, \
@@ -964,7 +966,7 @@ typedef enum cyaml_err {
  * \param[in]  _bitvals       Array of bit field value data for the bit field.
  * \param[in]  _bitvals_count Number of entries in _bitvals.
  */
-#define CYAML_FIELD_BITFIELD_PTR( \
+#define CYAML_FIELD_BITFIELD_PTR_BASE( \
 		_key, _flags, _structure, _member, _bitvals, _bitvals_count) \
 { \
 	.key = _key, \
@@ -998,7 +1000,7 @@ typedef enum cyaml_err {
  * \param[in]  _structure  The structure corresponding to the mapping.
  * \param[in]  _member     The member in _structure for this mapping value.
  */
-#define CYAML_FIELD_FLOAT( \
+#define CYAML_FIELD_FLOAT_BASE( \
 		_key, _flags, _structure, _member) \
 { \
 	.key = _key, \
@@ -1019,7 +1021,7 @@ typedef enum cyaml_err {
  * \param[in]  _structure  The structure corresponding to the mapping.
  * \param[in]  _member     The member in _structure for this mapping value.
  */
-#define CYAML_FIELD_FLOAT_PTR( \
+#define CYAML_FIELD_FLOAT_PTR_BASE( \
 		_key, _flags, _structure, _member) \
 { \
 	.key = _key, \
@@ -1069,7 +1071,7 @@ typedef enum cyaml_err {
  * \param[in]  _member     The member in _structure for this mapping value.
  * \param[in]  _min        Minimum string length in bytes.  Excludes '\0'.
  */
-#define CYAML_FIELD_STRING( \
+#define CYAML_FIELD_STRING_BASE( \
 		_key, _flags, _structure, _member, _min) \
 { \
 	.key = _key, \
@@ -1097,7 +1099,7 @@ typedef enum cyaml_err {
  * \param[in]  _min        Minimum string length in bytes.  Excludes '\0'.
  * \param[in]  _max        Maximum string length in bytes.  Excludes '\0'.
  */
-#define CYAML_FIELD_STRING_PTR( \
+#define CYAML_FIELD_STRING_PTR_BASE( \
 		_key, _flags, _structure, _member, _min, _max) \
 { \
 	.key = _key, \
@@ -1116,7 +1118,7 @@ typedef enum cyaml_err {
  * \param[in]  _type          The C type of structure corresponding to mapping.
  * \param[in]  _fields        Pointer to mapping fields schema array.
  */
-#define CYAML_VALUE_MAPPING( \
+#define CYAML_VALUE_MAPPING_BASE( \
 		_flags, _type, _fields) \
 	.type = CYAML_MAPPING, \
 	.flags = (enum cyaml_flag)(_flags), \
@@ -1136,7 +1138,7 @@ typedef enum cyaml_err {
  * \param[in]  _member     The member in _structure for this mapping value.
  * \param[in]  _fields     Pointer to mapping fields schema array.
  */
-#define CYAML_FIELD_MAPPING( \
+#define CYAML_FIELD_MAPPING_BASE( \
 		_key, _flags, _structure, _member, _fields) \
 { \
 	.key = _key, \
@@ -1158,7 +1160,7 @@ typedef enum cyaml_err {
  * \param[in]  _member     The member in _structure for this mapping value.
  * \param[in]  _fields     Pointer to mapping fields schema array.
  */
-#define CYAML_FIELD_MAPPING_PTR( \
+#define CYAML_FIELD_MAPPING_PTR_BASE( \
 		_key, _flags, _structure, _member, _fields) \
 { \
 	.key = _key, \
@@ -1222,7 +1224,7 @@ typedef enum cyaml_err {
  * \param[in]  _min        Minimum number of sequence entries required.
  * \param[in]  _max        Maximum number of sequence entries required.
  */
-#define CYAML_FIELD_SEQUENCE( \
+#define CYAML_FIELD_SEQUENCE_BASE( \
 		_key, _flags, _structure, _member, _entry, _min, _max) \
 { \
 	.key = _key, \
@@ -1270,7 +1272,7 @@ typedef enum cyaml_err {
  * \param[in]  _min        Minimum number of sequence entries required.
  * \param[in]  _max        Maximum number of sequence entries required.
  */
-#define CYAML_FIELD_SEQUENCE_COUNT( \
+#define CYAML_FIELD_SEQUENCE_COUNT_BASE( \
 		_key, _flags, _structure, _member, _count, _entry, _min, _max) \
 { \
 	.key = _key, \
@@ -1323,7 +1325,7 @@ typedef enum cyaml_err {
  * \param[in]  _entry      Pointer to schema for the **entries** in sequence.
  * \param[in]  _count      Number of sequence entries required.
  */
-#define CYAML_FIELD_SEQUENCE_FIXED( \
+#define CYAML_FIELD_SEQUENCE_FIXED_BASE( \
 		_key, _flags, _structure, _member, _entry, _count) \
 { \
 	.key = _key, \
@@ -1341,7 +1343,7 @@ typedef enum cyaml_err {
  * \param[in]  _key    String defining the YAML mapping key to ignore.
  * \param[in]  _flags  Any behavioural flags relevant to this key.
  */
-#define CYAML_FIELD_IGNORE( \
+#define CYAML_FIELD_IGNORE_BASE( \
 		_key, _flags) \
 { \
 	.key = _key, \
@@ -1357,7 +1359,39 @@ typedef enum cyaml_err {
  * CYAML mapping schemas are formed from an array of \ref cyaml_schema_field
  * entries, and an entry with a NULL key indicates the end of the array.
  */
-#define CYAML_FIELD_END { .key = NULL }
+#define CYAML_FIELD_END_BASE { .key = NULL }
+
+#ifndef CYAML_EX_H
+/**
+ * Not using the expanded version of the library, so \ref cyaml_schema_field is
+ * used rather than \ref cyaml_schema_field_ex.
+ * This means the "base" version the macros should be used throughout.
+ */
+#define CYAML_FIELD_INT CYAML_FIELD_INT_BASE
+#define CYAML_FIELD_INT_PTR CYAML_FIELD_INT_PTR_BASE
+#define CYAML_FIELD_UINT CYAML_FIELD_UINT_BASE
+#define CYAML_FIELD_UINT_PTR CYAML_FIELD_UINT_PTR_BASE
+#define CYAML_FIELD_BOOL CYAML_FIELD_BOOL_BASE
+#define CYAML_FIELD_BOOL_PTR CYAML_FIELD_BOOL_PTR_BASE
+#define CYAML_FIELD_ENUM CYAML_FIELD_ENUM_BASE
+#define CYAML_FIELD_ENUM_PTR CYAML_FIELD_ENUM_PTR_BASE
+#define CYAML_FIELD_FLAGS CYAML_FIELD_FLAGS_BASE
+#define CYAML_FIELD_FLAGS_PTR CYAML_FIELD_FLAGS_PTR_BASE
+#define CYAML_FIELD_BITFIELD CYAML_FIELD_BITFIELD_BASE
+#define CYAML_FIELD_BITFIELD_PTR CYAML_FIELD_BITFIELD_PTR_BASE
+#define CYAML_FIELD_FLOAT CYAML_FIELD_FLOAT_BASE
+#define CYAML_FIELD_FLOAT_PTR CYAML_FIELD_FLOAT_PTR_BASE
+#define CYAML_FIELD_STRING CYAML_FIELD_STRING_BASE
+#define CYAML_FIELD_STRING_PTR CYAML_FIELD_STRING_PTR_BASE
+#define CYAML_VALUE_MAPPING CYAML_VALUE_MAPPING_BASE
+#define CYAML_FIELD_MAPPING CYAML_FIELD_MAPPING_BASE
+#define CYAML_FIELD_MAPPING_PTR CYAML_FIELD_MAPPING_PTR_BASE
+#define CYAML_FIELD_SEQUENCE CYAML_FIELD_SEQUENCE_BASE
+#define CYAML_FIELD_SEQUENCE_COUNT CYAML_FIELD_SEQUENCE_COUNT_BASE
+#define CYAML_FIELD_SEQUENCE_FIXED CYAML_FIELD_SEQUENCE_FIXED_BASE
+#define CYAML_FIELD_IGNORE CYAML_FIELD_IGNORE_BASE
+#define CYAML_FIELD_END CYAML_FIELD_END_BASE
+#endif
 
 /**
  * Identifies that a \ref CYAML_SEQUENCE has unconstrained maximum entry

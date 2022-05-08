@@ -9,8 +9,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <cyaml/cyaml.h>
-
 #include "../../src/mem.h"
 #include "../../src/util.h"
 

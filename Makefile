@@ -59,7 +59,7 @@ LIBYAML_CFLAGS := $(if $(PKG_CONFIG),$(shell $(PKG_CONFIG) --cflags $(LIBYAML)),
 LIBYAML_LIBS := $(if $(PKG_CONFIG),$(shell $(PKG_CONFIG) --libs $(LIBYAML)),-lyaml)
 
 INCLUDE = -I include
-CPPFLAGS += $(VERSION_FLAGS) -MMD -MP
+CPPFLAGS += $(VERSION_FLAGS) -MMD -MP -DKEEP_BOTH_VERSIONS
 CFLAGS += $(INCLUDE) $(LIBYAML_CFLAGS)
 CFLAGS += -std=c11 -Wall -Wextra -pedantic \
 		-Wconversion -Wwrite-strings -Wcast-align -Wpointer-arith \
@@ -90,7 +90,7 @@ endif
 BUILDDIR_SHARED = $(BUILDDIR)/shared
 BUILDDIR_STATIC = $(BUILDDIR)/static
 
-LIB_SRC_FILES = mem.c free.c load.c save.c util.c utf8.c
+LIB_SRC_FILES = mem.c free.c load.c save.c util.c utf8.c extended.c
 LIB_SRC := $(addprefix src/,$(LIB_SRC_FILES))
 LIB_OBJ = $(patsubst %.c,%.o, $(addprefix $(BUILDDIR)/,$(LIB_SRC)))
 LIB_DEP = $(patsubst %.c,%.d, $(addprefix $(BUILDDIR)/,$(LIB_SRC)))

@@ -766,6 +766,29 @@ static inline const yaml_event_t * cyaml__current_event(
 }
 
 /**
+ * Internal function for retrieving a mapping field from an array by index
+ *
+ * \param[in]  cfg     The client's CYAML library config.
+ * \param[in]  fields  Array of mapping fields
+ * \param[in]  id      Index of the field in the array
+ * \return Pointer to the mapping field
+ */
+static inline const cyaml_schema_field_t * cyaml__mapping_field_by_id(
+		const cyaml_config_t *cfg,
+		const cyaml_schema_field_t *fields,
+		uint16_t id)
+{
+	if (cfg->flags & CYAML_CFG_EXTENDED) {
+		const cyaml_schema_field_ex_t *fields_ex;
+
+		fields_ex = (const cyaml_schema_field_ex_t *)fields;
+		return &((fields_ex + id)->base);
+	}
+
+	return fields + id;
+}
+
+/**
  * Get the offset to a mapping field by key in a mapping schema array.
  *
  * \param[in]  cfg     The client's CYAML library config.
@@ -780,13 +803,16 @@ static inline uint16_t cyaml__get_mapping_field_idx(
 		const char *key)
 {
 	const cyaml_schema_field_t *fields = schema->mapping.fields;
+	const cyaml_schema_field_t *current;
 	uint16_t index = 0;
 
 	assert(schema->type == CYAML_MAPPING);
 
 	/* Step through each entry in the schema */
-	for (; fields->key != NULL; fields++) {
-		if (cyaml__strcmp(cfg, schema, fields->key, key) == 0) {
+	for (current = cyaml__mapping_field_by_id(cfg, fields, index);
+	     current->key != NULL;
+	     current = cyaml__mapping_field_by_id(cfg, fields, index)) {
+		if (cyaml__strcmp(cfg, schema, current->key, key) == 0) {
 			return index;
 		}
 		index++;
@@ -815,7 +841,8 @@ static inline const cyaml_schema_field_t * cyaml_mapping_schema_field(
 	       state->state == CYAML_STATE_IN_MAP_VALUE);
 	assert(state->mapping.fields_idx != CYAML_FIELDS_IDX_NONE);
 
-	return state->mapping.fields + state->mapping.fields_idx;
+	return cyaml__mapping_field_by_id(ctx->config, state->mapping.fields,
+			state->mapping.fields_idx);
 }
 
 /**
@@ -852,19 +879,24 @@ static cyaml_err_t cyaml__stack_ensure(
  *
  * The mapping schema array must be terminated by an entry with a NULL key.
  *
+ * \param[in]  cfg             The client's CYAML library config.
  * \param[in]  mapping_schema  Array of mapping schema fields.
  * \return Number of entries in mapping_schema array.
  */
 static uint16_t cyaml__get_mapping_field_count(
+		const cyaml_config_t *cfg,
 		const cyaml_schema_field_t *mapping_schema)
 {
-	const cyaml_schema_field_t *entry = mapping_schema;
+	const cyaml_schema_field_t *entry;
+	uint16_t index = 0;
 
-	while (entry->key != NULL) {
-		entry++;
-	}
+	/* Step through each entry in the schema */
+	for (entry = cyaml__mapping_field_by_id(cfg, mapping_schema, index);
+	     entry->key != NULL;
+	     entry = cyaml__mapping_field_by_id(cfg, mapping_schema, index))
+		index++;
 
-	return (uint16_t)(entry - mapping_schema);
+	return index;
 }
 
 /**
@@ -965,9 +997,12 @@ static cyaml_err_t cyaml__mapping_bitfieid_validate(
 {
 	cyaml_state_t *state = ctx->state;
 	unsigned count = state->mapping.fields_count;
+	const cyaml_schema_field_t *field;
 
-	for (unsigned i = 0; i < count; i++) {
-		if (state->mapping.fields[i].value.flags & CYAML_FLAG_OPTIONAL) {
+	for (uint16_t i = 0; i < count; i++) {
+		field = cyaml__mapping_field_by_id(ctx->config,
+						   state->mapping.fields, i);
+		if (field->value.flags & CYAML_FLAG_OPTIONAL) {
 			continue;
 		}
 		if (state->mapping.fields_set[i / CYAML_BITFIELD_BITS] &
@@ -976,7 +1011,7 @@ static cyaml_err_t cyaml__mapping_bitfieid_validate(
 		}
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
 				"Load: Missing required mapping field: %s\n",
-				state->mapping.fields[i].key);
+				field->key);
 		return CYAML_ERR_MAPPING_FIELD_MISSING;
 	}
 
@@ -1030,7 +1065,7 @@ static cyaml_err_t cyaml__stack_push(
 		assert(schema->type == CYAML_MAPPING);
 		s.mapping.fields = schema->mapping.fields;
 		s.mapping.fields_count = cyaml__get_mapping_field_count(
-				schema->mapping.fields);
+				ctx->config, schema->mapping.fields);
 		err = cyaml__mapping_bitfieid_create(ctx, &s);
 		if (err != CYAML_OK) {
 			return err;
@@ -1160,6 +1195,106 @@ static cyaml_err_t cyaml__validate_event_type_for_schema(
 	return CYAML_OK;
 }
 
+static void cyaml__set_default_values(
+		const cyaml_config_t *config,
+		const cyaml_schema_value_t *schema,
+		uint8_t *value_data);
+
+/**
+ * Set a field's default value in the allocated buffer, if said field is set to
+ * have a default value.
+ *
+ * \param[in] config      The client's CYAML library config.
+ * \param[in] field       The mapping field defining the value.
+ * \param[in] value_data  The buffer to which the field is mapped.
+ */
+static void cyaml__set_default_value(
+		const cyaml_config_t *config,
+		const cyaml_schema_field_ex_t *field,
+		uint8_t *value_data)
+{
+	const void *default_value;
+
+	if (field->base.value.flags & CYAML_FLAG_POINTER)
+		return;
+
+	value_data += field->base.data_offset;
+	switch (field->base.value.type) {
+	case CYAML_SEQUENCE:
+	case CYAML_SEQUENCE_FIXED:
+	case CYAML_MAPPING:
+		/* Recursively fill the internal structure with defaults */
+		cyaml__set_default_values(config, &field->base.value,
+				value_data);
+		break;
+	case CYAML_STRING:
+		break;
+	case CYAML_FLOAT:
+		if (!field->use_default_value)
+			break;
+
+		if (field->base.value.data_size == 4)
+			default_value = &field->default_value.f;
+		else
+			default_value = &field->default_value.d;
+
+		memcpy(value_data, default_value, field->base.value.data_size);
+		break;
+	default:
+		if (!field->use_default_value)
+			break;
+
+		cyaml_data_write(field->default_value.u64,
+				field->base.value.data_size, value_data);
+		break;
+	}
+}
+
+/**
+ * Set a schema's default values in an allocated buffer
+ *
+ * \param[in] config      The client's CYAML library config.
+ * \param[in] schema      The schema to set default values for.
+ * \param[in] value_data  The buffer to which the schame is mapped.
+ */
+static void cyaml__set_default_values(
+		const cyaml_config_t *config,
+		const cyaml_schema_value_t *schema,
+		uint8_t *value_data)
+{
+	const cyaml_schema_field_ex_t *fields;
+
+	if (!(config->flags & CYAML_CFG_EXTENDED))
+		return;
+
+	switch (schema->type) {
+	case CYAML_MAPPING:
+		fields = (const cyaml_schema_field_ex_t *)schema->mapping.fields;
+		if (!fields)
+			return;
+
+		while (fields->base.key != NULL) {
+			cyaml__set_default_value(config, fields, value_data);
+			fields++;
+		}
+		break;
+	case CYAML_SEQUENCE:
+		cyaml__set_default_values(config, schema->sequence.entry,
+					  value_data);
+		break;
+	case CYAML_SEQUENCE_FIXED:
+		for (unsigned i = 0; i < schema->sequence.max; i++) {
+			cyaml__set_default_values(config,
+						  schema->sequence.entry,
+						  value_data);
+			value_data += schema->data_size;
+		}
+		break;
+	default:
+		break;
+	}
+}
+
 /**
  * Helper to make allocations for loaded YAML values.
  *
@@ -1229,6 +1364,9 @@ static cyaml_err_t cyaml__data_handle_pointer(
 				"Load: Allocation: %p (%zu + %zu bytes)\n",
 				value_data, offset, delta);
 
+		cyaml__set_default_values(ctx->config, schema,
+					  value_data + offset);
+
 		if (cyaml__is_sequence(schema)) {
 			/* Updated the in sequence state so it knows the new
 			 * allocation address. */
@@ -1254,6 +1392,8 @@ static cyaml_err_t cyaml__data_handle_pointer(
 static void cyaml__backtrace(
 		cyaml_ctx_t *ctx)
 {
+	const cyaml_schema_field_t *field;
+
 	if (ctx->stack_idx > 1) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR, "Load: Backtrace:\n");
 	} else {
@@ -1268,13 +1408,15 @@ static void cyaml__backtrace(
 		case CYAML_STATE_IN_MAP_VALUE:
 			if (state->mapping.fields_idx !=
 					CYAML_FIELDS_IDX_NONE) {
+				field = cyaml__mapping_field_by_id(ctx->config,
+						state->mapping.fields,
+						state->mapping.fields_idx);
 				cyaml__log(ctx->config, CYAML_LOG_ERROR,
 						"  in mapping field '%s' "
 						"(line: %zu, column: %zu)\n",
-						state->mapping.fields[
-						state->mapping.fields_idx].key,
-						state->line + 1,
-						state->column + 1);
+							field->key,
+							state->line + 1,
+							state->column + 1);
 			} else {
 				cyaml__log(ctx->config, CYAML_LOG_ERROR,
 						"  in mapping "
@@ -2243,8 +2385,10 @@ static cyaml_err_t cyaml__map_key_check_field(
 		const cyaml_ctx_t *ctx)
 {
 	const cyaml_schema_value_t *schema = ctx->state->schema;
-	const cyaml_schema_field_t *field = schema->mapping.fields +
-			ctx->state->mapping.fields_idx;
+	const cyaml_schema_field_t *field;
+
+	field = cyaml__mapping_field_by_id(ctx->config, schema->mapping.fields,
+			ctx->state->mapping.fields_idx);
 
 	if (field->value.type != CYAML_IGNORE) {
 		if (cyaml__mapping_bitfieid_check(ctx) == true) {

@@ -77,6 +77,29 @@ static void cyaml__free_sequence(
 }
 
 /**
+ * Internal function for retrieving a mapping field from an array by index
+ *
+ * \param[in]  cfg     The client's CYAML library config.
+ * \param[in]  fields  Array of mapping fields
+ * \param[in]  id      Index of the field in the array
+ * \return Pointer to the mapping field
+ */
+static inline const cyaml_schema_field_t * cyaml__mapping_field_by_id(
+		const cyaml_config_t *cfg,
+		const cyaml_schema_field_t *fields,
+		uint16_t id)
+{
+	if (cfg->flags & CYAML_CFG_EXTENDED) {
+		const cyaml_schema_field_ex_t *fields_ex;
+
+		fields_ex = (const cyaml_schema_field_ex_t *)fields;
+		return &((fields_ex + id)->base);
+	}
+
+	return fields + id;
+}
+
+/**
  * Internal function for freeing a CYAML-parsed mapping.
  *
  * \param[in]  cfg             The client's CYAML library config.
@@ -88,9 +111,13 @@ static void cyaml__free_mapping(
 		const cyaml_schema_value_t *mapping_schema,
 		uint8_t * const data)
 {
-	const cyaml_schema_field_t *schema = mapping_schema->mapping.fields;
+	const cyaml_schema_field_t *fields = mapping_schema->mapping.fields;
+	const cyaml_schema_field_t *schema;
+	uint16_t index = 0;
 
-	while (schema->key != NULL) {
+	for (schema = cyaml__mapping_field_by_id(cfg, fields, index);
+	     schema->key != NULL;
+	     schema = cyaml__mapping_field_by_id(cfg, fields, index)) {
 		uint64_t count = 0;
 		cyaml__log(cfg, CYAML_LOG_DEBUG,
 				"Free: Freeing key: %s (at offset: %u)\n",
@@ -105,7 +132,7 @@ static void cyaml__free_mapping(
 		}
 		cyaml__free_value(cfg, &schema->value,
 				data + schema->data_offset, count);
-		schema++;
+		index++;
 	}
 }
 

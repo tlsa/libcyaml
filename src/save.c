@@ -1133,6 +1133,25 @@ static cyaml_err_t cyaml__write_doc(
 }
 
 /**
+ * Helper function to retrieve the pointer of the next field to handle
+ *
+ * \param[in]  ctx  The CYAML saving context.
+ * \return Pointer to the next field in the current mapping fields array.
+ */
+static void cyaml__state_next_field(cyaml_ctx_t *ctx)
+{
+	if (ctx->config->flags & CYAML_CFG_EXTENDED) {
+		const cyaml_schema_field_ex_t *field;
+
+		field = (const void *)ctx->state->mapping.field;
+		field++;
+		ctx->state->mapping.field = &field->base;
+	} else {
+		ctx->state->mapping.field++;
+	}
+}
+
+/**
  * YAML saving handler for the \ref CYAML_STATE_IN_MAP_KEY and \ref
  * CYAML_STATE_IN_MAP_VALUE states.
  *
@@ -1149,7 +1168,7 @@ static cyaml_err_t cyaml__write_mapping(
 		uint64_t seq_count = 0;
 
 		if (field->value.type == CYAML_IGNORE) {
-			ctx->state->mapping.field++;
+			cyaml__state_next_field(ctx);
 			return CYAML_OK;
 		}
 
@@ -1158,7 +1177,7 @@ static cyaml_err_t cyaml__write_mapping(
 			const void *ptr = cyaml_data_read_pointer(
 					ctx->state->data + field->data_offset);
 			if (ptr == NULL) {
-				ctx->state->mapping.field++;
+				cyaml__state_next_field(ctx);
 				return CYAML_OK;
 			}
 		}
@@ -1171,7 +1190,7 @@ static cyaml_err_t cyaml__write_mapping(
 
 		/* Advance the field before writing value, since writing the
 		 * value can put a new state entry on the stack. */
-		ctx->state->mapping.field++;
+		cyaml__state_next_field(ctx);
 
 		if (field->value.type == CYAML_SEQUENCE) {
 			seq_count = cyaml_data_read(field->count_size,

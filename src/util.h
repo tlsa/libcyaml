@@ -15,7 +15,7 @@
 #include <string.h>
 #include <yaml.h>
 
-#include "cyaml/cyaml.h"
+#include "cyaml/cyaml_ex.h"
 #include "utf8.h"
 
 /** Macro to squash unused variable compiler warnings. */

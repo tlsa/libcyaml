@@ -12,7 +12,7 @@
 #ifndef CYAML_DATA_H
 #define CYAML_DATA_H
 
-#include "cyaml/cyaml.h"
+#include "cyaml/cyaml_ex.h"
 #include "util.h"
 
 /**
