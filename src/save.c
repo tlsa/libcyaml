@@ -17,10 +17,8 @@
 #include <assert.h>
 #include <limits.h>
 
-#include <yaml.h>
-
-#include "mem.h"
 #include "data.h"
+#include "mem.h"
 #include "util.h"
 
 /**

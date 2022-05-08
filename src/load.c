@@ -21,11 +21,8 @@
 #include <float.h>
 #include <math.h>
 
-#include <yaml.h>
-
 #include "mem.h"
 #include "data.h"
-#include "util.h"
 
 /** Identifies that no mapping schema entry was found for key. */
 #define CYAML_FIELDS_IDX_NONE 0xffff

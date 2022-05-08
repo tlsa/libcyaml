@@ -12,6 +12,8 @@
 #ifndef CYAML_MEM_H
 #define CYAML_MEM_H
 
+#include <string.h>
+
 #include "cyaml/cyaml.h"
 
 /**

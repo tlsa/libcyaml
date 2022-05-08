@@ -12,6 +12,9 @@
 #ifndef CYAML_UTIL_H
 #define CYAML_UTIL_H
 
+#include <string.h>
+#include <yaml.h>
+
 #include "cyaml/cyaml.h"
 #include "utf8.h"
 
