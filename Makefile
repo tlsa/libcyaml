@@ -46,7 +46,7 @@ Q ?= @
 CC ?= gcc
 AR ?= ar
 MKDIR =	mkdir -p
-INSTALL ?= install -c -D
+INSTALL ?= install -c
 VALGRIND = valgrind --leak-check=full --track-origins=yes
 
 VERSION_FLAGS = -DVERSION_MAJOR=$(VERSION_MAJOR) \
