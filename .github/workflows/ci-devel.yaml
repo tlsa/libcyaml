@@ -4,7 +4,7 @@ jobs:
   linux-gcc:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: apt-get install packages
       run: sudo apt-get update -qq &&
            sudo apt-get install --no-install-recommends -y
@@ -24,7 +24,7 @@ jobs:
   linux-clang:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: apt-get install packages
       run: sudo apt-get update -qq &&
            sudo apt-get install --no-install-recommends -y
@@ -44,7 +44,7 @@ jobs:
   mac-gcc:
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: brew install deps
       run: brew update && brew install
                libyaml
@@ -55,7 +55,7 @@ jobs:
   mac-clang:
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: brew install deps
       run: brew update && brew install
                libyaml
