@@ -4,7 +4,7 @@ on: [push]
 
 jobs:
   codeql:
-    name: Analyze with CodeQL
+    name: CodeQL
     runs-on: ubuntu-latest
 
     strategy:
@@ -14,7 +14,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         fetch-depth: 1
 
@@ -23,9 +23,8 @@ jobs:
            sudo apt-get install --no-install-recommends -y
                libyaml-dev
 
-    # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v1
+      uses: github/codeql-action/init@v2
       with:
         languages: ${{ matrix.language }}
 
@@ -33,10 +32,10 @@ jobs:
        make
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v1
+      uses: github/codeql-action/analyze@v2
 
   scan-build:
-    name: Analyze with scan-build
+    name: scan-build
     runs-on: ubuntu-latest
 
     strategy:
@@ -46,7 +45,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         fetch-depth: 1
 
@@ -62,6 +61,6 @@ jobs:
        scan-build -sarif -o build/sarif make
 
     - name: upload scan-build
-      uses: github/codeql-action/upload-sarif@v1
+      uses: github/codeql-action/upload-sarif@v2
       with:
         sarif_file: build/sarif
