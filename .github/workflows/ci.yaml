@@ -41,7 +41,7 @@ jobs:
     - name: test
       run: make test CC=clang
     - name: valgrind test
-      run: make valgrind-quiet CC=clang
+      run: CFLAGS=-gdwarf-4 make -B valgrind-quiet CC=clang
     - name: sanitize test
       run: make CC=clang VARIANT=san test
   mac-gcc:
