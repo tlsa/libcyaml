@@ -1517,6 +1517,11 @@ static cyaml_err_t cyaml__read_float_f(
 				"Load: Invalid FLOAT value: %s\n", value);
 		return CYAML_ERR_INVALID_VALUE;
 
+	} else if (*end != '\0') {
+		cyaml__log(ctx->config, CYAML_LOG_ERROR,
+				"Load: Invalid FLOAT value: %s\n", value);
+		return CYAML_ERR_INVALID_VALUE;
+
 	} else if (errno == ERANGE) {
 		cyaml_log_t level = CYAML_LOG_ERROR;
 
@@ -1571,6 +1576,11 @@ static cyaml_err_t cyaml__read_float_d(
 	temp = strtod(value, &end);
 
 	if (end == value) {
+		cyaml__log(ctx->config, CYAML_LOG_ERROR,
+				"Load: Invalid FLOAT value: %s\n", value);
+		return CYAML_ERR_INVALID_VALUE;
+
+	} else if (*end != '\0') {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
 				"Load: Invalid FLOAT value: %s\n", value);
 		return CYAML_ERR_INVALID_VALUE;

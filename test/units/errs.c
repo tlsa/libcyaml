@@ -3246,6 +3246,56 @@ static bool test_err_load_schema_invalid_value_float_range4(
  * \param[in]  config  The CYAML config to use for the test.
  * \return true if test passes, false otherwise.
  */
+static bool test_err_load_schema_invalid_value_float_junk(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"a: 0.452*00E003\n";
+	struct target_struct {
+		float a;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_FLOAT("a", CYAML_FLAG_DEFAULT,
+				struct target_struct, a),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading when schema expects float but value is invalid.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
 static bool test_err_load_schema_invalid_value_float_invalid(
 		ttest_report_ctx_t *report,
 		const cyaml_config_t *config)
@@ -3359,6 +3409,56 @@ static bool test_err_load_schema_invalid_value_double_range2(
 	static const struct cyaml_schema_field mapping_schema[] = {
 		CYAML_FIELD_FLOAT("a",
 				CYAML_FLAG_DEFAULT | CYAML_FLAG_STRICT,
+				struct target_struct, a),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading when schema expects double but value is invalid.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_invalid_value_double_junk(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"a: 0.452*00E003\n";
+	struct target_struct {
+		double a;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_FLOAT("a", CYAML_FLAG_DEFAULT,
 				struct target_struct, a),
 		CYAML_FIELD_END
 	};
@@ -7006,6 +7106,8 @@ bool errs_tests(
 	pass &= test_err_load_schema_invalid_value_bitfield_4(rc, &config);
 	pass &= test_err_load_schema_invalid_value_bitfield_5(rc, &config);
 	pass &= test_err_load_schema_invalid_value_bitfield_6(rc, &config);
+	pass &= test_err_load_schema_invalid_value_float_junk(rc, &config);
+	pass &= test_err_load_schema_invalid_value_double_junk(rc, &config);
 	pass &= test_err_load_schema_invalid_value_int_range_1(rc, &config);
 	pass &= test_err_load_schema_invalid_value_int_range_2(rc, &config);
 	pass &= test_err_load_schema_invalid_value_int_range_3(rc, &config);
