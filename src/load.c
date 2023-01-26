@@ -1754,8 +1754,8 @@ static cyaml_err_t cyaml__set_flag(
 		errno = 0;
 		temp = strtoll(value, &end, 0);
 
-		if (!(end == value || errno == ERANGE ||
-		      temp < 0 || (uint64_t)temp > max)) {
+		if (!(end == value || end == NULL || *end != '\0' ||
+		      errno == ERANGE || temp < 0 || (uint64_t)temp > max)) {
 			*flags_out |= ((uint64_t)temp);
 			return CYAML_OK;
 		}
