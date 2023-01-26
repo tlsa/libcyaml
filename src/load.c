@@ -1334,8 +1334,8 @@ static cyaml_err_t cyaml__read_int(
 	errno = 0;
 	temp = strtoll(value, &end, 0);
 
-	if (end == value || errno == ERANGE ||
-	    temp < min || temp > max) {
+	if (end == value || end == NULL || *end != '\0' ||
+	    errno == ERANGE || temp < min || temp > max) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
 				"Load: Invalid INT value: '%s'\n",
 				value);
@@ -1364,7 +1364,7 @@ static inline cyaml_err_t cyaml__read_uint64_t(
 	errno = 0;
 	temp = strtoull(value, &end, 0);
 
-	if (end == value || errno == ERANGE) {
+	if (end == value || end == NULL || *end != '\0' || errno == ERANGE) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
 				"Load: Invalid uint64_t value: '%s'\n",
 				value);
@@ -1512,12 +1512,7 @@ static cyaml_err_t cyaml__read_float_f(
 	errno = 0;
 	temp = strtof(value, &end);
 
-	if (end == value) {
-		cyaml__log(ctx->config, CYAML_LOG_ERROR,
-				"Load: Invalid FLOAT value: %s\n", value);
-		return CYAML_ERR_INVALID_VALUE;
-
-	} else if (*end != '\0') {
+	if (end == value || end == NULL || *end != '\0') {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
 				"Load: Invalid FLOAT value: %s\n", value);
 		return CYAML_ERR_INVALID_VALUE;
@@ -1575,12 +1570,7 @@ static cyaml_err_t cyaml__read_float_d(
 	errno = 0;
 	temp = strtod(value, &end);
 
-	if (end == value) {
-		cyaml__log(ctx->config, CYAML_LOG_ERROR,
-				"Load: Invalid FLOAT value: %s\n", value);
-		return CYAML_ERR_INVALID_VALUE;
-
-	} else if (*end != '\0') {
+	if (end == value || end == NULL || *end != '\0') {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
 				"Load: Invalid FLOAT value: %s\n", value);
 		return CYAML_ERR_INVALID_VALUE;
@@ -1764,8 +1754,8 @@ static cyaml_err_t cyaml__set_flag(
 		errno = 0;
 		temp = strtoll(value, &end, 0);
 
-		if (!(end == value || errno == ERANGE ||
-		      temp < 0 || (uint64_t)temp > max)) {
+		if (!(end == value || end == NULL || *end != '\0' ||
+		      errno == ERANGE || temp < 0 || (uint64_t)temp > max)) {
 			*flags_out |= ((uint64_t)temp);
 			return CYAML_OK;
 		}
