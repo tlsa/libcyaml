@@ -1,6 +1,22 @@
 LibCYAML: Change Log
 ====================
 
+## LibCYAML v1.4.0
+
+* **Loading**:
+  * Reject numerical values with trailing junk.
+  * New `CYAML_CFG_IGNORED_KEY_WARNING` to generate warnings when mapping
+    keys are ignored either explicitly by the `CYAML_IGNORE` type or implicitly
+    by the `CYAML_CFG_IGNORE_UNKNOWN_KEYS` config setting.
+* **Buildsystem**:
+  * Avoid using GNU `-D` install flag.
+* **General**:
+  * Improved API documentation for `CYAML_SEQUENCE_FIXED`.
+  * Minor optimisation for host endian detection for older GCCs.
+  * Minor CI updates.
+
+No changes are required for client applications to upgrade.
+
 ## LibCYAML v1.3.1
 
 * **Loading**:
