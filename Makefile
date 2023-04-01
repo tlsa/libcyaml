@@ -1,10 +1,16 @@
 # SPDX-License-Identifier: ISC
 #
-# Copyright (C) 2017-2021 Michael Drake <tlsa@netsurf-browser.org>
+# Copyright (C) 2017-2023 Michael Drake <tlsa@netsurf-browser.org>
 
 # CYAML's versioning is <MAJOR>.<MINOR>.<PATCH>[-DEVEL]
-# Master branch will always be DEVEL.  The release process will be to make
-# the release branch, set VESION_DEVEL to 0, and tag the release.
+# The main branch will usually be DEVEL.  The release process is:
+# 0. Create branch for release.
+# 1. Update the CHANGES.md file.
+# 2. Set MAJOR, MINOR, and PATCH versions appropriately for changes.
+# 3. Create PR, review, and merge to main.
+# 4. Set VESION_DEVEL to 0, commit to main.
+# 5. Tag the release: `git tag -a vN.N.N -m "libcyaml N.N.N"`
+# 6. Set VESION_DEVEL to 1, commit to main.
 VERSION_MAJOR = 1
 VERSION_MINOR = 3
 VERSION_PATCH = 1
