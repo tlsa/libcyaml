@@ -2237,6 +2237,22 @@ static cyaml_err_t cyaml__doc_end(
 }
 
 /**
+ * Log an ignored mapping key.
+ *
+ * \param[in]  ctx  The CYAML loading context.
+ * \param[in]  key  The key that has been ignored.
+ */
+static inline void cyaml__log_ignored_key(
+		const cyaml_ctx_t *ctx,
+		const char *key)
+{
+	cyaml_log_t lvl = ctx->config->flags & CYAML_CFG_IGNORED_KEY_WARNING ?
+			CYAML_LOG_WARNING : CYAML_LOG_DEBUG;
+
+	cyaml__log(ctx->config, lvl, "Load: Ignoring value for key: %s\n", key);
+}
+
+/**
  * Check the field against the schema for the current mapping key.
  *
  * \param[in]  ctx  The CYAML loading context.
@@ -2256,6 +2272,8 @@ static cyaml_err_t cyaml__map_key_check_field(
 					field->key);
 			return CYAML_ERR_UNEXPECTED_EVENT;
 		}
+	} else {
+		cyaml__log_ignored_key(ctx, field->key);
 	}
 
 	cyaml__mapping_bitfieid_set(ctx);
@@ -2291,8 +2309,9 @@ static cyaml_err_t cyaml__map_key(
 					"Load: Unexpected key: %s\n", key);
 			return CYAML_ERR_INVALID_KEY;
 		}
-		cyaml__log(ctx->config, CYAML_LOG_DEBUG,
-				"Load: Ignoring key: %s\n", key);
+
+		cyaml__log_ignored_key(ctx, key);
+
 		err = cyaml_get_next_event(ctx);
 		if (err != CYAML_OK) {
 			return err;
