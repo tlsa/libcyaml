@@ -570,6 +570,10 @@ typedef enum cyaml_cfg_flags {
 	 * memory is constrained.
 	 */
 	CYAML_CFG_NO_ALIAS            = (1 << 5),
+	/**
+	 * Log any ignored mapping keys at \ref CYAML_LOG_WARNING level.
+	 */
+	CYAML_CFG_IGNORED_KEY_WARNING = (1 << 6),
 } cyaml_cfg_flags_t;
 
 /**
