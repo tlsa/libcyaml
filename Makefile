@@ -14,7 +14,7 @@
 VERSION_MAJOR = 1
 VERSION_MINOR = 4
 VERSION_PATCH = 0
-VERSION_DEVEL = 0
+VERSION_DEVEL = 1
 VERSION_STR = $(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH)
 
 # Default variant depends on whether it's a development build.
