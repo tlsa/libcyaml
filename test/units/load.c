@@ -6015,6 +6015,88 @@ static bool test_load_mapping_ignored_unknown_keys(
 }
 
 /**
+ * Test loading a mapping with unknown keys ignored by config.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_warn_ignored_keys(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct target_struct {
+		short b;
+		int c;
+		long d;
+		long long e;
+	} data = {
+		.b = 90,
+		.c = 900,
+		.d = 9000,
+		.e = 90000,
+	};
+	static const unsigned char yaml[] =
+		"a: 9\n"
+		"b: 90\n"
+		"c: 900\n"
+		"d: 9000\n"
+		"e: 90000\n"
+		"f: 900000\n";
+	struct target_struct *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_INT("b", CYAML_FLAG_DEFAULT,
+				struct target_struct, b),
+		CYAML_FIELD_INT("c", CYAML_FLAG_DEFAULT,
+				struct target_struct, c),
+		CYAML_FIELD_INT("d", CYAML_FLAG_DEFAULT,
+				struct target_struct, d),
+		CYAML_FIELD_INT("e", CYAML_FLAG_DEFAULT,
+				struct target_struct, e),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	cyaml_config_t cfg = *config;
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = &cfg,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	cfg.flags |= CYAML_CFG_IGNORE_UNKNOWN_KEYS |
+	             CYAML_CFG_IGNORED_KEY_WARNING;
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), &cfg, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->b != data.b) {
+		return ttest_fail(&tc, "Incorrect value for entry b");
+	}
+	if (data_tgt->c != data.c) {
+		return ttest_fail(&tc, "Incorrect value for entry c");
+	}
+	if (data_tgt->d != data.d) {
+		return ttest_fail(&tc, "Incorrect value for entry d");
+	}
+	if (data_tgt->e != data.e) {
+		return ttest_fail(&tc, "Incorrect value for entry e");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading a sequence with max size 4, and only 2 entries in YAML.
  *
  * \param[in]  report  The test report context.
@@ -7592,6 +7674,7 @@ bool load_tests(
 	pass &= test_load_schema_top_level_scalar(rc, &config);
 	pass &= test_load_schema_top_level_string(rc, &config);
 	pass &= test_load_schema_top_level_sequence(rc, &config);
+	pass &= test_load_mapping_warn_ignored_keys(rc, &config);
 	pass &= test_load_multiple_documents_ignored(rc, &config);
 	pass &= test_load_mapping_without_any_fields(rc, &config);
 	pass &= test_load_mapping_with_multiple_fields(rc, &config);
