@@ -2286,7 +2286,6 @@ static cyaml_err_t cyaml__map_key(
 	if (ctx->state->mapping.fields_idx == CYAML_FIELDS_IDX_NONE) {
 		const yaml_event_t *const ignore_event =
 				cyaml__current_event(ctx);
-		cyaml_event_t cyaml_event;
 		if (!(ctx->config->flags &
 				CYAML_CFG_IGNORE_UNKNOWN_KEYS)) {
 			cyaml__log(ctx->config, CYAML_LOG_ERROR,
@@ -2299,8 +2298,9 @@ static cyaml_err_t cyaml__map_key(
 		if (err != CYAML_OK) {
 			return err;
 		}
-		cyaml_event = cyaml__get_event_type(ignore_event);
-		return cyaml__consume_ignored_value(ctx, cyaml_event);
+
+		return cyaml__consume_ignored_value(ctx,
+				cyaml__get_event_type(ignore_event));
 	}
 
 	err = cyaml__map_key_check_field(ctx);
