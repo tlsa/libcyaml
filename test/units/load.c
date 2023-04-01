@@ -3514,7 +3514,7 @@ static bool test_load_mapping_entry_sequence_ptr_string_ptr(
 	static const struct cyaml_schema_field mapping_schema[] = {
 		CYAML_FIELD_SEQUENCE("sequence", CYAML_FLAG_POINTER,
 				struct target_struct, seq, &entry_schema,
-				0, CYAML_ARRAY_LEN(ref)),
+				0, CYAML_UNLIMITED),
 		CYAML_FIELD_END
 	};
 	static const struct cyaml_schema_value top_schema = {
