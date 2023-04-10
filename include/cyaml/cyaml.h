@@ -621,6 +621,235 @@ typedef enum cyaml_err {
 } cyaml_err_t;
 
 /**
+ * Helper macro to add \ref CYAML_FLAG_POINTER to some flags.
+ *
+ * \param[in]  _flags  The flags to modify.
+ * \return The modified flags.
+ */
+#define CYAML__POINTER_ADD(_flags) \
+	((_flags) | CYAML_FLAG_POINTER)
+
+/**
+ * Helper macro to remove \ref CYAML_FLAG_POINTER from some flags.
+ *
+ * \param[in]  _flags  The flags to modify.
+ * \return The modified flags.
+ */
+#define CYAML__POINTER_REMOVE(_flags) \
+	((_flags) & (~CYAML_FLAG_POINTER))
+
+/** Type to \ref cyaml_schema_value union member for INT. */
+#define CYAML__UNION_MEMBER_INT            .enumeration
+/** Type to \ref cyaml_schema_value union member for UINT. */
+#define CYAML__UNION_MEMBER_UINT           .enumeration
+/** Type to \ref cyaml_schema_value union member for BOOL. */
+#define CYAML__UNION_MEMBER_BOOL           .enumeration
+/** Type to \ref cyaml_schema_value union member for ENUM. */
+#define CYAML__UNION_MEMBER_ENUM           .enumeration
+/** Type to \ref cyaml_schema_value union member for FLAGS. */
+#define CYAML__UNION_MEMBER_FLAGS          .enumeration
+/** Type to \ref cyaml_schema_value union member for FLOAT. */
+#define CYAML__UNION_MEMBER_FLOAT          .enumeration
+/** Type to \ref cyaml_schema_value union member for STRING. */
+#define CYAML__UNION_MEMBER_STRING         .string
+/** Type to \ref cyaml_schema_value union member for MAPPING. */
+#define CYAML__UNION_MEMBER_MAPPING        .mapping
+/** Type to \ref cyaml_schema_value union member for BITFIELD. */
+#define CYAML__UNION_MEMBER_BITFIELD       .bitfield
+/** Type to \ref cyaml_schema_value union member for SEQUENCE. */
+#define CYAML__UNION_MEMBER_SEQUENCE       .sequence
+/** Type to \ref cyaml_schema_value union member for SEQUENCE_FIXED. */
+#define CYAML__UNION_MEMBER_SEQUENCE_FIXED .sequence
+
+/** Fake a valid sequence count member for INT. */
+#define CYAML__SEQUENCE_COUNT_INT(_member, _count)            _member
+/** Fake a valid sequence count member for UINT. */
+#define CYAML__SEQUENCE_COUNT_UINT(_member, _count)           _member
+/** Fake a valid sequence count member for BOOL. */
+#define CYAML__SEQUENCE_COUNT_BOOL(_member, _count)           _member
+/** Fake a valid sequence count member for ENUM. */
+#define CYAML__SEQUENCE_COUNT_ENUM(_member, _count)           _member
+/** Fake a valid sequence count member for FLAGS. */
+#define CYAML__SEQUENCE_COUNT_FLAGS(_member, _count)          _member
+/** Fake a valid sequence count member for FLOAT. */
+#define CYAML__SEQUENCE_COUNT_FLOAT(_member, _count)          _member
+/** Fake a valid sequence count member for STRING. */
+#define CYAML__SEQUENCE_COUNT_STRING(_member, _count)         _member
+/** Fake a valid sequence count member for MAPPING. */
+#define CYAML__SEQUENCE_COUNT_MAPPING(_member, _count)        _member
+/** Fake a valid sequence count member for BITFIELD. */
+#define CYAML__SEQUENCE_COUNT_BITFIELD(_member, _count)       _member
+/** Create the sequence count member for SEQUENCE. */
+#define CYAML__SEQUENCE_COUNT_SEQUENCE(_member, _count)       _member ## _count
+/** Fake a valid sequence count member for SEQUENCE_FIXED. */
+#define CYAML__SEQUENCE_COUNT_SEQUENCE_FIXED(_member, _count) _member
+
+/** Adapt flags for mapping schema building macro for INT. */
+#define CYAML__HANDLE_PTR_INT(_flags)            CYAML__POINTER_ADD(_flags)
+/** Adapt flags for mapping schema building macro for UINT. */
+#define CYAML__HANDLE_PTR_UINT(_flags)           CYAML__POINTER_ADD(_flags)
+/** Adapt flags for mapping schema building macro for BOOL. */
+#define CYAML__HANDLE_PTR_BOOL(_flags)           CYAML__POINTER_ADD(_flags)
+/** Adapt flags for mapping schema building macro for ENUM. */
+#define CYAML__HANDLE_PTR_ENUM(_flags)           CYAML__POINTER_ADD(_flags)
+/** Adapt flags for mapping schema building macro for FLAGS. */
+#define CYAML__HANDLE_PTR_FLAGS(_flags)          CYAML__POINTER_ADD(_flags)
+/** Adapt flags for mapping schema building macro for FLOAT. */
+#define CYAML__HANDLE_PTR_FLOAT(_flags)          CYAML__POINTER_ADD(_flags)
+/** Adapt flags for mapping schema building macro for STRING. */
+#define CYAML__HANDLE_PTR_STRING(_flags)         CYAML__POINTER_ADD(_flags)
+/** Adapt flags for mapping schema building macro for MAPPING. */
+#define CYAML__HANDLE_PTR_MAPPING(_flags)        CYAML__POINTER_ADD(_flags)
+/** Adapt flags for mapping schema building macro for BITFIELD. */
+#define CYAML__HANDLE_PTR_BITFIELD(_flags)       CYAML__POINTER_ADD(_flags)
+/** Adapt flags for mapping schema building macro for SEQUENCE. */
+#define CYAML__HANDLE_PTR_SEQUENCE(_flags)       _flags
+/** Adapt flags for mapping schema building macro for SEQUENCE_FIXED. */
+#define CYAML__HANDLE_PTR_SEQUENCE_FIXED(_flags) _flags
+
+/**
+ * Create an expression for a variable of the type of a structure member.
+ *
+ * \param[in]  _structure  The structure containing _member.
+ * \param[in]  _member     A member of _structure.
+ * \return variable of type `_structure._member`.
+ */
+#define CYAML__MEMBER(_structure, _member) \
+	(((_structure *)NULL)->_member)
+
+/**
+ * Value schema helper macro for values with \ref CYAML_INT type.
+ *
+ * \param[in]  _TYPE   The type-specific suffix of a \ref cyaml_type.
+ *                     For example, `INT` for \ref CYAML_INT.
+ * \param[in]  _flags  Any behavioural flags relevant to this value.
+ * \param[in]  _type   The C type for this value.
+ * \param[in]  ...     An initialiser appropriate for the type-specific
+ *                     \ref cyaml_schema_value anonymous union member.
+ */
+#define CYAML_VALUE( \
+		_TYPE, _flags, _type, ...) \
+	.type = CYAML_ ## _TYPE, \
+	.flags = (enum cyaml_flag)(_flags), \
+	.data_size = sizeof(_type), \
+	CYAML__UNION_MEMBER_ ## _TYPE = __VA_ARGS__
+
+/**
+ * Mapping schema building helper macro for non-pointer fields.
+ *
+ * Use this for any structure members that are not pointers.
+ *
+ * \param[in]  _TYPE       The CYAML type for the field. It must be one of:
+ *                         * `INT` for \ref CYAML_INT
+ *                         * `UINT` for \ref CYAML_UINT
+ *                         * `BOOL` for \ref CYAML_BOOL
+ *                         * `ENUM` for \ref CYAML_ENUM
+ *                         * `FLAGS` for \ref CYAML_FLAGS
+ *                         * `FLOAT` for \ref CYAML_FLOAT
+ *                         * `STRING` for \ref CYAML_STRING
+ *                         * `MAPPING` for \ref CYAML_MAPPING
+ *                         * `BITFIELD` for \ref CYAML_BITFIELD
+ *                         * `SEQUENCE` for \ref CYAML_SEQUENCE
+ *                         * `SEQUENCE_FIXED` for \ref CYAML_SEQUENCE_FIXED
+ * \param[in]  _key        String defining the YAML mapping key for this value.
+ * \param[in]  _flags      Any behavioural flags relevant to this value.
+ * \param[in]  _structure  The structure corresponding to the mapping.
+ * \param[in]  _member     The member in _structure for this mapping value.
+ * \param[in]  ...         An initialiser appropriate for the type-specific
+ *                         \ref cyaml_schema_value anonymous union member.
+ */
+#define CYAML_FIELD( \
+		_TYPE, _key, _flags, _structure, _member, ...) \
+{ \
+	.key = _key, \
+	.data_offset = offsetof(_structure, _member), \
+	.value = { \
+		CYAML_VALUE(_TYPE, \
+				CYAML__POINTER_REMOVE(_flags), \
+				CYAML__MEMBER(_structure, _member), \
+				__VA_ARGS__), \
+	}, \
+}
+
+/**
+ * Mapping schema building helper macro for fields with a sequence type.
+ *
+ * Use this only for structure members that are arrays.
+ *
+ * \note The universal \ref CYAML_FIELD_PTR macro may also be used for
+ *       sequences. The only difference is that \ref CYAML_FIELD_PTR assumes
+ *       that for fields of type \ref CYAML_SEQUENCE there will be a pair of
+ *       `<_member>` for the array and `<_member>_count` for storing the number
+ *       of entries in the array, This macro allows an arbitrary name for the
+ *       entry count variable, rather than assuming a `_count` postfix.
+ *
+ * \param[in]  _TYPE       The CYAML type for the field. It must be one of:
+ *                         * `INT` for \ref CYAML_INT
+ *                         * `UINT` for \ref CYAML_UINT
+ *                         * `BOOL` for \ref CYAML_BOOL
+ *                         * `ENUM` for \ref CYAML_ENUM
+ *                         * `FLAGS` for \ref CYAML_FLAGS
+ *                         * `FLOAT` for \ref CYAML_FLOAT
+ *                         * `STRING` for \ref CYAML_STRING
+ *                         * `MAPPING` for \ref CYAML_MAPPING
+ *                         * `BITFIELD` for \ref CYAML_BITFIELD
+ *                         * `SEQUENCE` for \ref CYAML_SEQUENCE
+ *                         * `SEQUENCE_FIXED` for \ref CYAML_SEQUENCE_FIXED
+ * \param[in]  _key        String defining the YAML mapping key for this value.
+ * \param[in]  _flags      Any behavioural flags relevant to this value.
+ * \param[in]  _structure  The structure corresponding to the mapping.
+ * \param[in]  _member     The member in _structure for this mapping value.
+ * \param[in]  _count      The member in _structure for this sequence's
+ *                         entry count.
+ * \param[in]  ...         An initialiser appropriate for the type-specific
+ *                         \ref cyaml_schema_value anonymous union member.
+ */
+#define CYAML_FIELD_PTR_COUNT( \
+		_TYPE, _key, _flags, _structure, _member, _count, ...) \
+{ \
+	.key = _key, \
+	.data_offset = offsetof(_structure, _member), \
+	.count_offset = offsetof(_structure, _count), \
+	.count_size = sizeof(CYAML__MEMBER(_structure, _count)), \
+	.value = { \
+		CYAML_VALUE(_TYPE, \
+				CYAML__HANDLE_PTR_ ## _TYPE(_flags), \
+				*CYAML__MEMBER(_structure, _member), \
+				__VA_ARGS__), \
+	}, \
+}
+
+/**
+ * Mapping schema building helper macro for pointer fields.
+ *
+ * Use this for any structure members that are pointers.
+ *
+ * \param[in]  _TYPE       The CYAML type for the field. It must be one of:
+ *                         * `INT` for \ref CYAML_INT
+ *                         * `UINT` for \ref CYAML_UINT
+ *                         * `BOOL` for \ref CYAML_BOOL
+ *                         * `ENUM` for \ref CYAML_ENUM
+ *                         * `FLAGS` for \ref CYAML_FLAGS
+ *                         * `FLOAT` for \ref CYAML_FLOAT
+ *                         * `STRING` for \ref CYAML_STRING
+ *                         * `MAPPING` for \ref CYAML_MAPPING
+ *                         * `BITFIELD` for \ref CYAML_BITFIELD
+ *                         * `SEQUENCE` for \ref CYAML_SEQUENCE
+ *                         * `SEQUENCE_FIXED` for \ref CYAML_SEQUENCE_FIXED
+ * \param[in]  _key        String defining the YAML mapping key for this value.
+ * \param[in]  _flags      Any behavioural flags relevant to this value.
+ * \param[in]  _structure  The structure corresponding to the mapping.
+ * \param[in]  _member     The member in _structure for this mapping value.
+ * \param[in]  ...         An initialiser appropriate for the type-specific
+ *                         \ref cyaml_schema_value anonymous union member.
+ */
+#define CYAML_FIELD_PTR( \
+		_TYPE, _key, _flags, _structure, _member, ...) \
+	CYAML_FIELD_PTR_COUNT(_TYPE, _key, _flags, _structure, _member, \
+			CYAML__SEQUENCE_COUNT_ ## _TYPE(_member, _count), \
+			__VA_ARGS__)
+
+/**
  * Value schema helper macro for values with \ref CYAML_INT type.
  *
  * \param[in]  _flags         Any behavioural flags relevant to this value.
@@ -628,9 +857,7 @@ typedef enum cyaml_err {
  */
 #define CYAML_VALUE_INT( \
 		_flags, _type) \
-	.type = CYAML_INT, \
-	.flags = (enum cyaml_flag)(_flags), \
-	.data_size = sizeof(_type)
+	CYAML_VALUE(INT, _flags, _type, {0})
 
 /**
  * Value schema helper macro for values with \ref CYAML_UINT type.
@@ -640,9 +867,7 @@ typedef enum cyaml_err {
  */
 #define CYAML_VALUE_UINT( \
 		_flags, _type) \
-	.type = CYAML_UINT, \
-	.flags = (enum cyaml_flag)(_flags), \
-	.data_size = sizeof(_type)
+	CYAML_VALUE(UINT, _flags, _type, {0})
 
 /**
  * Value schema helper macro for values with \ref CYAML_BOOL type.
@@ -652,9 +877,7 @@ typedef enum cyaml_err {
  */
 #define CYAML_VALUE_BOOL( \
 		_flags, _type) \
-	.type = CYAML_BOOL, \
-	.flags = (enum cyaml_flag)(_flags), \
-	.data_size = sizeof(_type)
+	CYAML_VALUE(BOOL, _flags, _type, {0})
 
 /**
  * Value schema helper macro for values with \ref CYAML_ENUM type.
@@ -666,13 +889,10 @@ typedef enum cyaml_err {
  */
 #define CYAML_VALUE_ENUM( \
 		_flags, _type, _strings, _strings_count) \
-	.type = CYAML_ENUM, \
-	.flags = (enum cyaml_flag)(_flags), \
-	.data_size = sizeof(_type), \
-	.enumeration = { \
+	CYAML_VALUE(ENUM, _flags, _type, { \
 		.strings = _strings, \
 		.count = _strings_count, \
-	}
+	})
 
 /**
  * Value schema helper macro for values with \ref CYAML_FLAGS type.
@@ -684,13 +904,10 @@ typedef enum cyaml_err {
  */
 #define CYAML_VALUE_FLAGS( \
 		_flags, _type, _strings, _strings_count) \
-	.type = CYAML_FLAGS, \
-	.flags = (enum cyaml_flag)(_flags), \
-	.data_size = sizeof(_type), \
-	.enumeration = { \
+	CYAML_VALUE(FLAGS, _flags, _type, { \
 		.strings = _strings, \
 		.count = _strings_count, \
-	}
+	})
 
 /**
  * Value schema helper macro for values with \ref CYAML_BITFIELD type.
@@ -702,13 +919,10 @@ typedef enum cyaml_err {
  */
 #define CYAML_VALUE_BITFIELD( \
 		_flags, _type, _bitvals, _bitvals_count) \
-	.type = CYAML_BITFIELD, \
-	.flags = (enum cyaml_flag)(_flags), \
-	.data_size = sizeof(_type), \
-	.bitfield = { \
+	CYAML_VALUE(BITFIELD, _flags, _type, { \
 		.bitdefs = _bitvals, \
 		.count = _bitvals_count, \
-	}
+	})
 
 /**
  * Value schema helper macro for values with \ref CYAML_FLOAT type.
@@ -718,9 +932,7 @@ typedef enum cyaml_err {
  */
 #define CYAML_VALUE_FLOAT( \
 		_flags, _type) \
-	.type = CYAML_FLOAT, \
-	.flags = (enum cyaml_flag)(_flags), \
-	.data_size = sizeof(_type)
+	CYAML_VALUE(FLOAT, _flags, _type, {0})
 
 /**
  * Value schema helper macro for values with \ref CYAML_STRING type.
@@ -741,13 +953,10 @@ typedef enum cyaml_err {
  */
 #define CYAML_VALUE_STRING( \
 		_flags, _type, _min, _max) \
-	.type = CYAML_STRING, \
-	.flags = (enum cyaml_flag)(_flags), \
-	.data_size = sizeof(_type), \
-	.string = { \
+	CYAML_VALUE(STRING, _flags, _type, { \
 		.min = _min, \
 		.max = _max, \
-	}
+	})
 
 /**
  * Value schema helper macro for values with \ref CYAML_MAPPING type.
@@ -758,12 +967,9 @@ typedef enum cyaml_err {
  */
 #define CYAML_VALUE_MAPPING( \
 		_flags, _type, _fields) \
-	.type = CYAML_MAPPING, \
-	.flags = (enum cyaml_flag)(_flags), \
-	.data_size = sizeof(_type), \
-	.mapping = { \
+	CYAML_VALUE(MAPPING, _flags, _type, { \
 		.fields = _fields, \
-	}
+	})
 
 /**
  * Value schema helper macro for values with \ref CYAML_SEQUENCE type.
@@ -776,14 +982,11 @@ typedef enum cyaml_err {
  */
 #define CYAML_VALUE_SEQUENCE( \
 		_flags, _type, _entry, _min, _max) \
-	.type = CYAML_SEQUENCE, \
-	.flags = (enum cyaml_flag)(_flags), \
-	.data_size = sizeof(_type), \
-	.sequence = { \
+	CYAML_VALUE(SEQUENCE, _flags, _type, { \
 		.entry = _entry, \
 		.min = _min, \
 		.max = _max, \
-	}
+	})
 
 /**
  * Value schema helper macro for values with \ref CYAML_SEQUENCE_FIXED type.
@@ -800,14 +1003,11 @@ typedef enum cyaml_err {
  */
 #define CYAML_VALUE_SEQUENCE_FIXED( \
 		_flags, _type, _entry, _count) \
-	.type = CYAML_SEQUENCE_FIXED, \
-	.flags = (enum cyaml_flag)(_flags), \
-	.data_size = sizeof(_type), \
-	.sequence = { \
+	CYAML_VALUE(SEQUENCE_FIXED, _flags, _type, { \
 		.entry = _entry, \
 		.min = _count, \
 		.max = _count, \
-	}
+	})
 
 /**
  * Mapping schema helper macro for keys with \ref CYAML_INT type.
@@ -821,14 +1021,7 @@ typedef enum cyaml_err {
  */
 #define CYAML_FIELD_INT( \
 		_key, _flags, _structure, _member) \
-{ \
-	.key = _key, \
-	.data_offset = offsetof(_structure, _member), \
-	.value = { \
-		CYAML_VALUE_INT(((_flags) & (~CYAML_FLAG_POINTER)), \
-				(((_structure *)NULL)->_member)), \
-	}, \
-}
+	CYAML_FIELD(INT, _key, _flags, _structure, _member, {0})
 
 /**
  * Mapping schema helper macro for keys with \ref CYAML_INT type.
@@ -842,14 +1035,7 @@ typedef enum cyaml_err {
  */
 #define CYAML_FIELD_INT_PTR( \
 		_key, _flags, _structure, _member) \
-{ \
-	.key = _key, \
-	.data_offset = offsetof(_structure, _member), \
-	.value = { \
-		CYAML_VALUE_INT(((_flags) | CYAML_FLAG_POINTER), \
-				(*(((_structure *)NULL)->_member))), \
-	}, \
-}
+	CYAML_FIELD_PTR(INT, _key, _flags, _structure, _member, {0})
 
 /**
  * Mapping schema helper macro for keys with \ref CYAML_UINT type.
@@ -863,14 +1049,7 @@ typedef enum cyaml_err {
  */
 #define CYAML_FIELD_UINT( \
 		_key, _flags, _structure, _member) \
-{ \
-	.key = _key, \
-	.data_offset = offsetof(_structure, _member), \
-	.value = { \
-		CYAML_VALUE_UINT(((_flags) & (~CYAML_FLAG_POINTER)), \
-				(((_structure *)NULL)->_member)), \
-	}, \
-}
+	CYAML_FIELD(UINT, _key, _flags, _structure, _member, {0})
 
 /**
  * Mapping schema helper macro for keys with \ref CYAML_UINT type.
@@ -884,14 +1063,7 @@ typedef enum cyaml_err {
  */
 #define CYAML_FIELD_UINT_PTR( \
 		_key, _flags, _structure, _member) \
-{ \
-	.key = _key, \
-	.data_offset = offsetof(_structure, _member), \
-	.value = { \
-		CYAML_VALUE_UINT(((_flags) | CYAML_FLAG_POINTER), \
-				(*(((_structure *)NULL)->_member))), \
-	}, \
-}
+	CYAML_FIELD_PTR(UINT, _key, _flags, _structure, _member, {0})
 
 /**
  * Mapping schema helper macro for keys with \ref CYAML_BOOL type.
@@ -905,14 +1077,7 @@ typedef enum cyaml_err {
  */
 #define CYAML_FIELD_BOOL( \
 		_key, _flags, _structure, _member) \
-{ \
-	.key = _key, \
-	.data_offset = offsetof(_structure, _member), \
-	.value = { \
-		CYAML_VALUE_BOOL(((_flags) & (~CYAML_FLAG_POINTER)), \
-				(((_structure *)NULL)->_member)), \
-	}, \
-}
+	CYAML_FIELD(BOOL, _key, _flags, _structure, _member, {0})
 
 /**
  * Mapping schema helper macro for keys with \ref CYAML_BOOL type.
@@ -926,14 +1091,7 @@ typedef enum cyaml_err {
  */
 #define CYAML_FIELD_BOOL_PTR( \
 		_key, _flags, _structure, _member) \
-{ \
-	.key = _key, \
-	.data_offset = offsetof(_structure, _member), \
-	.value = { \
-		CYAML_VALUE_BOOL(((_flags) | CYAML_FLAG_POINTER), \
-				(*(((_structure *)NULL)->_member))), \
-	}, \
-}
+	CYAML_FIELD_PTR(BOOL, _key, _flags, _structure, _member, {0})
 
 /**
  * Mapping schema helper macro for keys with \ref CYAML_ENUM type.
@@ -949,15 +1107,12 @@ typedef enum cyaml_err {
  */
 #define CYAML_FIELD_ENUM( \
 		_key, _flags, _structure, _member, _strings, _strings_count) \
-{ \
-	.key = _key, \
-	.data_offset = offsetof(_structure, _member), \
-	.value = { \
-		CYAML_VALUE_ENUM(((_flags) & (~CYAML_FLAG_POINTER)), \
-				(((_structure *)NULL)->_member), \
-				_strings, _strings_count), \
-	}, \
-}
+	CYAML_FIELD(ENUM, _key, _flags, _structure, _member, \
+		{ \
+			.strings = _strings, \
+			.count   = _strings_count, \
+		} \
+	)
 
 /**
  * Mapping schema helper macro for keys with \ref CYAML_ENUM type.
@@ -973,15 +1128,12 @@ typedef enum cyaml_err {
  */
 #define CYAML_FIELD_ENUM_PTR( \
 		_key, _flags, _structure, _member, _strings, _strings_count) \
-{ \
-	.key = _key, \
-	.data_offset = offsetof(_structure, _member), \
-	.value = { \
-		CYAML_VALUE_ENUM(((_flags) | CYAML_FLAG_POINTER), \
-				(*(((_structure *)NULL)->_member)), \
-				_strings, _strings_count), \
-	}, \
-}
+	CYAML_FIELD_PTR(ENUM, _key, _flags, _structure, _member, \
+		{ \
+			.strings = _strings, \
+			.count   = _strings_count, \
+		} \
+	)
 
 /**
  * Mapping schema helper macro for keys with \ref CYAML_FLAGS type.
@@ -997,15 +1149,12 @@ typedef enum cyaml_err {
  */
 #define CYAML_FIELD_FLAGS( \
 		_key, _flags, _structure, _member, _strings, _strings_count) \
-{ \
-	.key = _key, \
-	.data_offset = offsetof(_structure, _member), \
-	.value = { \
-		CYAML_VALUE_FLAGS(((_flags) & (~CYAML_FLAG_POINTER)), \
-				(((_structure *)NULL)->_member), \
-				_strings, _strings_count), \
-	}, \
-}
+	CYAML_FIELD(FLAGS, _key, _flags, _structure, _member, \
+		{ \
+			.strings = _strings, \
+			.count   = _strings_count, \
+		} \
+	)
 
 /**
  * Mapping schema helper macro for keys with \ref CYAML_FLAGS type.
@@ -1021,15 +1170,12 @@ typedef enum cyaml_err {
  */
 #define CYAML_FIELD_FLAGS_PTR( \
 		_key, _flags, _structure, _member, _strings, _strings_count) \
-{ \
-	.key = _key, \
-	.data_offset = offsetof(_structure, _member), \
-	.value = { \
-		CYAML_VALUE_FLAGS(((_flags) | CYAML_FLAG_POINTER), \
-				(*(((_structure *)NULL)->_member)), \
-				_strings, _strings_count), \
-	}, \
-}
+	CYAML_FIELD_PTR(FLAGS, _key, _flags, _structure, _member, \
+		{ \
+			.strings = _strings, \
+			.count   = _strings_count, \
+		} \
+	)
 
 /**
  * Mapping schema helper macro for keys with \ref CYAML_BITFIELD type.
@@ -1045,15 +1191,12 @@ typedef enum cyaml_err {
  */
 #define CYAML_FIELD_BITFIELD( \
 		_key, _flags, _structure, _member, _bitvals, _bitvals_count) \
-{ \
-	.key = _key, \
-	.data_offset = offsetof(_structure, _member), \
-	.value = { \
-		CYAML_VALUE_BITFIELD(((_flags) & (~CYAML_FLAG_POINTER)), \
-				(((_structure *)NULL)->_member), \
-				_bitvals, _bitvals_count), \
-	}, \
-}
+	CYAML_FIELD(BITFIELD, _key, _flags, _structure, _member, \
+		{ \
+			.bitdefs = _bitvals, \
+			.count   = _bitvals_count, \
+		} \
+	)
 
 /**
  * Mapping schema helper macro for keys with \ref CYAML_BITFIELD type.
@@ -1069,15 +1212,12 @@ typedef enum cyaml_err {
  */
 #define CYAML_FIELD_BITFIELD_PTR( \
 		_key, _flags, _structure, _member, _bitvals, _bitvals_count) \
-{ \
-	.key = _key, \
-	.data_offset = offsetof(_structure, _member), \
-	.value = { \
-		CYAML_VALUE_BITFIELD(((_flags) | CYAML_FLAG_POINTER), \
-				(*(((_structure *)NULL)->_member)), \
-				_bitvals, _bitvals_count), \
-	}, \
-}
+	CYAML_FIELD_PTR(BITFIELD, _key, _flags, _structure, _member, \
+		{ \
+			.bitdefs = _bitvals, \
+			.count   = _bitvals_count, \
+		} \
+	)
 
 /**
  * Mapping schema helper macro for keys with \ref CYAML_FLOAT type.
@@ -1091,14 +1231,7 @@ typedef enum cyaml_err {
  */
 #define CYAML_FIELD_FLOAT( \
 		_key, _flags, _structure, _member) \
-{ \
-	.key = _key, \
-	.data_offset = offsetof(_structure, _member), \
-	.value = { \
-		CYAML_VALUE_FLOAT(((_flags) & (~CYAML_FLAG_POINTER)), \
-				(((_structure *)NULL)->_member)), \
-	}, \
-}
+	CYAML_FIELD(FLOAT, _key, _flags, _structure, _member, {0})
 
 /**
  * Mapping schema helper macro for keys with \ref CYAML_FLOAT type.
@@ -1112,14 +1245,7 @@ typedef enum cyaml_err {
  */
 #define CYAML_FIELD_FLOAT_PTR( \
 		_key, _flags, _structure, _member) \
-{ \
-	.key = _key, \
-	.data_offset = offsetof(_structure, _member), \
-	.value = { \
-		CYAML_VALUE_FLOAT(((_flags) | CYAML_FLAG_POINTER), \
-				(*(((_structure *)NULL)->_member))), \
-	}, \
-}
+	CYAML_FIELD_PTR(FLOAT, _key, _flags, _structure, _member, {0})
 
 /**
  * Mapping schema helper macro for keys with \ref CYAML_STRING type.
@@ -1135,15 +1261,12 @@ typedef enum cyaml_err {
  */
 #define CYAML_FIELD_STRING( \
 		_key, _flags, _structure, _member, _min) \
-{ \
-	.key = _key, \
-	.data_offset = offsetof(_structure, _member), \
-	.value = { \
-		CYAML_VALUE_STRING(((_flags) & (~CYAML_FLAG_POINTER)), \
-				(((_structure *)NULL)->_member), _min, \
-				sizeof(((_structure *)NULL)->_member) - 1), \
-	}, \
-}
+	CYAML_FIELD(STRING, _key, _flags, _structure, _member, \
+		{ \
+			.min = _min, \
+			.max = sizeof(CYAML__MEMBER(_structure, _member)) - 1, \
+		} \
+	)
 
 /**
  * Mapping schema helper macro for keys with \ref CYAML_STRING type.
@@ -1163,15 +1286,12 @@ typedef enum cyaml_err {
  */
 #define CYAML_FIELD_STRING_PTR( \
 		_key, _flags, _structure, _member, _min, _max) \
-{ \
-	.key = _key, \
-	.data_offset = offsetof(_structure, _member), \
-	.value = { \
-		CYAML_VALUE_STRING(((_flags) | CYAML_FLAG_POINTER), \
-				(((_structure *)NULL)->_member), \
-				_min, _max), \
-	}, \
-}
+	CYAML_FIELD_PTR(STRING, _key, _flags, _structure, _member, \
+		{ \
+			.min = _min, \
+			.max = _max, \
+		} \
+	)
 
 /**
  * Mapping schema helper macro for keys with \ref CYAML_MAPPING type.
@@ -1186,14 +1306,11 @@ typedef enum cyaml_err {
  */
 #define CYAML_FIELD_MAPPING( \
 		_key, _flags, _structure, _member, _fields) \
-{ \
-	.key = _key, \
-	.data_offset = offsetof(_structure, _member), \
-	.value = { \
-		CYAML_VALUE_MAPPING(((_flags) & (~CYAML_FLAG_POINTER)), \
-				(((_structure *)NULL)->_member), _fields), \
-	}, \
-}
+	CYAML_FIELD(MAPPING, _key, _flags, _structure, _member, \
+		{ \
+			.fields = _fields, \
+		} \
+	)
 
 /**
  * Mapping schema helper macro for keys with \ref CYAML_MAPPING type.
@@ -1208,14 +1325,11 @@ typedef enum cyaml_err {
  */
 #define CYAML_FIELD_MAPPING_PTR( \
 		_key, _flags, _structure, _member, _fields) \
-{ \
-	.key = _key, \
-	.data_offset = offsetof(_structure, _member), \
-	.value = { \
-		CYAML_VALUE_MAPPING(((_flags) | CYAML_FLAG_POINTER), \
-				(*(((_structure *)NULL)->_member)), _fields), \
-	}, \
-}
+	CYAML_FIELD_PTR(MAPPING, _key, _flags, _structure, _member, \
+		{ \
+			.fields = _fields, \
+		} \
+	)
 
 /**
  * Mapping schema helper macro for keys with \ref CYAML_SEQUENCE type.
@@ -1252,17 +1366,13 @@ typedef enum cyaml_err {
  */
 #define CYAML_FIELD_SEQUENCE( \
 		_key, _flags, _structure, _member, _entry, _min, _max) \
-{ \
-	.key = _key, \
-	.data_offset = offsetof(_structure, _member), \
-	.count_offset = offsetof(_structure, _member ## _count), \
-	.count_size = sizeof(((_structure *)NULL)->_member ## _count), \
-	.value = { \
-		CYAML_VALUE_SEQUENCE((_flags), \
-				(*(((_structure *)NULL)->_member)), \
-				_entry, _min, _max), \
-	}, \
-}
+	CYAML_FIELD_PTR(SEQUENCE, _key, _flags, _structure, _member, \
+		{ \
+			.entry = _entry, \
+			.min   = _min, \
+			.max   = _max, \
+		} \
+	)
 
 /**
  * Mapping schema helper macro for keys with \ref CYAML_SEQUENCE type.
@@ -1300,17 +1410,14 @@ typedef enum cyaml_err {
  */
 #define CYAML_FIELD_SEQUENCE_COUNT( \
 		_key, _flags, _structure, _member, _count, _entry, _min, _max) \
-{ \
-	.key = _key, \
-	.data_offset = offsetof(_structure, _member), \
-	.count_offset = offsetof(_structure, _count), \
-	.count_size = sizeof(((_structure *)NULL)->_count), \
-	.value = { \
-		CYAML_VALUE_SEQUENCE((_flags), \
-				(*(((_structure *)NULL)->_member)), \
-				_entry, _min, _max), \
-	}, \
-}
+	CYAML_FIELD_PTR_COUNT(SEQUENCE, \
+			_key, _flags, _structure, _member, _count, \
+		{ \
+			.entry = _entry, \
+			.min   = _min, \
+			.max   = _max, \
+		} \
+	)
 
 /**
  * Mapping schema helper macro for keys with \ref CYAML_SEQUENCE_FIXED type.
@@ -1329,15 +1436,13 @@ typedef enum cyaml_err {
  */
 #define CYAML_FIELD_SEQUENCE_FIXED( \
 		_key, _flags, _structure, _member, _entry, _count) \
-{ \
-	.key = _key, \
-	.data_offset = offsetof(_structure, _member), \
-	.value = { \
-		CYAML_VALUE_SEQUENCE_FIXED((_flags), \
-				(*(((_structure *)NULL)->_member)), \
-				_entry, _count), \
-	}, \
-}
+	CYAML_FIELD_PTR(SEQUENCE_FIXED, _key, _flags, _structure, _member, \
+		{ \
+			.entry = _entry, \
+			.min   = _count, \
+			.max   = _count, \
+		} \
+	)
 
 /**
  * Mapping schema helper macro for keys with \ref CYAML_IGNORE type.
