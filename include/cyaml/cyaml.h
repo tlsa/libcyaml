@@ -633,6 +633,183 @@ typedef enum cyaml_err {
 	.data_size = sizeof(_type)
 
 /**
+ * Value schema helper macro for values with \ref CYAML_UINT type.
+ *
+ * \param[in]  _flags         Any behavioural flags relevant to this value.
+ * \param[in]  _type          The C type for this value.
+ */
+#define CYAML_VALUE_UINT( \
+		_flags, _type) \
+	.type = CYAML_UINT, \
+	.flags = (enum cyaml_flag)(_flags), \
+	.data_size = sizeof(_type)
+
+/**
+ * Value schema helper macro for values with \ref CYAML_BOOL type.
+ *
+ * \param[in]  _flags         Any behavioural flags relevant to this value.
+ * \param[in]  _type          The C type for this value.
+ */
+#define CYAML_VALUE_BOOL( \
+		_flags, _type) \
+	.type = CYAML_BOOL, \
+	.flags = (enum cyaml_flag)(_flags), \
+	.data_size = sizeof(_type)
+
+/**
+ * Value schema helper macro for values with \ref CYAML_ENUM type.
+ *
+ * \param[in]  _flags         Any behavioural flags relevant to this value.
+ * \param[in]  _type          The C type for this value.
+ * \param[in]  _strings       Array of string data for enumeration values.
+ * \param[in]  _strings_count Number of entries in _strings.
+ */
+#define CYAML_VALUE_ENUM( \
+		_flags, _type, _strings, _strings_count) \
+	.type = CYAML_ENUM, \
+	.flags = (enum cyaml_flag)(_flags), \
+	.data_size = sizeof(_type), \
+	.enumeration = { \
+		.strings = _strings, \
+		.count = _strings_count, \
+	}
+
+/**
+ * Value schema helper macro for values with \ref CYAML_FLAGS type.
+ *
+ * \param[in]  _flags         Any behavioural flags relevant to this value.
+ * \param[in]  _type          The C type for this value.
+ * \param[in]  _strings       Array of string data for flag values.
+ * \param[in]  _strings_count Number of entries in _strings.
+ */
+#define CYAML_VALUE_FLAGS( \
+		_flags, _type, _strings, _strings_count) \
+	.type = CYAML_FLAGS, \
+	.flags = (enum cyaml_flag)(_flags), \
+	.data_size = sizeof(_type), \
+	.enumeration = { \
+		.strings = _strings, \
+		.count = _strings_count, \
+	}
+
+/**
+ * Value schema helper macro for values with \ref CYAML_BITFIELD type.
+ *
+ * \param[in]  _flags         Any behavioural flags relevant to this value.
+ * \param[in]  _type          The C type for this value.
+ * \param[in]  _bitvals       Array of bit field value data for the bit field.
+ * \param[in]  _bitvals_count Number of entries in _bitvals.
+ */
+#define CYAML_VALUE_BITFIELD( \
+		_flags, _type, _bitvals, _bitvals_count) \
+	.type = CYAML_BITFIELD, \
+	.flags = (enum cyaml_flag)(_flags), \
+	.data_size = sizeof(_type), \
+	.bitfield = { \
+		.bitdefs = _bitvals, \
+		.count = _bitvals_count, \
+	}
+
+/**
+ * Value schema helper macro for values with \ref CYAML_FLOAT type.
+ *
+ * \param[in]  _flags         Any behavioural flags relevant to this value.
+ * \param[in]  _type          The C type for this value.
+ */
+#define CYAML_VALUE_FLOAT( \
+		_flags, _type) \
+	.type = CYAML_FLOAT, \
+	.flags = (enum cyaml_flag)(_flags), \
+	.data_size = sizeof(_type)
+
+/**
+ * Value schema helper macro for values with \ref CYAML_STRING type.
+ *
+ * \note If the string is an array (`char str[N];`) then the \ref
+ *       CYAML_FLAG_POINTER flag must **not** be set, and the max
+ *       length must be no more than `N-1`.
+ *
+ *       If the string is a pointer (`char *str;`), then the \ref
+ *       CYAML_FLAG_POINTER flag **must be set**.
+ *
+ * \param[in]  _flags         Any behavioural flags relevant to this value.
+ * \param[in]  _type          The C type for this value.
+ * \param[in]  _min           Minimum string length in bytes.
+ *                            Excludes trailing '\0'.
+ * \param[in]  _max           The C type for this value.
+ *                            Excludes trailing '\0'.
+ */
+#define CYAML_VALUE_STRING( \
+		_flags, _type, _min, _max) \
+	.type = CYAML_STRING, \
+	.flags = (enum cyaml_flag)(_flags), \
+	.data_size = sizeof(_type), \
+	.string = { \
+		.min = _min, \
+		.max = _max, \
+	}
+
+/**
+ * Value schema helper macro for values with \ref CYAML_MAPPING type.
+ *
+ * \param[in]  _flags         Any behavioural flags relevant to this value.
+ * \param[in]  _type          The C type of structure corresponding to mapping.
+ * \param[in]  _fields        Pointer to mapping fields schema array.
+ */
+#define CYAML_VALUE_MAPPING( \
+		_flags, _type, _fields) \
+	.type = CYAML_MAPPING, \
+	.flags = (enum cyaml_flag)(_flags), \
+	.data_size = sizeof(_type), \
+	.mapping = { \
+		.fields = _fields, \
+	}
+
+/**
+ * Value schema helper macro for values with \ref CYAML_SEQUENCE type.
+ *
+ * \param[in]  _flags      Any behavioural flags relevant to this value.
+ * \param[in]  _type       The C type of sequence **entries**.
+ * \param[in]  _entry      Pointer to schema for the **entries** in sequence.
+ * \param[in]  _min        Minimum number of sequence entries required.
+ * \param[in]  _max        Maximum number of sequence entries required.
+ */
+#define CYAML_VALUE_SEQUENCE( \
+		_flags, _type, _entry, _min, _max) \
+	.type = CYAML_SEQUENCE, \
+	.flags = (enum cyaml_flag)(_flags), \
+	.data_size = sizeof(_type), \
+	.sequence = { \
+		.entry = _entry, \
+		.min = _min, \
+		.max = _max, \
+	}
+
+/**
+ * Value schema helper macro for values with \ref CYAML_SEQUENCE_FIXED type.
+ *
+ * Note that since this is a fixed size sequence, it must not be used with an
+ * excessive entry count. For example, passing \ref CYAML_UNLIMITED as the count
+ * to a \ref CYAML_SEQUENCE_FIXED with the \ref CYAML_FLAG_POINTER flag would
+ * cause an enormous allocation, which would fail on many systems.
+ *
+ * \param[in]  _flags      Any behavioural flags relevant to this value.
+ * \param[in]  _type       The C type of sequence **entries**.
+ * \param[in]  _entry      Pointer to schema for the **entries** in sequence.
+ * \param[in]  _count      Number of sequence entries required.
+ */
+#define CYAML_VALUE_SEQUENCE_FIXED( \
+		_flags, _type, _entry, _count) \
+	.type = CYAML_SEQUENCE_FIXED, \
+	.flags = (enum cyaml_flag)(_flags), \
+	.data_size = sizeof(_type), \
+	.sequence = { \
+		.entry = _entry, \
+		.min = _count, \
+		.max = _count, \
+	}
+
+/**
  * Mapping schema helper macro for keys with \ref CYAML_INT type.
  *
  * Use this for integers contained in structs.
@@ -673,18 +850,6 @@ typedef enum cyaml_err {
 				(*(((_structure *)NULL)->_member))), \
 	}, \
 }
-
-/**
- * Value schema helper macro for values with \ref CYAML_UINT type.
- *
- * \param[in]  _flags         Any behavioural flags relevant to this value.
- * \param[in]  _type          The C type for this value.
- */
-#define CYAML_VALUE_UINT( \
-		_flags, _type) \
-	.type = CYAML_UINT, \
-	.flags = (enum cyaml_flag)(_flags), \
-	.data_size = sizeof(_type)
 
 /**
  * Mapping schema helper macro for keys with \ref CYAML_UINT type.
@@ -729,18 +894,6 @@ typedef enum cyaml_err {
 }
 
 /**
- * Value schema helper macro for values with \ref CYAML_BOOL type.
- *
- * \param[in]  _flags         Any behavioural flags relevant to this value.
- * \param[in]  _type          The C type for this value.
- */
-#define CYAML_VALUE_BOOL( \
-		_flags, _type) \
-	.type = CYAML_BOOL, \
-	.flags = (enum cyaml_flag)(_flags), \
-	.data_size = sizeof(_type)
-
-/**
  * Mapping schema helper macro for keys with \ref CYAML_BOOL type.
  *
  * Use this for boolean types contained in structs.
@@ -781,24 +934,6 @@ typedef enum cyaml_err {
 				(*(((_structure *)NULL)->_member))), \
 	}, \
 }
-
-/**
- * Value schema helper macro for values with \ref CYAML_ENUM type.
- *
- * \param[in]  _flags         Any behavioural flags relevant to this value.
- * \param[in]  _type          The C type for this value.
- * \param[in]  _strings       Array of string data for enumeration values.
- * \param[in]  _strings_count Number of entries in _strings.
- */
-#define CYAML_VALUE_ENUM( \
-		_flags, _type, _strings, _strings_count) \
-	.type = CYAML_ENUM, \
-	.flags = (enum cyaml_flag)(_flags), \
-	.data_size = sizeof(_type), \
-	.enumeration = { \
-		.strings = _strings, \
-		.count = _strings_count, \
-	}
 
 /**
  * Mapping schema helper macro for keys with \ref CYAML_ENUM type.
@@ -849,24 +984,6 @@ typedef enum cyaml_err {
 }
 
 /**
- * Value schema helper macro for values with \ref CYAML_FLAGS type.
- *
- * \param[in]  _flags         Any behavioural flags relevant to this value.
- * \param[in]  _type          The C type for this value.
- * \param[in]  _strings       Array of string data for flag values.
- * \param[in]  _strings_count Number of entries in _strings.
- */
-#define CYAML_VALUE_FLAGS( \
-		_flags, _type, _strings, _strings_count) \
-	.type = CYAML_FLAGS, \
-	.flags = (enum cyaml_flag)(_flags), \
-	.data_size = sizeof(_type), \
-	.enumeration = { \
-		.strings = _strings, \
-		.count = _strings_count, \
-	}
-
-/**
  * Mapping schema helper macro for keys with \ref CYAML_FLAGS type.
  *
  * Use this for flag types contained in structs.
@@ -913,24 +1030,6 @@ typedef enum cyaml_err {
 				_strings, _strings_count), \
 	}, \
 }
-
-/**
- * Value schema helper macro for values with \ref CYAML_BITFIELD type.
- *
- * \param[in]  _flags         Any behavioural flags relevant to this value.
- * \param[in]  _type          The C type for this value.
- * \param[in]  _bitvals       Array of bit field value data for the bit field.
- * \param[in]  _bitvals_count Number of entries in _bitvals.
- */
-#define CYAML_VALUE_BITFIELD( \
-		_flags, _type, _bitvals, _bitvals_count) \
-	.type = CYAML_BITFIELD, \
-	.flags = (enum cyaml_flag)(_flags), \
-	.data_size = sizeof(_type), \
-	.bitfield = { \
-		.bitdefs = _bitvals, \
-		.count = _bitvals_count, \
-	}
 
 /**
  * Mapping schema helper macro for keys with \ref CYAML_BITFIELD type.
@@ -981,18 +1080,6 @@ typedef enum cyaml_err {
 }
 
 /**
- * Value schema helper macro for values with \ref CYAML_FLOAT type.
- *
- * \param[in]  _flags         Any behavioural flags relevant to this value.
- * \param[in]  _type          The C type for this value.
- */
-#define CYAML_VALUE_FLOAT( \
-		_flags, _type) \
-	.type = CYAML_FLOAT, \
-	.flags = (enum cyaml_flag)(_flags), \
-	.data_size = sizeof(_type)
-
-/**
  * Mapping schema helper macro for keys with \ref CYAML_FLOAT type.
  *
  * Use this for floating point types contained in structs.
@@ -1033,33 +1120,6 @@ typedef enum cyaml_err {
 				(*(((_structure *)NULL)->_member))), \
 	}, \
 }
-
-/**
- * Value schema helper macro for values with \ref CYAML_STRING type.
- *
- * \note If the string is an array (`char str[N];`) then the \ref
- *       CYAML_FLAG_POINTER flag must **not** be set, and the max
- *       length must be no more than `N-1`.
- *
- *       If the string is a pointer (`char *str;`), then the \ref
- *       CYAML_FLAG_POINTER flag **must be set**.
- *
- * \param[in]  _flags         Any behavioural flags relevant to this value.
- * \param[in]  _type          The C type for this value.
- * \param[in]  _min           Minimum string length in bytes.
- *                            Excludes trailing '\0'.
- * \param[in]  _max           The C type for this value.
- *                            Excludes trailing '\0'.
- */
-#define CYAML_VALUE_STRING( \
-		_flags, _type, _min, _max) \
-	.type = CYAML_STRING, \
-	.flags = (enum cyaml_flag)(_flags), \
-	.data_size = sizeof(_type), \
-	.string = { \
-		.min = _min, \
-		.max = _max, \
-	}
 
 /**
  * Mapping schema helper macro for keys with \ref CYAML_STRING type.
@@ -1114,22 +1174,6 @@ typedef enum cyaml_err {
 }
 
 /**
- * Value schema helper macro for values with \ref CYAML_MAPPING type.
- *
- * \param[in]  _flags         Any behavioural flags relevant to this value.
- * \param[in]  _type          The C type of structure corresponding to mapping.
- * \param[in]  _fields        Pointer to mapping fields schema array.
- */
-#define CYAML_VALUE_MAPPING( \
-		_flags, _type, _fields) \
-	.type = CYAML_MAPPING, \
-	.flags = (enum cyaml_flag)(_flags), \
-	.data_size = sizeof(_type), \
-	.mapping = { \
-		.fields = _fields, \
-	}
-
-/**
  * Mapping schema helper macro for keys with \ref CYAML_MAPPING type.
  *
  * Use this for structures contained within other structures.
@@ -1172,26 +1216,6 @@ typedef enum cyaml_err {
 				(*(((_structure *)NULL)->_member)), _fields), \
 	}, \
 }
-
-/**
- * Value schema helper macro for values with \ref CYAML_SEQUENCE type.
- *
- * \param[in]  _flags      Any behavioural flags relevant to this value.
- * \param[in]  _type       The C type of sequence **entries**.
- * \param[in]  _entry      Pointer to schema for the **entries** in sequence.
- * \param[in]  _min        Minimum number of sequence entries required.
- * \param[in]  _max        Maximum number of sequence entries required.
- */
-#define CYAML_VALUE_SEQUENCE( \
-		_flags, _type, _entry, _min, _max) \
-	.type = CYAML_SEQUENCE, \
-	.flags = (enum cyaml_flag)(_flags), \
-	.data_size = sizeof(_type), \
-	.sequence = { \
-		.entry = _entry, \
-		.min = _min, \
-		.max = _max, \
-	}
 
 /**
  * Mapping schema helper macro for keys with \ref CYAML_SEQUENCE type.
@@ -1287,30 +1311,6 @@ typedef enum cyaml_err {
 				_entry, _min, _max), \
 	}, \
 }
-
-/**
- * Value schema helper macro for values with \ref CYAML_SEQUENCE_FIXED type.
- *
- * Note that since this is a fixed size sequence, it must not be used with an
- * excessive entry count. For example, passing \ref CYAML_UNLIMITED as the count
- * to a \ref CYAML_SEQUENCE_FIXED with the \ref CYAML_FLAG_POINTER flag would
- * cause an enormous allocation, which would fail on many systems.
- *
- * \param[in]  _flags      Any behavioural flags relevant to this value.
- * \param[in]  _type       The C type of sequence **entries**.
- * \param[in]  _entry      Pointer to schema for the **entries** in sequence.
- * \param[in]  _count      Number of sequence entries required.
- */
-#define CYAML_VALUE_SEQUENCE_FIXED( \
-		_flags, _type, _entry, _count) \
-	.type = CYAML_SEQUENCE_FIXED, \
-	.flags = (enum cyaml_flag)(_flags), \
-	.data_size = sizeof(_type), \
-	.sequence = { \
-		.entry = _entry, \
-		.min = _count, \
-		.max = _count, \
-	}
 
 /**
  * Mapping schema helper macro for keys with \ref CYAML_SEQUENCE_FIXED type.
