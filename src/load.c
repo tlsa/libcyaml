@@ -1234,9 +1234,9 @@ static void cyaml__set_default_value(
 			break;
 
 		if (field->base.value.data_size == 4)
-			default_value = &field->default_value.f;
+			default_value = &field->default_value_f;
 		else
-			default_value = &field->default_value.d;
+			default_value = &field->default_value_d;
 
 		memcpy(value_data, default_value, field->base.value.data_size);
 		break;
@@ -1244,7 +1244,7 @@ static void cyaml__set_default_value(
 		if (!field->use_default_value)
 			break;
 
-		cyaml_data_write(field->default_value.u64,
+		cyaml_data_write(field->default_value_u64,
 				field->base.value.data_size, value_data);
 		break;
 	}

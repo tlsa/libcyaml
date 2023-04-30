@@ -628,7 +628,8 @@ typedef enum cyaml_err {
 		_flags, _type) \
 	.type = CYAML_INT, \
 	.flags = (enum cyaml_flag)(_flags), \
-	.data_size = sizeof(_type)
+	.data_size = sizeof(_type), \
+	.string = {0}
 
 /**
  * Mapping schema helper macro for keys with \ref CYAML_INT type.
@@ -645,6 +646,8 @@ typedef enum cyaml_err {
 { \
 	.key = _key, \
 	.data_offset = offsetof(_structure, _member), \
+	.count_offset = 0, \
+	.count_size = 0, \
 	.value = { \
 		CYAML_VALUE_INT(((_flags) & (~CYAML_FLAG_POINTER)), \
 				(((_structure *)NULL)->_member)), \
@@ -666,6 +669,8 @@ typedef enum cyaml_err {
 { \
 	.key = _key, \
 	.data_offset = offsetof(_structure, _member), \
+	.count_offset = 0, \
+	.count_size = 0, \
 	.value = { \
 		CYAML_VALUE_INT(((_flags) | CYAML_FLAG_POINTER), \
 				(*(((_structure *)NULL)->_member))), \
@@ -682,7 +687,8 @@ typedef enum cyaml_err {
 		_flags, _type) \
 	.type = CYAML_UINT, \
 	.flags = (enum cyaml_flag)(_flags), \
-	.data_size = sizeof(_type)
+	.data_size = sizeof(_type), \
+	.string = {0}
 
 /**
  * Mapping schema helper macro for keys with \ref CYAML_UINT type.
@@ -699,6 +705,8 @@ typedef enum cyaml_err {
 { \
 	.key = _key, \
 	.data_offset = offsetof(_structure, _member), \
+	.count_offset = 0, \
+	.count_size = 0, \
 	.value = { \
 		CYAML_VALUE_UINT(((_flags) & (~CYAML_FLAG_POINTER)), \
 				(((_structure *)NULL)->_member)), \
@@ -720,6 +728,8 @@ typedef enum cyaml_err {
 { \
 	.key = _key, \
 	.data_offset = offsetof(_structure, _member), \
+	.count_offset = 0, \
+	.count_size = 0, \
 	.value = { \
 		CYAML_VALUE_UINT(((_flags) | CYAML_FLAG_POINTER), \
 				(*(((_structure *)NULL)->_member))), \
@@ -736,7 +746,8 @@ typedef enum cyaml_err {
 		_flags, _type) \
 	.type = CYAML_BOOL, \
 	.flags = (enum cyaml_flag)(_flags), \
-	.data_size = sizeof(_type)
+	.data_size = sizeof(_type), \
+	.string = {0}
 
 /**
  * Mapping schema helper macro for keys with \ref CYAML_BOOL type.
@@ -753,6 +764,8 @@ typedef enum cyaml_err {
 { \
 	.key = _key, \
 	.data_offset = offsetof(_structure, _member), \
+	.count_offset = 0, \
+	.count_size = 0, \
 	.value = { \
 		CYAML_VALUE_BOOL(((_flags) & (~CYAML_FLAG_POINTER)), \
 				(((_structure *)NULL)->_member)), \
@@ -774,6 +787,8 @@ typedef enum cyaml_err {
 { \
 	.key = _key, \
 	.data_offset = offsetof(_structure, _member), \
+	.count_offset = 0, \
+	.count_size = 0, \
 	.value = { \
 		CYAML_VALUE_BOOL(((_flags) | CYAML_FLAG_POINTER), \
 				(*(((_structure *)NULL)->_member))), \
@@ -815,6 +830,8 @@ typedef enum cyaml_err {
 { \
 	.key = _key, \
 	.data_offset = offsetof(_structure, _member), \
+	.count_offset = 0, \
+	.count_size = 0, \
 	.value = { \
 		CYAML_VALUE_ENUM(((_flags) & (~CYAML_FLAG_POINTER)), \
 				(((_structure *)NULL)->_member), \
@@ -839,6 +856,8 @@ typedef enum cyaml_err {
 { \
 	.key = _key, \
 	.data_offset = offsetof(_structure, _member), \
+	.count_offset = 0, \
+	.count_size = 0, \
 	.value = { \
 		CYAML_VALUE_ENUM(((_flags) | CYAML_FLAG_POINTER), \
 				(*(((_structure *)NULL)->_member)), \
@@ -881,6 +900,8 @@ typedef enum cyaml_err {
 { \
 	.key = _key, \
 	.data_offset = offsetof(_structure, _member), \
+	.count_offset = 0, \
+	.count_size = 0, \
 	.value = { \
 		CYAML_VALUE_FLAGS(((_flags) & (~CYAML_FLAG_POINTER)), \
 				(((_structure *)NULL)->_member), \
@@ -905,6 +926,8 @@ typedef enum cyaml_err {
 { \
 	.key = _key, \
 	.data_offset = offsetof(_structure, _member), \
+	.count_offset = 0, \
+	.count_size = 0, \
 	.value = { \
 		CYAML_VALUE_FLAGS(((_flags) | CYAML_FLAG_POINTER), \
 				(*(((_structure *)NULL)->_member)), \
@@ -947,6 +970,8 @@ typedef enum cyaml_err {
 { \
 	.key = _key, \
 	.data_offset = offsetof(_structure, _member), \
+	.count_offset = 0, \
+	.count_size = 0, \
 	.value = { \
 		CYAML_VALUE_BITFIELD(((_flags) & (~CYAML_FLAG_POINTER)), \
 				(((_structure *)NULL)->_member), \
@@ -971,6 +996,8 @@ typedef enum cyaml_err {
 { \
 	.key = _key, \
 	.data_offset = offsetof(_structure, _member), \
+	.count_offset = 0, \
+	.count_size = 0, \
 	.value = { \
 		CYAML_VALUE_BITFIELD(((_flags) | CYAML_FLAG_POINTER), \
 				(*(((_structure *)NULL)->_member)), \
@@ -988,7 +1015,8 @@ typedef enum cyaml_err {
 		_flags, _type) \
 	.type = CYAML_FLOAT, \
 	.flags = (enum cyaml_flag)(_flags), \
-	.data_size = sizeof(_type)
+	.data_size = sizeof(_type), \
+	.string = {0}
 
 /**
  * Mapping schema helper macro for keys with \ref CYAML_FLOAT type.
@@ -1005,6 +1033,8 @@ typedef enum cyaml_err {
 { \
 	.key = _key, \
 	.data_offset = offsetof(_structure, _member), \
+	.count_offset = 0, \
+	.count_size = 0, \
 	.value = { \
 		CYAML_VALUE_FLOAT(((_flags) & (~CYAML_FLAG_POINTER)), \
 				(((_structure *)NULL)->_member)), \
@@ -1026,6 +1056,8 @@ typedef enum cyaml_err {
 { \
 	.key = _key, \
 	.data_offset = offsetof(_structure, _member), \
+	.count_offset = 0, \
+	.count_size = 0, \
 	.value = { \
 		CYAML_VALUE_FLOAT(((_flags) | CYAML_FLAG_POINTER), \
 				(*(((_structure *)NULL)->_member))), \
@@ -1076,6 +1108,8 @@ typedef enum cyaml_err {
 { \
 	.key = _key, \
 	.data_offset = offsetof(_structure, _member), \
+	.count_offset = 0, \
+	.count_size = 0, \
 	.value = { \
 		CYAML_VALUE_STRING(((_flags) & (~CYAML_FLAG_POINTER)), \
 				(((_structure *)NULL)->_member), _min, \
@@ -1104,6 +1138,8 @@ typedef enum cyaml_err {
 { \
 	.key = _key, \
 	.data_offset = offsetof(_structure, _member), \
+	.count_offset = 0, \
+	.count_size = 0, \
 	.value = { \
 		CYAML_VALUE_STRING(((_flags) | CYAML_FLAG_POINTER), \
 				(((_structure *)NULL)->_member), \
@@ -1143,6 +1179,8 @@ typedef enum cyaml_err {
 { \
 	.key = _key, \
 	.data_offset = offsetof(_structure, _member), \
+	.count_offset = 0, \
+	.count_size = 0, \
 	.value = { \
 		CYAML_VALUE_MAPPING(((_flags) & (~CYAML_FLAG_POINTER)), \
 				(((_structure *)NULL)->_member), _fields), \
@@ -1165,6 +1203,8 @@ typedef enum cyaml_err {
 { \
 	.key = _key, \
 	.data_offset = offsetof(_structure, _member), \
+	.count_offset = 0, \
+	.count_size = 0, \
 	.value = { \
 		CYAML_VALUE_MAPPING(((_flags) | CYAML_FLAG_POINTER), \
 				(*(((_structure *)NULL)->_member)), _fields), \
@@ -1330,6 +1370,8 @@ typedef enum cyaml_err {
 { \
 	.key = _key, \
 	.data_offset = offsetof(_structure, _member), \
+	.count_offset = 0, \
+	.count_size = 0, \
 	.value = { \
 		CYAML_VALUE_SEQUENCE_FIXED((_flags), \
 				(*(((_structure *)NULL)->_member)), \
@@ -1347,6 +1389,9 @@ typedef enum cyaml_err {
 		_key, _flags) \
 { \
 	.key = _key, \
+	.data_offset = 0, \
+	.count_offset = 0, \
+	.count_size = 0, \
 	.value = { \
 		.type = CYAML_IGNORE, \
 		.flags = (_flags), \
@@ -1359,7 +1404,13 @@ typedef enum cyaml_err {
  * CYAML mapping schemas are formed from an array of \ref cyaml_schema_field
  * entries, and an entry with a NULL key indicates the end of the array.
  */
-#define CYAML_FIELD_END_BASE { .key = NULL }
+#define CYAML_FIELD_END_BASE { \
+	.key = NULL, \
+	.data_offset = 0, \
+	.count_offset = 0, \
+	.count_size = 0, \
+	.value = {0}, \
+}
 
 #ifndef CYAML_EX_H
 /**

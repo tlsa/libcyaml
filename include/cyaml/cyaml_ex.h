@@ -26,18 +26,6 @@ extern "C"
 #endif
 
 /**
- * Default value
- *
- * This union is used to allow specifying various default values (integers and
- * both floating point formats).
- */
-typedef union cyaml_uint_float {
-	uint64_t u64; /**< An integer default value. */
-	float f; /**< A floating-point default value. */
-	double d; /**< A double-sized floating-point default value. */
-} cyaml_uint_float_t;
-
-/**
  * Expanded schema entry for mapping fields.
  *
  * Includes the base mapping field data, and a default value (if provided).
@@ -54,9 +42,17 @@ typedef struct cyaml_schema_field_ex {
 	/**
 	 * The default value (if provided)
 	 */
-	cyaml_uint_float_t default_value;
+	union {
+		uint64_t default_value_u64; /**< An integer default value. */
+		float default_value_f; /**< A floating-point default value. */
+		double default_value_d; /**< A double-sized floating-point default value. */
+	};
 } cyaml_schema_field_ex_t;
 
+
+#define CYAML_FIELD_DEFAULT_NONE \
+	.use_default_value = false, \
+	.default_value_u64 = 0,
 
 /**
  * Expanded mapping schema helper macro for keys with \ref CYAML_INT type.
@@ -66,6 +62,7 @@ typedef struct cyaml_schema_field_ex {
 #define CYAML_FIELD_INT_EX(...) \
 { \
 	.base = CYAML_FIELD_INT_BASE(__VA_ARGS__), \
+	CYAML_FIELD_DEFAULT_NONE \
 }
 
 /**
@@ -85,8 +82,8 @@ typedef struct cyaml_schema_field_ex {
 { \
 	.base = CYAML_FIELD_INT_BASE(_key, (_flags | CYAML_FLAG_OPTIONAL), \
 			__VA_ARGS__), \
-	.default_value.u64 = (uint64_t)_default, \
 	.use_default_value = true, \
+	.default_value_u64 = (uint64_t)_default, \
 }
 
 /**
@@ -97,6 +94,7 @@ typedef struct cyaml_schema_field_ex {
 #define CYAML_FIELD_INT_PTR_EX(...) \
 { \
 	.base = CYAML_FIELD_INT_PTR_BASE(__VA_ARGS__), \
+	CYAML_FIELD_DEFAULT_NONE \
 }
 
 /**
@@ -107,6 +105,7 @@ typedef struct cyaml_schema_field_ex {
 #define CYAML_FIELD_UINT_EX(...) \
 { \
 	.base = CYAML_FIELD_UINT_BASE(__VA_ARGS__), \
+	CYAML_FIELD_DEFAULT_NONE \
 }
 
 /**
@@ -127,8 +126,8 @@ typedef struct cyaml_schema_field_ex {
 { \
 	.base = CYAML_FIELD_UINT_BASE(_key, (_flags | CYAML_FLAG_OPTIONAL), \
 			__VA_ARGS__), \
-	.default_value.u64 = (uint64_t)_default, \
 	.use_default_value = true, \
+	.default_value_u64 = (uint64_t)_default, \
 }
 
 /**
@@ -139,6 +138,7 @@ typedef struct cyaml_schema_field_ex {
 #define CYAML_FIELD_UINT_PTR_EX(...) \
 { \
 	.base = CYAML_FIELD_UINT_PTR_BASE(__VA_ARGS__), \
+	CYAML_FIELD_DEFAULT_NONE \
 }
 
 /**
@@ -149,6 +149,7 @@ typedef struct cyaml_schema_field_ex {
 #define CYAML_FIELD_BOOL_EX(...) \
 { \
 	.base = CYAML_FIELD_BOOL_BASE(__VA_ARGS__), \
+	CYAML_FIELD_DEFAULT_NONE \
 }
 
 /**
@@ -169,8 +170,8 @@ typedef struct cyaml_schema_field_ex {
 { \
 	.base = CYAML_FIELD_BOOL_BASE(_key, (_flags | CYAML_FLAG_OPTIONAL), \
 			__VA_ARGS__), \
-	.default_value.u64 = (uint64_t)_default, \
 	.use_default_value = true, \
+	.default_value_u64 = (uint64_t)_default, \
 }
 
 /**
@@ -181,6 +182,7 @@ typedef struct cyaml_schema_field_ex {
 #define CYAML_FIELD_BOOL_PTR_EX(...) \
 { \
 	.base = CYAML_FIELD_BOOL_PTR_BASE(__VA_ARGS__), \
+	CYAML_FIELD_DEFAULT_NONE \
 }
 
 /**
@@ -191,6 +193,7 @@ typedef struct cyaml_schema_field_ex {
 #define CYAML_FIELD_ENUM_EX(...) \
 { \
 	.base = CYAML_FIELD_ENUM_BASE(__VA_ARGS__), \
+	CYAML_FIELD_DEFAULT_NONE \
 }
 
 /**
@@ -213,8 +216,8 @@ typedef struct cyaml_schema_field_ex {
 { \
 	.base = CYAML_FIELD_ENUM_BASE(_key, (_flags | CYAML_FLAG_OPTIONAL), \
 			__VA_ARGS__), \
-	.default_value.u64 = (uint64_t)_default, \
 	.use_default_value = true, \
+	.default_value_u64 = (uint64_t)_default, \
 }
 
 /**
@@ -225,6 +228,7 @@ typedef struct cyaml_schema_field_ex {
 #define CYAML_FIELD_ENUM_PTR_EX(...) \
 { \
 	.base = CYAML_FIELD_ENUM_PTR_BASE(__VA_ARGS__), \
+	CYAML_FIELD_DEFAULT_NONE \
 }
 
 /**
@@ -235,6 +239,7 @@ typedef struct cyaml_schema_field_ex {
 #define CYAML_FIELD_FLAGS_EX(...) \
 { \
 	.base = CYAML_FIELD_FLAGS_BASE(__VA_ARGS__), \
+	CYAML_FIELD_DEFAULT_NONE \
 }
 
 /**
@@ -257,8 +262,8 @@ typedef struct cyaml_schema_field_ex {
 { \
 	.base = CYAML_FIELD_FLAGS_BASE(_key, (_flags | CYAML_FLAG_OPTIONAL), \
 			__VA_ARGS__), \
-	.default_value.u64 = _default, \
 	.use_default_value = true, \
+	.default_value_u64 = _default, \
 }
 
 /**
@@ -269,6 +274,7 @@ typedef struct cyaml_schema_field_ex {
 #define CYAML_FIELD_FLAGS_PTR_EX(...) \
 { \
 	.base = CYAML_FIELD_FLAGS_PTR_BASE(__VA_ARGS__), \
+	CYAML_FIELD_DEFAULT_NONE \
 }
 
 /**
@@ -279,6 +285,7 @@ typedef struct cyaml_schema_field_ex {
 #define CYAML_FIELD_BITFIELD_EX(...) \
 { \
 	.base = CYAML_FIELD_BITFIELD_BASE(__VA_ARGS__), \
+	CYAML_FIELD_DEFAULT_NONE \
 }
 
 /**
@@ -301,8 +308,8 @@ typedef struct cyaml_schema_field_ex {
 { \
 	.base = CYAML_FIELD_BITFIELD_BASE(_key, \
 			(_flags | CYAML_FLAG_OPTIONAL), __VA_ARGS__), \
-	.default_value.u64 = (uint64_t)_default, \
 	.use_default_value = true, \
+	.default_value_u64 = (uint64_t)_default, \
 }
 
 /**
@@ -313,6 +320,7 @@ typedef struct cyaml_schema_field_ex {
 #define CYAML_FIELD_BITFIELD_PTR_EX(...) \
 { \
 	.base = CYAML_FIELD_BITFIELD_PTR_BASE(__VA_ARGS__), \
+	CYAML_FIELD_DEFAULT_NONE \
 }
 
 /**
@@ -323,6 +331,7 @@ typedef struct cyaml_schema_field_ex {
 #define CYAML_FIELD_FLOAT_EX(...) \
 { \
 	.base = CYAML_FIELD_FLOAT_BASE(__VA_ARGS__), \
+	CYAML_FIELD_DEFAULT_NONE \
 }
 
 /**
@@ -343,8 +352,8 @@ typedef struct cyaml_schema_field_ex {
 { \
 	.base = CYAML_FIELD_FLOAT_BASE(_key, (_flags | CYAML_FLAG_OPTIONAL), \
 			_structure, _member), \
-	.default_value.f = (float)_default, \
 	.use_default_value = true, \
+	.default_value_f = (float)_default, \
 }
 
 /**
@@ -365,8 +374,8 @@ typedef struct cyaml_schema_field_ex {
 { \
 	.base = CYAML_FIELD_FLOAT_BASE(_key, (_flags | CYAML_FLAG_OPTIONAL), \
 			_structure, _member), \
-	.default_value.d = (double)_default, \
 	.use_default_value = true, \
+	.default_value_d = (double)_default, \
 }
 
 /**
@@ -377,6 +386,7 @@ typedef struct cyaml_schema_field_ex {
 #define CYAML_FIELD_FLOAT_PTR_EX(...) \
 { \
 	.base = CYAML_FIELD_FLOAT_PTR_BASE(__VA_ARGS__), \
+	CYAML_FIELD_DEFAULT_NONE \
 }
 
 /**
@@ -387,6 +397,7 @@ typedef struct cyaml_schema_field_ex {
 #define CYAML_FIELD_STRING_EX(...) \
 { \
 	.base = CYAML_FIELD_STRING_BASE(__VA_ARGS__), \
+	CYAML_FIELD_DEFAULT_NONE \
 }
 
 /**
@@ -397,6 +408,7 @@ typedef struct cyaml_schema_field_ex {
 #define CYAML_FIELD_STRING_PTR_EX(...) \
 { \
 	.base = CYAML_FIELD_STRING_PTR_BASE(__VA_ARGS__), \
+	CYAML_FIELD_DEFAULT_NONE \
 }
 
 /**
@@ -419,6 +431,7 @@ typedef struct cyaml_schema_field_ex {
 #define CYAML_FIELD_MAPPING_EX(...) \
 { \
 	.base = CYAML_FIELD_MAPPING_BASE(__VA_ARGS__), \
+	CYAML_FIELD_DEFAULT_NONE \
 }
 
 /**
@@ -429,6 +442,7 @@ typedef struct cyaml_schema_field_ex {
 #define CYAML_FIELD_MAPPING_PTR_EX(...) \
 { \
 	.base = CYAML_FIELD_MAPPING_PTR_BASE(__VA_ARGS__), \
+	CYAML_FIELD_DEFAULT_NONE \
 }
 
 /**
@@ -439,6 +453,7 @@ typedef struct cyaml_schema_field_ex {
 #define CYAML_FIELD_SEQUENCE_EX(...) \
 { \
 	.base = CYAML_FIELD_SEQUENCE_BASE(__VA_ARGS__), \
+	CYAML_FIELD_DEFAULT_NONE \
 }
 
 /**
@@ -449,6 +464,7 @@ typedef struct cyaml_schema_field_ex {
 #define CYAML_FIELD_SEQUENCE_PTR_EX(...) \
 { \
 	.base = CYAML_FIELD_SEQUENCE_PTR_BASE(__VA_ARGS__), \
+	CYAML_FIELD_DEFAULT_NONE \
 }
 
 /**
@@ -459,6 +475,7 @@ typedef struct cyaml_schema_field_ex {
 #define CYAML_FIELD_SEQUENCE_COUNT_EX(...) \
 { \
 	.base = CYAML_FIELD_SEQUENCE_COUNT_BASE(__VA_ARGS__), \
+	CYAML_FIELD_DEFAULT_NONE \
 }
 
 /**
@@ -470,6 +487,7 @@ typedef struct cyaml_schema_field_ex {
 #define CYAML_FIELD_SEQUENCE_FIXED_EX(...) \
 { \
 	.base = CYAML_FIELD_SEQUENCE_FIXED_BASE(__VA_ARGS__), \
+	CYAML_FIELD_DEFAULT_NONE \
 }
 
 /**
@@ -480,6 +498,7 @@ typedef struct cyaml_schema_field_ex {
 #define CYAML_FIELD_IGNORE_EX(...) \
 { \
 	.base = CYAML_FIELD_IGNORE_BASE(__VA_ARGS__), \
+	CYAML_FIELD_DEFAULT_NONE \
 }
 
 /**
@@ -488,7 +507,10 @@ typedef struct cyaml_schema_field_ex {
  *
  * Similar to /ref CYAML_FIELD_END.
  */
-#define CYAML_FIELD_END_EX { .base = CYAML_FIELD_END_BASE }
+#define CYAML_FIELD_END_EX { \
+	.base = CYAML_FIELD_END_BASE, \
+	CYAML_FIELD_DEFAULT_NONE \
+}
 
 /**
  * Load a YAML document from a file at the given path, using expanded cyaml
