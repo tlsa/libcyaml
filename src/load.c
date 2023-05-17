@@ -1133,11 +1133,11 @@ static cyaml_err_t cyaml__mapping_bitfieid_validate(
 	unsigned count = state->mapping.fields_count;
 
 	for (unsigned i = 0; i < count; i++) {
-		if (state->mapping.fields[i].value.flags & CYAML_FLAG_OPTIONAL) {
-			continue;
-		}
 		if (state->mapping.fields_set[i / CYAML_BITFIELD_BITS] &
 				(1u << (i % CYAML_BITFIELD_BITS))) {
+			continue;
+		}
+		if (state->mapping.fields[i].value.flags & CYAML_FLAG_OPTIONAL) {
 			continue;
 		}
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
