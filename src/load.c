@@ -1137,7 +1137,8 @@ static cyaml_err_t cyaml__mapping_bitfieid_validate(
 				(1u << (i % CYAML_BITFIELD_BITS))) {
 			continue;
 		}
-		if (state->mapping.fields[i].value.flags & CYAML_FLAG_OPTIONAL) {
+		if (cyaml__flag_check_all(state->mapping.fields[i].value.flags,
+				CYAML_FLAG_OPTIONAL)) {
 			continue;
 		}
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
