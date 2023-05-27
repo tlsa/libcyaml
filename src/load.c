@@ -1607,17 +1607,30 @@ static cyaml_err_t cyaml__read_enum(
 		}
 	}
 
-	if (schema->flags & CYAML_FLAG_STRICT) {
-		cyaml__log(ctx->config, CYAML_LOG_ERROR,
-				"Load: Invalid ENUM value: %s\n", value);
-		return CYAML_ERR_INVALID_VALUE;
+	if (!cyaml__flag_check_all(schema->flags, CYAML_FLAG_STRICT)) {
+		cyaml_err_t err;
 
+		cyaml__log(ctx->config, CYAML_LOG_DEBUG,
+				"Load: Attempt numerical fallback for ENUM: "
+				"'%s'\n", value);
+
+		err = cyaml__read_int(ctx, schema, value, data);
+		if (err == CYAML_OK) {
+			return CYAML_OK;
+		}
 	}
 
-	cyaml__log(ctx->config, CYAML_LOG_DEBUG,
-			"Load: Attempt numerical fallback for ENUM: "
-			"'%s'\n", value);
-	return cyaml__read_int(ctx, schema, value, data);
+	cyaml__log(ctx->config, CYAML_LOG_ERROR,
+			"Load: Invalid ENUM value: %s\n", value);
+
+	cyaml__log(ctx->config, CYAML_LOG_NOTICE,
+			"Load:   Valid values are:\n");
+	for (uint32_t i = 0; i < schema->enumeration.count; i++) {
+		cyaml__log(ctx->config, CYAML_LOG_NOTICE,
+				"Load:   - `%s`\n", strings[i].str);
+	}
+
+	return CYAML_ERR_INVALID_VALUE;
 }
 
 /**
