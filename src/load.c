@@ -161,6 +161,169 @@ typedef struct cyaml_ctx {
 } cyaml_ctx_t;
 
 /**
+ * Store a signed integer to client data structure according to schema.
+ *
+ * \param[in]  ctx       The CYAML loading context.
+ * \param[in]  schema    The schema for the value to be stored.
+ * \param[in]  value     The value to store.
+ * \param[in]  location  The place to write the value in the output data.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static inline cyaml_err_t cyaml__store_int(
+		const cyaml_ctx_t *ctx,
+		const cyaml_schema_value_t *schema,
+		int64_t value,
+		uint8_t *location)
+{
+	int64_t max;
+	int64_t min;
+
+	if (schema->data_size == 0 || schema->data_size > sizeof(uint64_t)) {
+		return CYAML_ERR_INVALID_DATA_SIZE;
+	}
+
+	max = (int64_t)((UINT64_MAX >> ((8 - schema->data_size) * 8)) / 2);
+	min = (-max) - 1;
+
+	if (value < min || value > max) {
+		cyaml__log(ctx->config, CYAML_LOG_ERROR,
+				"Load: INT value out of range: '%" PRId64 "'\n",
+				value);
+		return CYAML_ERR_INVALID_VALUE;
+	}
+
+	return cyaml_data_write((uint64_t)value, schema->data_size, location);
+}
+
+/**
+ * Store an unsigned integer to client data structure according to schema.
+ *
+ * \param[in]  ctx       The CYAML loading context.
+ * \param[in]  schema    The schema for the value to be stored.
+ * \param[in]  value     The value to store.
+ * \param[in]  location  The place to write the value in the output data.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static inline cyaml_err_t cyaml__store_uint(
+		const cyaml_ctx_t *ctx,
+		const cyaml_schema_value_t *schema,
+		uint64_t value,
+		uint8_t *location)
+{
+	uint64_t max;
+
+	if (schema->data_size == 0) {
+		return CYAML_ERR_INVALID_DATA_SIZE;
+	}
+
+	max = (~(uint64_t)0) >> ((8 - schema->data_size) * 8);
+	if (value > max) {
+		cyaml__log(ctx->config, CYAML_LOG_ERROR,
+				"Load: Invalid UINT value: '%" PRIu64 "'\n",
+				value);
+		return CYAML_ERR_INVALID_VALUE;
+	}
+
+	return cyaml_data_write(value, schema->data_size, location);
+}
+
+/**
+ * Store a boolean to client data structure according to schema.
+ *
+ * \param[in]  ctx       The CYAML loading context.
+ * \param[in]  schema    The schema for the value to be stored.
+ * \param[in]  value     The value to store.
+ * \param[in]  location  The place to write the value in the output data.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static inline cyaml_err_t cyaml__store_bool(
+		const cyaml_ctx_t *ctx,
+		const cyaml_schema_value_t *schema,
+		bool value,
+		uint8_t *location)
+{
+	CYAML_UNUSED(ctx);
+
+	return cyaml_data_write(value, schema->data_size, location);
+}
+
+/**
+ * Store a floating point value to client data structure according to schema.
+ *
+ * \param[in]  ctx       The CYAML loading context.
+ * \param[in]  schema    The schema for the value to be stored.
+ * \param[in]  value     The value to store.
+ * \param[in]  location  The place to write the value in the output data.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__store_float(
+		const cyaml_ctx_t *ctx,
+		const cyaml_schema_value_t *schema,
+		double value,
+		uint8_t *location)
+{
+	CYAML_UNUSED(ctx);
+
+	if (schema->data_size == sizeof(float)) {
+		float fvalue;
+
+		if (cyaml__flag_check_all(schema->flags, CYAML_FLAG_STRICT)) {
+			if (value > FLT_MAX || value < -FLT_MAX) {
+				return CYAML_ERR_INVALID_VALUE;
+			}
+		}
+
+		fvalue = (float)value;
+		memcpy(location, &fvalue, schema->data_size);
+
+	} else if (schema->data_size == sizeof(double)) {
+		memcpy(location, &value, schema->data_size);
+	} else {
+		return CYAML_ERR_INVALID_DATA_SIZE;
+	}
+
+	return CYAML_OK;
+}
+
+/**
+ * Store a string value to client data structure according to schema.
+ *
+ * \param[in]  ctx       The CYAML loading context.
+ * \param[in]  schema    The schema for the value to be stored.
+ * \param[in]  value     The value to store.
+ * \param[in]  location  The place to write the value in the output data.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__store_string(
+		const cyaml_ctx_t *ctx,
+		const cyaml_schema_value_t *schema,
+		const char *value,
+		uint8_t *location)
+{
+	size_t str_len = strlen(value);
+
+	CYAML_UNUSED(ctx);
+
+	if (schema->string.min > schema->string.max) {
+		return CYAML_ERR_BAD_MIN_MAX_SCHEMA;
+	} else if (str_len < schema->string.min) {
+		cyaml__log(ctx->config, CYAML_LOG_ERROR,
+				"Load: STRING length < %"PRIu32": %s\n",
+				schema->string.min, value);
+		return CYAML_ERR_STRING_LENGTH_MIN;
+	} else if (str_len > schema->string.max) {
+		cyaml__log(ctx->config, CYAML_LOG_ERROR,
+				"Load: STRING length > %"PRIu32": %s\n",
+				schema->string.max, value);
+		return CYAML_ERR_STRING_LENGTH_MAX;
+	}
+
+	memcpy(location, value, str_len + 1);
+
+	return CYAML_OK;
+}
+
+/**
  * Get the CYAML event type from a `libyaml` event.
  *
  * \param[in]  event  The `libyaml` event.
@@ -1319,30 +1482,18 @@ static cyaml_err_t cyaml__read_int(
 {
 	long long temp;
 	char *end = NULL;
-	int64_t max;
-	int64_t min;
-
-	CYAML_UNUSED(ctx);
-
-	if (schema->data_size == 0 || schema->data_size > sizeof(uint64_t)) {
-		return CYAML_ERR_INVALID_DATA_SIZE;
-	}
-
-	max = (int64_t)((UINT64_MAX >> ((8 - schema->data_size) * 8)) / 2);
-	min = (-max) - 1;
 
 	errno = 0;
 	temp = strtoll(value, &end, 0);
 
-	if (end == value || end == NULL || *end != '\0' ||
-	    errno == ERANGE || temp < min || temp > max) {
+	if (end == value || end == NULL || *end != '\0' || errno == ERANGE) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
 				"Load: Invalid INT value: '%s'\n",
 				value);
 		return CYAML_ERR_INVALID_VALUE;
 	}
 
-	return cyaml_data_write((uint64_t)temp, schema->data_size, data);
+	return cyaml__store_int(ctx, schema, (int64_t)temp, data);
 }
 
 /**
@@ -1392,28 +1543,13 @@ static cyaml_err_t cyaml__read_uint(
 {
 	cyaml_err_t err;
 	uint64_t temp;
-	uint64_t max;
-
-	CYAML_UNUSED(ctx);
-
-	if (schema->data_size == 0) {
-		return CYAML_ERR_INVALID_DATA_SIZE;
-	}
 
 	err = cyaml__read_uint64_t(ctx, value, &temp);
 	if (err != CYAML_OK) {
 		return err;
 	}
 
-	max = (~(uint64_t)0) >> ((8 - schema->data_size) * 8);
-	if (temp > max) {
-		cyaml__log(ctx->config, CYAML_LOG_ERROR,
-				"Load: Invalid UINT value: '%s'\n",
-				value);
-		return CYAML_ERR_INVALID_VALUE;
-	}
-
-	return cyaml_data_write(temp, schema->data_size, data);
+	return cyaml__store_uint(ctx, schema, temp, data);
 }
 
 /**
@@ -1436,8 +1572,6 @@ static cyaml_err_t cyaml__read_bool(
 		"false", "no", "off", "disable", "0",
 	};
 
-	CYAML_UNUSED(ctx);
-
 	for (uint32_t i = 0; i < CYAML_ARRAY_LEN(false_strings); i++) {
 		if (cyaml_utf8_casecmp(value, false_strings[i]) == 0) {
 			temp = false;
@@ -1445,7 +1579,7 @@ static cyaml_err_t cyaml__read_bool(
 		}
 	}
 
-	return cyaml_data_write(temp, schema->data_size, data);
+	return cyaml__store_bool(ctx, schema, temp, data);
 }
 
 /**
@@ -1468,8 +1602,8 @@ static cyaml_err_t cyaml__read_enum(
 	for (uint32_t i = 0; i < schema->enumeration.count; i++) {
 		if (cyaml__strcmp(ctx->config, schema,
 				value, strings[i].str) == 0) {
-			return cyaml_data_write((uint32_t)strings[i].val,
-					schema->data_size, data);
+			return cyaml__store_int(ctx, schema,
+					strings[i].val, data);
 		}
 	}
 
@@ -1487,7 +1621,13 @@ static cyaml_err_t cyaml__read_enum(
 }
 
 /**
- * Helper to read \ref CYAML_FLOAT of size `sizeof(float)`.
+ * Helper to read \ref CYAML_FLOAT values.
+ *
+ * The `data_size` of the schema entry must be the size of a known
+ * floating point C type.
+ *
+ * \note The `long double` type was causing problems, so it isn't currently
+ *       supported.
  *
  * \param[in]  ctx     The CYAML loading context.
  * \param[in]  schema  The schema for the value to be read.
@@ -1495,65 +1635,7 @@ static cyaml_err_t cyaml__read_enum(
  * \param[in]  data    The place to write the value in the output data.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
-static cyaml_err_t cyaml__read_float_f(
-		const cyaml_ctx_t *ctx,
-		const cyaml_schema_value_t *schema,
-		const char *value,
-		uint8_t *data)
-{
-	float temp;
-	char *end = NULL;
-
-	assert(schema->data_size == sizeof(temp));
-
-	CYAML_UNUSED(ctx);
-	CYAML_UNUSED(schema);
-
-	errno = 0;
-	temp = strtof(value, &end);
-
-	if (end == value || end == NULL || *end != '\0') {
-		cyaml__log(ctx->config, CYAML_LOG_ERROR,
-				"Load: Invalid FLOAT value: %s\n", value);
-		return CYAML_ERR_INVALID_VALUE;
-
-	} else if (errno == ERANGE) {
-		cyaml_log_t level = CYAML_LOG_ERROR;
-
-		if (!cyaml__flag_check_all(schema->flags, CYAML_FLAG_STRICT)) {
-			level = CYAML_LOG_NOTICE;
-		}
-
-		if (temp == HUGE_VALF || temp == -HUGE_VALF) {
-			cyaml__log(ctx->config, level,
-				"Load: FLOAT overflow: %s\n", value);
-
-		} else {
-			assert(temp < FLT_MIN || temp > FLT_MAX);
-			cyaml__log(ctx->config, level,
-				"Load: FLOAT underflow: %s\n", value);
-		}
-
-		if (cyaml__flag_check_all(schema->flags, CYAML_FLAG_STRICT)) {
-			return CYAML_ERR_INVALID_VALUE;
-		}
-	}
-
-	memcpy(data, &temp, sizeof(temp));
-
-	return CYAML_OK;
-}
-
-/**
- * Helper to read \ref CYAML_FLOAT of size `sizeof(double)`.
- *
- * \param[in]  ctx     The CYAML loading context.
- * \param[in]  schema  The schema for the value to be read.
- * \param[in]  value   String containing scaler value.
- * \param[in]  data    The place to write the value in the output data.
- * \return \ref CYAML_OK on success, or appropriate error code otherwise.
- */
-static cyaml_err_t cyaml__read_float_d(
+static cyaml_err_t cyaml__read_float(
 		const cyaml_ctx_t *ctx,
 		const cyaml_schema_value_t *schema,
 		const char *value,
@@ -1561,11 +1643,6 @@ static cyaml_err_t cyaml__read_float_d(
 {
 	double temp;
 	char *end = NULL;
-
-	assert(schema->data_size == sizeof(temp));
-
-	CYAML_UNUSED(ctx);
-	CYAML_UNUSED(schema);
 
 	errno = 0;
 	temp = strtod(value, &end);
@@ -1590,60 +1667,7 @@ static cyaml_err_t cyaml__read_float_d(
 		}
 	}
 
-	memcpy(data, &temp, sizeof(temp));
-
-	return CYAML_OK;
-}
-
-/**
- * Read a value of type \ref CYAML_FLOAT.
- *
- * The `data_size` of the schema entry must be the size of a known
- * floating point C type.
- *
- * \note The `long double` type was causing problems, so it isn't currently
- *       supported.
- *
- * \param[in]  ctx     The CYAML loading context.
- * \param[in]  schema  The schema for the value to be read.
- * \param[in]  value   String containing scaler value.
- * \param[in]  data    The place to write the value in the output data.
- * \return \ref CYAML_OK on success, or appropriate error code otherwise.
- */
-static cyaml_err_t cyaml__read_float(
-		const cyaml_ctx_t *ctx,
-		const cyaml_schema_value_t *schema,
-		const char *value,
-		uint8_t *data)
-{
-	typedef cyaml_err_t (*cyaml_float_fn)(
-			const cyaml_ctx_t *ctx,
-			const cyaml_schema_value_t *schema,
-			const char *value,
-			uint8_t *data_target);
-	struct float_fns {
-		size_t size;
-		const cyaml_float_fn func;
-	};
-	static const struct float_fns fns[] = {
-		{
-			.size = sizeof(float),
-			.func = cyaml__read_float_f,
-		},
-		{
-			.size = sizeof(double),
-			.func = cyaml__read_float_d,
-		},
-	};
-
-	for (unsigned i = 0; i < CYAML_ARRAY_LEN(fns); i++) {
-		if (fns[i].size == schema->data_size) {
-			assert(fns[i].func != NULL);
-			return fns[i].func(ctx, schema, value, data);
-		}
-	}
-
-	return CYAML_ERR_INVALID_DATA_SIZE;
+	return cyaml__store_float(ctx, schema, temp, data);
 }
 
 /**
@@ -1661,27 +1685,7 @@ static cyaml_err_t cyaml__read_string(
 		const char *value,
 		uint8_t *data)
 {
-	size_t str_len = strlen(value);
-
-	CYAML_UNUSED(ctx);
-
-	if (schema->string.min > schema->string.max) {
-		return CYAML_ERR_BAD_MIN_MAX_SCHEMA;
-	} else if (str_len < schema->string.min) {
-		cyaml__log(ctx->config, CYAML_LOG_ERROR,
-				"Load: STRING length < %"PRIu32": %s\n",
-				schema->string.min, value);
-		return CYAML_ERR_STRING_LENGTH_MIN;
-	} else if (str_len > schema->string.max) {
-		cyaml__log(ctx->config, CYAML_LOG_ERROR,
-				"Load: STRING length > %"PRIu32": %s\n",
-				schema->string.max, value);
-		return CYAML_ERR_STRING_LENGTH_MAX;
-	}
-
-	memcpy(data, value, str_len + 1);
-
-	return CYAML_OK;
+	return cyaml__store_string(ctx, schema, value, data);
 }
 
 /**
