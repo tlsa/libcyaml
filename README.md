@@ -6,6 +6,12 @@ LibCYAML: Schema-based YAML parsing and serialisation
 LibCYAML is a C library for reading and writing structured YAML documents.
 It is written in ISO C11 and licensed under the ISC licence.
 
+> **Warning**
+>
+> The `main` branch is currently undergoing changes for version 2.
+> You probably want to be using a
+> [tagged release](https://github.com/tlsa/libcyaml/tags) instead.
+
 Overview
 --------
 

@@ -11,9 +11,9 @@
 # 4. Set VESION_DEVEL to 0, commit to main.
 # 5. Tag the release: `git tag -a vN.N.N -m "libcyaml N.N.N"`
 # 6. Set VESION_DEVEL to 1, commit to main.
-VERSION_MAJOR = 1
-VERSION_MINOR = 4
-VERSION_PATCH = 1
+VERSION_MAJOR = 2
+VERSION_MINOR = 0
+VERSION_PATCH = 0
 VERSION_DEVEL = 1
 VERSION_STR = $(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH)
 
