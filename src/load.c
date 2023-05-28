@@ -1133,17 +1133,19 @@ static cyaml_err_t cyaml__mapping_bitfieid_validate(
 	unsigned count = state->mapping.fields_count;
 
 	for (unsigned i = 0; i < count; i++) {
+		const cyaml_schema_field_t *field = state->mapping.fields + i;
+
 		if (state->mapping.fields_set[i / CYAML_BITFIELD_BITS] &
 				(1u << (i % CYAML_BITFIELD_BITS))) {
 			continue;
 		}
-		if (cyaml__flag_check_all(state->mapping.fields[i].value.flags,
+		if (cyaml__flag_check_all(field->value.flags,
 				CYAML_FLAG_OPTIONAL)) {
 			continue;
 		}
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
 				"Load: Missing required mapping field: %s\n",
-				state->mapping.fields[i].key);
+				field->key);
 		return CYAML_ERR_MAPPING_FIELD_MISSING;
 	}
 
