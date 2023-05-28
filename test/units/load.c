@@ -103,6 +103,2845 @@ static bool test_load_mapping_entry_int_pos(
 }
 
 /**
+ * Test loading a positive unsigned 8-bit integer with a default value.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_u8(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const uint8_t before = 1;
+	const uint8_t test = 0x55;
+	const uint8_t after = 0xff;
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		uint8_t test;
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD(UINT, "test", CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .missing = test }),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect value before default");
+	}
+
+	if (data_tgt->test != test) {
+		return ttest_fail(&tc, "Incorrect default value");
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect value after default");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a positive signed integer with a default value.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_int(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	int value = 90;
+	const int default_value = -1;
+	const unsigned trample = 0xdeadbeef;
+	static const unsigned char yaml[] =
+		"test_int: 90\n"
+		"trample: 0xdeadbeef\n";
+	struct target_struct {
+		int test_value_int;
+		int default_int;
+		unsigned trample;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_INT("test_int", CYAML_FLAG_DEFAULT,
+				struct target_struct, test_value_int),
+		CYAML_FIELD(INT, "default", CYAML_FLAG_OPTIONAL,
+				struct target_struct, default_int,
+				{ .missing = default_value }),
+		CYAML_FIELD_UINT("trample", CYAML_FLAG_DEFAULT,
+				struct target_struct, trample),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->test_value_int != value) {
+		return ttest_fail(&tc, "Incorrect value");
+	}
+
+	if (data_tgt->default_int != default_value) {
+		return ttest_fail(&tc, "Incorrect default value");
+	}
+
+	if (data_tgt->trample != trample) {
+		return ttest_fail(&tc, "Trampled structure");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a boolean with a default value.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_bool(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const uint8_t before = 1;
+	const bool test = true;
+	const uint8_t after = 0xff;
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		bool test;
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD(BOOL, "test", CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .missing = test }),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect value before default");
+	}
+
+	if (data_tgt->test != test) {
+		return ttest_fail(&tc, "Incorrect default value");
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect value after default");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading an enum with a default value.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_enum(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const uint8_t before = 1;
+	const enum enum_test {
+		ENUM_TEST_BAT,
+		ENUM_TEST_DOG,
+		ENUM_TEST_CAT,
+	} test = ENUM_TEST_CAT;
+	static const cyaml_strval_t enum_test_schema[] = {
+		{ .str = "cat", .val = ENUM_TEST_CAT },
+		{ .str = "bat", .val = ENUM_TEST_BAT },
+		{ .str = "dog", .val = ENUM_TEST_DOG },
+	};
+	const uint8_t after = 0xff;
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		enum enum_test test;
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD(ENUM, "test", CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .missing = test,
+				  .strings = enum_test_schema,
+				  .count = CYAML_ARRAY_LEN(enum_test_schema)
+				}),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect value before default");
+	}
+
+	if (data_tgt->test != test) {
+		return ttest_fail(&tc, "Incorrect default value");
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect value after default");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading flags with a default value.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_flags(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const uint8_t before = 1;
+	const enum flags_test {
+		FLAGS_TEST_BAT = 1 << 0,
+		FLAGS_TEST_DOG = 1 << 1,
+		FLAGS_TEST_CAT = 1 << 2,
+	} test = FLAGS_TEST_CAT | FLAGS_TEST_BAT;
+	static const cyaml_strval_t flags_test_schema[] = {
+		{ .str = "cat", .val = FLAGS_TEST_CAT },
+		{ .str = "bat", .val = FLAGS_TEST_BAT },
+		{ .str = "dog", .val = FLAGS_TEST_DOG },
+	};
+	const uint8_t after = 0xff;
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		enum flags_test test;
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD(FLAGS, "test", CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .missing = test,
+				  .strings = flags_test_schema,
+				  .count = CYAML_ARRAY_LEN(flags_test_schema)
+				}),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect value before default");
+	}
+
+	if (data_tgt->test != test) {
+		return ttest_fail(&tc, "Incorrect default value");
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect value after default");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a float with a default value.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_float(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const uint8_t before = 1;
+	const float test = 3.14159f;
+	const uint8_t after = 0xff;
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		float test;
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD(FLOAT, "test", CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .missing = test }),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect value before default");
+	}
+
+	if (data_tgt->test != test) {
+		return ttest_fail(&tc, "Incorrect default value "
+				"(expected: %f, got: %f)",
+				test, data_tgt->test);
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect value after default");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a double precision float with a default value.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_double(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const uint8_t before = 1;
+	const double test = 3.14159;
+	const uint8_t after = 0xff;
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		double test;
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD(FLOAT, "test", CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .missing = test }),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect value before default");
+	}
+
+	if (data_tgt->test != test) {
+		return ttest_fail(&tc, "Incorrect default value "
+				"(expected: %f, got: %f)",
+				test, data_tgt->test);
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect value after default");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a string with a default value.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_string(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const uint8_t before = 1;
+	static const char * const test = "My cat is best cat!";
+	const uint8_t after = 0xff;
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		char test[20];
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD(STRING, "test", CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .missing = test, .min = 0, .max = 19 }),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect value before default");
+	}
+
+	if (strcmp(data_tgt->test, test) != 0) {
+		return ttest_fail(&tc, "Incorrect default value "
+				"(expected: %s, got: %s)",
+				test, data_tgt->test);
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect value after default");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a bitfield with a default value.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_bitfield(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const uint8_t before = 1;
+	static const uint64_t test = 0xFFFFFFFFFFFFFFFFu;
+	static const cyaml_bitdef_t bitvals[] = {
+		{ .name = "a", .offset =  0, .bits =  3 },
+		{ .name = "b", .offset =  3, .bits =  7 },
+		{ .name = "c", .offset = 10, .bits = 32 },
+		{ .name = "d", .offset = 42, .bits =  8 },
+		{ .name = "e", .offset = 50, .bits = 14 },
+	};
+	const uint8_t after = 0xff;
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		uint64_t test;
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD(BITFIELD, "test", CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .missing = test,
+				  .bitdefs = bitvals,
+				  .count = CYAML_ARRAY_LEN(bitvals)
+				}),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect value before default");
+	}
+
+	if (data_tgt->test != test) {
+		return ttest_fail(&tc, "Incorrect default value");
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect value after default");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a mapping with a default value.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_mapping_small(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const uint8_t before = 1;
+	static const struct test_struct {
+		uint8_t value;
+	} test = {
+		.value = 0x55,
+	};
+	const uint8_t after = 0xff;
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		struct test_struct test;
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field test_schema[] = {
+		CYAML_FIELD_UINT("value", CYAML_FLAG_DEFAULT,
+				struct test_struct, value),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD(MAPPING, "test", CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .missing = &test,
+				  .fields = test_schema,
+				}),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect value before default");
+	}
+
+	if (data_tgt->test.value != test.value) {
+		return ttest_fail(&tc, "Incorrect default value "
+				"(expected: %u, got: %u)",
+				test.value, data_tgt->test.value);
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect value after default");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a mapping with a default value.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_mapping_large(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static long values[] = { 4, 3, 2, 1 };
+	const uint8_t before = 1;
+	static const struct test_struct {
+		char *a;
+		char b[10];
+		int c;
+		long d[4];
+		long *e;
+		unsigned e_count;
+		char *f;
+		char *g;
+		char h[10];
+		int i;
+		long j[4];
+		long *k;
+		unsigned k_count;
+		bool l;
+	} test = {
+		.a = (char *) "Hello",
+		.b = "World!",
+		.c = 0,
+		.d = { 0, 0, 0, 0 },
+		.e = values,
+		.e_count = CYAML_ARRAY_LEN(values),
+		.f = (char *) "Required!",
+		.g = NULL,
+		.h = "\0",
+		.i = 9876,
+		.j = { 1, 2, 3, 4 },
+		.k = NULL,
+		.l = false,
+	};
+	const uint8_t after = 0xff;
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		struct test_struct test;
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_value sequence_entry = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, sizeof(long)),
+	};
+	static const struct cyaml_schema_field test_schema[] = {
+		CYAML_FIELD_STRING_PTR("a",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct test_struct, a, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_STRING("b", CYAML_FLAG_OPTIONAL,
+				struct test_struct, b, 0),
+		CYAML_FIELD_INT("c", CYAML_FLAG_OPTIONAL,
+				struct test_struct, c),
+		CYAML_FIELD_SEQUENCE_FIXED("d", CYAML_FLAG_OPTIONAL,
+				struct test_struct, d, &sequence_entry, 4),
+		CYAML_FIELD_SEQUENCE("e",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct test_struct, e, &sequence_entry,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_STRING_PTR("f",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct test_struct, f, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_STRING_PTR("g",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct test_struct, g, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_STRING("h", CYAML_FLAG_OPTIONAL,
+				struct test_struct, h, 0),
+		CYAML_FIELD_INT("i", CYAML_FLAG_OPTIONAL,
+				struct test_struct, i),
+		CYAML_FIELD_SEQUENCE_FIXED("j", CYAML_FLAG_OPTIONAL,
+				struct test_struct, j, &sequence_entry, 4),
+		CYAML_FIELD_SEQUENCE("k",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct test_struct, k, &sequence_entry,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_BOOL("l",
+				CYAML_FLAG_OPTIONAL,
+				struct test_struct, l),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD(MAPPING, "test", CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .missing = &test,
+				  .fields = test_schema,
+				}),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect value before default");
+	}
+
+	if (strcmp(data_tgt->test.a, test.a) != 0) {
+		return ttest_fail(&tc, "Incorrect value for entry a: "
+				"Expected: %s, got: %s",
+				test.a, data_tgt->test.a);
+	}
+	if (strcmp(data_tgt->test.b, test.b) != 0) {
+		return ttest_fail(&tc, "Incorrect value for entry b");
+	}
+	if (data_tgt->test.c != test.c) {
+		return ttest_fail(&tc, "Incorrect value for entry c");
+	}
+	for (unsigned i = 0; i < 4; i++) {
+		if (data_tgt->test.d[i] != test.d[i]) {
+			return ttest_fail(&tc, "Incorrect value for entry d");
+		}
+	}
+	if (data_tgt->test.e_count != test.e_count) {
+		return ttest_fail(&tc, "Bad sequence element count for e");
+	}
+	for (unsigned i = 0; i < 4; i++) {
+		if (data_tgt->test.e[i] != test.e[i]) {
+			return ttest_fail(&tc, "Incorrect value for entry e "
+					"Index: %u: Expected: %ld, got: %ld",
+					i, test.e[i], data_tgt->test.e[i]);
+		}
+	}
+	if (strcmp(data_tgt->test.f, test.f) != 0) {
+		return ttest_fail(&tc, "Incorrect value for entry f: "
+				"Expected: %s, got: %s",
+				test.f, data_tgt->test.f);
+	}
+	if (data_tgt->test.g != test.g) {
+		return ttest_fail(&tc, "Incorrect value for entry g: "
+				"Expected: %s, got: %s",
+				test.g, data_tgt->test.g);
+	}
+	if (strcmp(data_tgt->test.h, test.h) != 0) {
+		return ttest_fail(&tc, "Incorrect value for entry h");
+	}
+	if (data_tgt->test.i != test.i) {
+		return ttest_fail(&tc, "Incorrect value for entry i");
+	}
+	for (unsigned i = 0; i < 4; i++) {
+		if (data_tgt->test.j[i] != test.j[i]) {
+			return ttest_fail(&tc, "Incorrect value for entry j");
+		}
+	}
+	if (data_tgt->test.k != test.k) {
+		return ttest_fail(&tc, "Incorrect value for entry k");
+	}
+
+	if (data_tgt->test.l != test.l) {
+		return ttest_fail(&tc, "Incorrect value for entry l");
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect value after default");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a sequence with a default value.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_sequence_small(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const uint8_t before = 1;
+	static const uint8_t test[] = { 99 };
+	const uint8_t after = 0xff;
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		uint8_t test[CYAML_ARRAY_LEN(test)];
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_UINT(CYAML_FLAG_DEFAULT, uint8_t),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD(SEQUENCE_FIXED, "test", CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .entry = &entry_schema,
+				  .min = CYAML_ARRAY_LEN(test),
+				  .max = CYAML_ARRAY_LEN(test),
+				  .missing = test, }),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect value before default");
+	}
+
+	for (size_t i = 0; i < CYAML_ARRAY_LEN(test); i++) {
+		if (data_tgt->test[i] != test[i]) {
+			return ttest_fail(&tc, "Incorrect default value");
+		}
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect value after default");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a sequence with a default value.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_sequence_large(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const uint8_t before = 1;
+	static const uint8_t test[] = {
+		99, 98, 97, 96, 95, 94, 93, 92, 91, 90,
+		 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, };
+	const uint8_t after = 0xff;
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		uint8_t test[CYAML_ARRAY_LEN(test)];
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_UINT(CYAML_FLAG_DEFAULT, uint8_t),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD(SEQUENCE_FIXED, "test", CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .entry = &entry_schema,
+				  .min = CYAML_ARRAY_LEN(test),
+				  .max = CYAML_ARRAY_LEN(test),
+				  .missing = test, }),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect value before default");
+	}
+
+	for (size_t i = 0; i < CYAML_ARRAY_LEN(test); i++) {
+		if (data_tgt->test[i] != test[i]) {
+			return ttest_fail(&tc, "Incorrect default value");
+		}
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect value after default");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a default value for an unsigned integer pointer.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_u8_ptr(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const uint8_t before = 1;
+	const uint8_t test = 0x55;
+	const uint8_t after = 0xff;
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		uint8_t *test;
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD_PTR(UINT, "test",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .missing = test }),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect value before default");
+	}
+
+	if (data_tgt->test == NULL) {
+		return ttest_fail(&tc, "Failed to get default allocation");
+	}
+
+	if (*data_tgt->test != test) {
+		return ttest_fail(&tc, "Incorrect default value");
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect value after default");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a default value for a signed integer pointer.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_int_ptr(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	int value = 90;
+	const int default_value = -1;
+	static const unsigned char yaml[] =
+		"test_int: 90\n";
+	struct target_struct {
+		int *test_value_int;
+		int *default_int;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_INT_PTR("test_int", CYAML_FLAG_POINTER,
+				struct target_struct, test_value_int),
+		CYAML_FIELD_PTR(INT, "default",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct target_struct, default_int,
+				{ .missing = default_value }),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->test_value_int == NULL) {
+		return ttest_fail(&tc, "Expected allocation for value");
+	}
+
+	if (*data_tgt->test_value_int != value) {
+		return ttest_fail(&tc, "Incorrect value");
+	}
+
+	if (data_tgt->default_int == NULL) {
+		return ttest_fail(&tc, "Expected allocated default value");
+	}
+
+	if (*data_tgt->default_int != default_value) {
+		return ttest_fail(&tc, "Incorrect default value");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a default value for a boolean pointer.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_bool_ptr(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const uint8_t before = 1;
+	const bool test = true;
+	const uint8_t after = 0xff;
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		bool *test;
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD_PTR(BOOL, "test",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .missing = test }),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect value before default");
+	}
+
+	if (data_tgt->test == NULL) {
+		return ttest_fail(&tc, "Failed to get default allocation");
+	}
+
+	if (*data_tgt->test != test) {
+		return ttest_fail(&tc, "Incorrect default value");
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect value after default");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a default value for a enum pointer.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_enum_ptr(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const uint8_t before = 1;
+	const enum enum_test {
+		ENUM_TEST_BAT,
+		ENUM_TEST_DOG,
+		ENUM_TEST_CAT,
+	} test = ENUM_TEST_CAT;
+	static const cyaml_strval_t enum_test_schema[] = {
+		{ .str = "cat", .val = ENUM_TEST_CAT },
+		{ .str = "bat", .val = ENUM_TEST_BAT },
+		{ .str = "dog", .val = ENUM_TEST_DOG },
+	};
+	const uint8_t after = 0xff;
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		enum enum_test *test;
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD_PTR(ENUM, "test",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .missing = test,
+				  .strings = enum_test_schema,
+				  .count = CYAML_ARRAY_LEN(enum_test_schema)
+				}),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect value before default");
+	}
+
+	if (data_tgt->test == NULL) {
+		return ttest_fail(&tc, "Failed to get default allocation");
+	}
+
+	if (*data_tgt->test != test) {
+		return ttest_fail(&tc, "Incorrect default value");
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect value after default");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a default value for a flags pointer.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_flags_ptr(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const uint8_t before = 1;
+	const enum flags_test {
+		FLAGS_TEST_BAT = 1 << 0,
+		FLAGS_TEST_DOG = 1 << 1,
+		FLAGS_TEST_CAT = 1 << 2,
+	} test = FLAGS_TEST_CAT | FLAGS_TEST_BAT;
+	static const cyaml_strval_t flags_test_schema[] = {
+		{ .str = "cat", .val = FLAGS_TEST_CAT },
+		{ .str = "bat", .val = FLAGS_TEST_BAT },
+		{ .str = "dog", .val = FLAGS_TEST_DOG },
+	};
+	const uint8_t after = 0xff;
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		enum flags_test *test;
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD_PTR(FLAGS, "test",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .missing = test,
+				  .strings = flags_test_schema,
+				  .count = CYAML_ARRAY_LEN(flags_test_schema)
+				}),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect value before default");
+	}
+
+	if (data_tgt->test == NULL) {
+		return ttest_fail(&tc, "Failed to get default allocation");
+	}
+
+	if (*data_tgt->test != test) {
+		return ttest_fail(&tc, "Incorrect default value");
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect value after default");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a default value for a float pointer.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_float_ptr(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const uint8_t before = 1;
+	const float test = 3.14159f;
+	const uint8_t after = 0xff;
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		float *test;
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD_PTR(FLOAT, "test",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .missing = test }),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect value before default");
+	}
+
+	if (data_tgt->test == NULL) {
+		return ttest_fail(&tc, "Failed to get default allocation");
+	}
+
+	if (*data_tgt->test != test) {
+		return ttest_fail(&tc, "Incorrect default value "
+				"(expected: %f, got: %f)",
+				test, *data_tgt->test);
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect value after default");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a default value for a double precision float pointer.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_double_ptr(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const uint8_t before = 1;
+	const double test = 3.14159;
+	const uint8_t after = 0xff;
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		double *test;
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD_PTR(FLOAT, "test",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .missing = test }),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect value before default");
+	}
+
+	if (data_tgt->test == NULL) {
+		return ttest_fail(&tc, "Failed to get default allocation");
+	}
+
+	if (*data_tgt->test != test) {
+		return ttest_fail(&tc, "Incorrect default value "
+				"(expected: %f, got: %f)",
+				test, *data_tgt->test);
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect value after default");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a default value for a string pointer.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_string_ptr(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const uint8_t before = 1;
+	static const char * const test = "Hello World!";
+	const uint8_t after = 0xff;
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		char *test;
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD_PTR(STRING, "test",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .missing = test,
+				  .min = 0, .max = CYAML_UNLIMITED }),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect value before default");
+	}
+
+	if (data_tgt->test == NULL) {
+		return ttest_fail(&tc, "Failed to get default allocation");
+	}
+
+	if (strcmp(data_tgt->test, test) != 0) {
+		return ttest_fail(&tc, "Incorrect default value "
+				"(expected: %s, got: %s)",
+				test, *data_tgt->test);
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect value after default");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a default value for a bitfield pointer.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_bitfield_ptr(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const uint8_t before = 1;
+	static const uint64_t test = 0xFFFFFFFFFFFFFFFFu;
+	static const cyaml_bitdef_t bitvals[] = {
+		{ .name = "a", .offset =  0, .bits =  3 },
+		{ .name = "b", .offset =  3, .bits =  7 },
+		{ .name = "c", .offset = 10, .bits = 32 },
+		{ .name = "d", .offset = 42, .bits =  8 },
+		{ .name = "e", .offset = 50, .bits = 14 },
+	};
+	const uint8_t after = 0xff;
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		uint64_t *test;
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD_PTR(BITFIELD, "test",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .missing = test,
+				  .bitdefs = bitvals,
+				  .count = CYAML_ARRAY_LEN(bitvals)
+				}),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect value before default");
+	}
+
+	if (data_tgt->test == NULL) {
+		return ttest_fail(&tc, "Failed to get default allocation");
+	}
+
+	if (*data_tgt->test != test) {
+		return ttest_fail(&tc, "Incorrect default value");
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect value after default");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a default value for a mapping pointer.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_mapping_small_ptr(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const uint8_t before = 1;
+	static const struct test_struct {
+		uint8_t value;
+	} test = {
+		.value = 0x55,
+	};
+	const uint8_t after = 0xff;
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		struct test_struct *test;
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field test_schema[] = {
+		CYAML_FIELD_UINT("value", CYAML_FLAG_DEFAULT,
+				struct test_struct, value),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD_PTR(MAPPING, "test",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .missing = &test,
+				  .fields = test_schema,
+				}),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect value before default");
+	}
+
+	if (data_tgt->test == NULL) {
+		return ttest_fail(&tc, "Failed to get default allocation");
+	}
+
+	if (data_tgt->test->value != test.value) {
+		return ttest_fail(&tc, "Incorrect default value "
+				"(expected: %u, got: %u)",
+				test.value, data_tgt->test->value);
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect value after default");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a default value for a mapping pointer.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_mapping_large_ptr(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static long values[] = { 4, 3, 2, 1 };
+	const uint8_t before = 1;
+	static const struct test_struct {
+		char *a;
+		char b[10];
+		int c;
+		long d[4];
+		long *e;
+		unsigned e_count;
+		char *f;
+		char *g;
+		char h[10];
+		int i;
+		long j[4];
+		long *k;
+		unsigned k_count;
+		bool l;
+	} test = {
+		.a = (char *) "Hello",
+		.b = "World!",
+		.c = 0,
+		.d = { 0, 0, 0, 0 },
+		.e = values,
+		.e_count = CYAML_ARRAY_LEN(values),
+		.f = (char *) "Required!",
+		.g = NULL,
+		.h = "\0",
+		.i = 9876,
+		.j = { 1, 2, 3, 4 },
+		.k = NULL,
+		.l = false,
+	};
+	const uint8_t after = 0xff;
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		struct test_struct *test;
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_value sequence_entry = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, sizeof(long)),
+	};
+	static const struct cyaml_schema_field test_schema[] = {
+		CYAML_FIELD_STRING_PTR("a",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct test_struct, a, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_STRING("b", CYAML_FLAG_OPTIONAL,
+				struct test_struct, b, 0),
+		CYAML_FIELD_INT("c", CYAML_FLAG_OPTIONAL,
+				struct test_struct, c),
+		CYAML_FIELD_SEQUENCE_FIXED("d", CYAML_FLAG_OPTIONAL,
+				struct test_struct, d, &sequence_entry, 4),
+		CYAML_FIELD_SEQUENCE("e",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct test_struct, e, &sequence_entry,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_STRING_PTR("f",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct test_struct, f, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_STRING_PTR("g",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct test_struct, g, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_STRING("h", CYAML_FLAG_OPTIONAL,
+				struct test_struct, h, 0),
+		CYAML_FIELD_INT("i", CYAML_FLAG_OPTIONAL,
+				struct test_struct, i),
+		CYAML_FIELD_SEQUENCE_FIXED("j", CYAML_FLAG_OPTIONAL,
+				struct test_struct, j, &sequence_entry, 4),
+		CYAML_FIELD_SEQUENCE("k",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct test_struct, k, &sequence_entry,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_BOOL("l",
+				CYAML_FLAG_OPTIONAL,
+				struct test_struct, l),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD_PTR(MAPPING, "test",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .missing = &test,
+				  .fields = test_schema,
+				}),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect value before default");
+	}
+
+	if (data_tgt->test == NULL) {
+		return ttest_fail(&tc, "Failed to get default allocation");
+	}
+
+	if (strcmp(data_tgt->test->a, test.a) != 0) {
+		return ttest_fail(&tc, "Incorrect value for entry a: "
+				"Expected: %s, got: %s",
+				test.a, data_tgt->test->a);
+	}
+	if (strcmp(data_tgt->test->b, test.b) != 0) {
+		return ttest_fail(&tc, "Incorrect value for entry b");
+	}
+	if (data_tgt->test->c != test.c) {
+		return ttest_fail(&tc, "Incorrect value for entry c");
+	}
+	for (unsigned i = 0; i < 4; i++) {
+		if (data_tgt->test->d[i] != test.d[i]) {
+			return ttest_fail(&tc, "Incorrect value for entry d");
+		}
+	}
+	if (data_tgt->test->e_count != test.e_count) {
+		return ttest_fail(&tc, "Bad sequence element count for e");
+	}
+	for (unsigned i = 0; i < 4; i++) {
+		if (data_tgt->test->e[i] != test.e[i]) {
+			return ttest_fail(&tc, "Incorrect value for entry e "
+					"Index: %u: Expected: %ld, got: %ld",
+					i, test.e[i], data_tgt->test->e[i]);
+		}
+	}
+	if (strcmp(data_tgt->test->f, test.f) != 0) {
+		return ttest_fail(&tc, "Incorrect value for entry f: "
+				"Expected: %s, got: %s",
+				test.f, data_tgt->test->f);
+	}
+	if (data_tgt->test->g != test.g) {
+		return ttest_fail(&tc, "Incorrect value for entry g: "
+				"Expected: %s, got: %s",
+				test.g, data_tgt->test->g);
+	}
+	if (strcmp(data_tgt->test->h, test.h) != 0) {
+		return ttest_fail(&tc, "Incorrect value for entry h");
+	}
+	if (data_tgt->test->i != test.i) {
+		return ttest_fail(&tc, "Incorrect value for entry i");
+	}
+	for (unsigned i = 0; i < 4; i++) {
+		if (data_tgt->test->j[i] != test.j[i]) {
+			return ttest_fail(&tc, "Incorrect value for entry j");
+		}
+	}
+	if (data_tgt->test->k != test.k) {
+		return ttest_fail(&tc, "Incorrect value for entry k");
+	}
+
+	if (data_tgt->test->l != test.l) {
+		return ttest_fail(&tc, "Incorrect value for entry l");
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect value after default");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a default value for a sequence pointer.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_sequence_small_ptr(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const uint8_t before = 1;
+	static const uint8_t test[] = { 99 };
+	const uint8_t after = 0xff;
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		uint8_t *test;
+		unsigned test_count;
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_UINT(CYAML_FLAG_DEFAULT, uint8_t),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD_PTR(SEQUENCE, "test",
+				CYAML_FLAG_OPTIONAL | CYAML_FLAG_POINTER,
+				struct target_struct, test,
+				{ .entry = &entry_schema,
+				  .min = CYAML_ARRAY_LEN(test),
+				  .max = CYAML_ARRAY_LEN(test),
+				  .missing = test,
+				  .missing_count = CYAML_ARRAY_LEN(test) }),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect value before default");
+	}
+
+	if (data_tgt->test == NULL) {
+		return ttest_fail(&tc, "Failed to get default allocation");
+	}
+
+	if (data_tgt->test_count != CYAML_ARRAY_LEN(test)) {
+		return ttest_fail(&tc, "Incorrect entry count");
+	}
+
+	for (size_t i = 0; i < CYAML_ARRAY_LEN(test); i++) {
+		if (data_tgt->test[i] != test[i]) {
+			return ttest_fail(&tc, "Incorrect default value");
+		}
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect value after default");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a default value for a sequence pointer.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_sequence_large_ptr(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const uint8_t before = 1;
+	static const uint8_t test[] = {
+		99, 98, 97, 96, 95, 94, 93, 92, 91, 90,
+		 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, };
+	const uint8_t after = 0xff;
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		uint8_t *test;
+		unsigned test_count;
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_UINT(CYAML_FLAG_DEFAULT, uint8_t),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD_PTR(SEQUENCE, "test",
+				CYAML_FLAG_OPTIONAL | CYAML_FLAG_POINTER,
+				struct target_struct, test,
+				{ .entry = &entry_schema,
+				  .min = CYAML_ARRAY_LEN(test),
+				  .max = CYAML_ARRAY_LEN(test),
+				  .missing = test,
+				  .missing_count = CYAML_ARRAY_LEN(test) }),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect value before default");
+	}
+
+	if (data_tgt->test == NULL) {
+		return ttest_fail(&tc, "Failed to get default allocation");
+	}
+
+	if (data_tgt->test_count != CYAML_ARRAY_LEN(test)) {
+		return ttest_fail(&tc, "Incorrect entry count");
+	}
+
+	for (size_t i = 0; i < CYAML_ARRAY_LEN(test); i++) {
+		if (data_tgt->test[i] != test[i]) {
+			return ttest_fail(&tc, "Incorrect default value");
+		}
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect value after default");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a positive unsigned 8-bit integer via pointer.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_u8_ptr_zero(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const uint8_t before = 1;
+	const uint8_t after = 0xff;
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		uint8_t *test;
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD_PTR(UINT, "test",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .missing = 0 }),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect value before default");
+	}
+
+	if (data_tgt->test != NULL) {
+		return ttest_fail(&tc, "Shouldn't have an allocation");
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect value after default");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a default value for a signed integer pointer.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_int_ptr_zero(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const uint8_t before = 1;
+	const uint8_t after = 0xff;
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		int *test;
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD_PTR(INT, "test",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .missing = 0 }),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect value before default");
+	}
+
+	if (data_tgt->test != NULL) {
+		return ttest_fail(&tc, "Shouldn't have an allocation");
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect value after default");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a default value for a boolean pointer.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_bool_ptr_zero(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const uint8_t before = 1;
+	const uint8_t after = 0xff;
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		bool *test;
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD_PTR(BOOL, "test",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .missing = 0 }),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect value before default");
+	}
+
+	if (data_tgt->test != NULL) {
+		return ttest_fail(&tc, "Shouldn't have an allocation");
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect value after default");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a default value for a enum pointer.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_enum_ptr_zero(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const uint8_t before = 1;
+	enum enum_test {
+		ENUM_TEST_BAT,
+		ENUM_TEST_DOG,
+		ENUM_TEST_CAT,
+	};
+	static const cyaml_strval_t enum_test_schema[] = {
+		{ .str = "cat", .val = ENUM_TEST_CAT },
+		{ .str = "bat", .val = ENUM_TEST_BAT },
+		{ .str = "dog", .val = ENUM_TEST_DOG },
+	};
+	const uint8_t after = 0xff;
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		enum enum_test *test;
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD_PTR(ENUM, "test",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .missing = 0,
+				  .strings = enum_test_schema,
+				  .count = CYAML_ARRAY_LEN(enum_test_schema)
+				}),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect value before default");
+	}
+
+	if (data_tgt->test != NULL) {
+		return ttest_fail(&tc, "Shouldn't have an allocation");
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect value after default");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a default value for a flags pointer.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_flags_ptr_zero(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const uint8_t before = 1;
+	enum flags_test {
+		FLAGS_TEST_BAT = 1 << 0,
+		FLAGS_TEST_DOG = 1 << 1,
+		FLAGS_TEST_CAT = 1 << 2,
+	};
+	static const cyaml_strval_t flags_test_schema[] = {
+		{ .str = "cat", .val = FLAGS_TEST_CAT },
+		{ .str = "bat", .val = FLAGS_TEST_BAT },
+		{ .str = "dog", .val = FLAGS_TEST_DOG },
+	};
+	const uint8_t after = 0xff;
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		enum flags_test *test;
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD_PTR(FLAGS, "test",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .missing = 0,
+				  .strings = flags_test_schema,
+				  .count = CYAML_ARRAY_LEN(flags_test_schema)
+				}),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect value before default");
+	}
+
+	if (data_tgt->test != NULL) {
+		return ttest_fail(&tc, "Shouldn't have an allocation");
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect value after default");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a default value for a float pointer.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_float_ptr_zero(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const uint8_t before = 1;
+	const uint8_t after = 0xff;
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		float *test;
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD_PTR(FLOAT, "test",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .missing = 0 }),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect value before default");
+	}
+
+	if (data_tgt->test != NULL) {
+		return ttest_fail(&tc, "Shouldn't have an allocation");
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect value after default");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a default value for a double precision float pointer.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_double_ptr_zero(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const uint8_t before = 1;
+	const uint8_t after = 0xff;
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		double *test;
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD_PTR(FLOAT, "test",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .missing = 0 }),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect value before default");
+	}
+
+	if (data_tgt->test != NULL) {
+		return ttest_fail(&tc, "Shouldn't have an allocation");
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect value after default");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a default value for a bitfield pointer.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_bitfield_ptr_zero(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const uint8_t before = 1;
+	static const cyaml_bitdef_t bitvals[] = {
+		{ .name = "a", .offset =  0, .bits =  3 },
+		{ .name = "b", .offset =  3, .bits =  7 },
+		{ .name = "c", .offset = 10, .bits = 32 },
+		{ .name = "d", .offset = 42, .bits =  8 },
+		{ .name = "e", .offset = 50, .bits = 14 },
+	};
+	const uint8_t after = 0xff;
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		uint64_t *test;
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD_PTR(BITFIELD, "test",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .missing = 0,
+				  .bitdefs = bitvals,
+				  .count = CYAML_ARRAY_LEN(bitvals)
+				}),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect value before default");
+	}
+
+	if (data_tgt->test != NULL) {
+		return ttest_fail(&tc, "Shouldn't have an allocation");
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect value after default");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading a negative signed integer.
  *
  * \param[in]  report  The test report context.
@@ -5704,6 +8543,7 @@ static bool test_load_mapping_with_optional_fields(
 		.c = 0,
 		.d = { 0, 0, 0, 0 },
 		.e = values,
+		.e_count = CYAML_ARRAY_LEN(values),
 		.f = (char *) "Required!",
 		.g = NULL,
 		.h = "\0",
@@ -5795,6 +8635,9 @@ static bool test_load_mapping_with_optional_fields(
 		if (data_tgt->d[i] != data.d[i]) {
 			return ttest_fail(&tc, "Incorrect value for entry d");
 		}
+	}
+	if (data_tgt->e_count != data.e_count) {
+		return ttest_fail(&tc, "Bad sequence element count for e");
 	}
 	for (unsigned i = 0; i < 4; i++) {
 		if (data_tgt->e[i] != data.e[i]) {
@@ -7720,6 +10563,49 @@ bool load_tests(
 	ttest_heading(rc, "Load tests: anchors and aliases (edge cases)");
 
 	pass &= test_load_anchor_updated_anchor(rc, &config);
+
+	ttest_heading(rc, "Load tests: default values");
+
+	pass &= test_load_mapping_field_default_u8(rc, &config);
+	pass &= test_load_mapping_field_default_int(rc, &config);
+	pass &= test_load_mapping_field_default_bool(rc, &config);
+	pass &= test_load_mapping_field_default_enum(rc, &config);
+	pass &= test_load_mapping_field_default_flags(rc, &config);
+	pass &= test_load_mapping_field_default_float(rc, &config);
+	pass &= test_load_mapping_field_default_double(rc, &config);
+	pass &= test_load_mapping_field_default_string(rc, &config);
+	pass &= test_load_mapping_field_default_bitfield(rc, &config);
+	pass &= test_load_mapping_field_default_mapping_large(rc, &config);
+	pass &= test_load_mapping_field_default_mapping_small(rc, &config);
+	pass &= test_load_mapping_field_default_sequence_large(rc, &config);
+	pass &= test_load_mapping_field_default_sequence_small(rc, &config);
+
+	ttest_heading(rc, "Load tests: default values (pointers)");
+
+	pass &= test_load_mapping_field_default_u8_ptr(rc, &config);
+	pass &= test_load_mapping_field_default_int_ptr(rc, &config);
+	pass &= test_load_mapping_field_default_bool_ptr(rc, &config);
+	pass &= test_load_mapping_field_default_enum_ptr(rc, &config);
+	pass &= test_load_mapping_field_default_flags_ptr(rc, &config);
+	pass &= test_load_mapping_field_default_float_ptr(rc, &config);
+	pass &= test_load_mapping_field_default_double_ptr(rc, &config);
+	pass &= test_load_mapping_field_default_string_ptr(rc, &config);
+	pass &= test_load_mapping_field_default_bitfield_ptr(rc, &config);
+	pass &= test_load_mapping_field_default_mapping_large_ptr(rc, &config);
+	pass &= test_load_mapping_field_default_mapping_small_ptr(rc, &config);
+	pass &= test_load_mapping_field_default_sequence_large_ptr(rc, &config);
+	pass &= test_load_mapping_field_default_sequence_small_ptr(rc, &config);
+
+	ttest_heading(rc, "Load tests: default values zero (pointers)");
+
+	pass &= test_load_mapping_field_default_u8_ptr_zero(rc, &config);
+	pass &= test_load_mapping_field_default_int_ptr_zero(rc, &config);
+	pass &= test_load_mapping_field_default_bool_ptr_zero(rc, &config);
+	pass &= test_load_mapping_field_default_enum_ptr_zero(rc, &config);
+	pass &= test_load_mapping_field_default_flags_ptr_zero(rc, &config);
+	pass &= test_load_mapping_field_default_float_ptr_zero(rc, &config);
+	pass &= test_load_mapping_field_default_double_ptr_zero(rc, &config);
+	pass &= test_load_mapping_field_default_bitfield_ptr_zero(rc, &config);
 
 	return pass;
 }
