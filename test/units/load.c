@@ -4342,6 +4342,56 @@ static bool test_load_mapping_entry_ignore_scalar(
 }
 
 /**
+ * Test loading an optional ignored value.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_entry_ignore_optional_scalar(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"ignore: foo\n";
+	struct target_struct {
+		bool foo;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_IGNORE("ignore", CYAML_FLAG_DEFAULT),
+		CYAML_FIELD_IGNORE("optional", CYAML_FLAG_OPTIONAL),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->foo != false) {
+		return ttest_fail(&tc, "Incorrect value");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading a flag word.
  *
  * \param[in]  report  The test report context.
@@ -10448,6 +10498,7 @@ bool load_tests(
 	pass &= test_load_mapping_entry_string_ptr_empty(rc, &config);
 	pass &= test_load_mapping_entry_string_ptr_null_str(rc, &config);
 	pass &= test_load_mapping_entry_string_ptr_null_empty(rc, &config);
+	pass &= test_load_mapping_entry_ignore_optional_scalar(rc, &config);
 
 	ttest_heading(rc, "Load single entry mapping tests: complex types");
 
