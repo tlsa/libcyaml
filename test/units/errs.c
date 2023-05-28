@@ -6460,6 +6460,7 @@ static bool test_err_load_alloc_oom_1(
 		const cyaml_config_t *config)
 {
 	cyaml_config_t cfg = *config;
+	static const int test[] = { 99, 98, 97 };
 	static const unsigned char yaml[] =
 		"animals:\n"
 		"  - kind: cat\n"
@@ -6472,6 +6473,9 @@ static bool test_err_load_alloc_oom_1(
 		char *kind;
 		char *sound;
 		int *position;
+		int *default_int;
+		int *default_sequence;
+		unsigned default_sequence_count;
 	};
 	struct target_struct {
 		struct animal_s **animal;
@@ -6488,6 +6492,18 @@ static bool test_err_load_alloc_oom_1(
 		CYAML_FIELD_SEQUENCE_FIXED("position", CYAML_FLAG_POINTER,
 				struct animal_s, position,
 				&position_entry_schema, 3),
+		CYAML_FIELD_PTR(INT, "default_int",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct animal_s, default_int,
+				{ .missing = 9 }),
+		CYAML_FIELD_PTR(SEQUENCE, "default_sequence",
+				CYAML_FLAG_OPTIONAL | CYAML_FLAG_POINTER,
+				struct animal_s, default_sequence,
+				{ .entry = &position_entry_schema,
+				  .min = CYAML_ARRAY_LEN(test),
+				  .max = CYAML_ARRAY_LEN(test),
+				  .missing = test,
+				  .missing_count = CYAML_ARRAY_LEN(test) }),
 		CYAML_FIELD_END
 	};
 	static const struct cyaml_schema_value animal_entry_schema = {
