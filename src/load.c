@@ -1114,6 +1114,198 @@ static bool cyaml__mapping_bitfieid_check(
 }
 
 /**
+ * Check whether a numerical value has a zero-value missing entry.
+ *
+ * \param[in]  schema  The schema for a value.
+ * \return true if numerical value has zero missing value, false otherwise.
+ */
+static bool cyaml__numerical_default_zero(
+		const cyaml_schema_value_t *schema)
+{
+	switch (schema->type) {
+	case CYAML_INT:
+		return 0 == schema->integer.missing;
+	case CYAML_ENUM:
+		return 0 == schema->enumeration.missing;
+	case CYAML_UINT:
+		return 0 == schema->unsigned_integer.missing;
+	case CYAML_FLAGS:
+		return 0 == schema->enumeration.missing;
+	case CYAML_BITFIELD:
+		return 0 == schema->bitfield.missing;
+	case CYAML_BOOL:
+		return 0 == schema->boolean.missing;
+	case CYAML_FLOAT:
+		return 0 == schema->floating_point.missing;
+	default:
+		return false;
+	}
+}
+
+/**
+ * Store any scalar default value for a missing field.
+ *
+ * \param[in]  ctx     The CYAML loading context.
+ * \param[in]  field   The missing field's schema.
+ * \param[in]  data    Client data pointer for parent mapping.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__field_scalar_apply_default(
+		const cyaml_ctx_t *ctx,
+		const cyaml_schema_field_t *field,
+		uint8_t *data)
+{
+	const cyaml_schema_value_t *schema = &field->value;
+
+	if (cyaml__numerical_default_zero(schema)) {
+		return CYAML_OK;
+	}
+
+	if (schema->type == CYAML_STRING) {
+		if (schema->string.missing == NULL) {
+			return CYAML_OK;
+		}
+	}
+
+	if (schema->flags & CYAML_FLAG_POINTER) {
+		uint8_t *value_data = NULL;
+		size_t size;
+
+		switch (schema->type) {
+		case CYAML_STRING:
+			size = strlen(schema->string.missing) + 1;
+			break;
+		default:
+			size = schema->data_size;
+			break;
+		}
+
+		value_data = cyaml__realloc(ctx->config, value_data, 0,
+				size, true);
+		if (value_data == NULL) {
+			return CYAML_ERR_OOM;
+		}
+
+		cyaml__log(ctx->config, CYAML_LOG_DEBUG,
+				"Load: Allocation: %p (%zu bytes)\n",
+				value_data, size);
+
+		cyaml_data_write_pointer(value_data, data);
+		data = value_data;
+	}
+
+	switch (schema->type) {
+	case CYAML_INT:
+		return cyaml__store_int(ctx, schema,
+				schema->integer.missing, data);
+	case CYAML_ENUM:
+		return cyaml__store_int(ctx, schema,
+				schema->enumeration.missing, data);
+	case CYAML_UINT:
+		return cyaml__store_uint(ctx, schema,
+				schema->unsigned_integer.missing, data);
+	case CYAML_FLAGS:
+		return cyaml__store_int(ctx, schema,
+				schema->enumeration.missing, data);
+	case CYAML_BITFIELD:
+		return cyaml__store_uint(ctx, schema,
+				schema->bitfield.missing, data);
+	case CYAML_BOOL:
+		return cyaml__store_bool(ctx, schema,
+				schema->boolean.missing, data);
+	case CYAML_FLOAT:
+		return cyaml__store_float(ctx, schema,
+				schema->floating_point.missing, data);
+	case CYAML_STRING:
+		return cyaml__store_string(ctx, schema,
+				schema->string.missing, data);
+	default:
+		return CYAML_ERR_INTERNAL_ERROR;
+	}
+}
+
+/**
+ * Store any default value for a missing field.
+ *
+ * \param[in]  ctx     The CYAML loading context.
+ * \param[in]  field   The missing field's schema.
+ * \param[in]  data    Client data pointer for parent mapping.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__field_apply_default(
+		const cyaml_ctx_t *ctx,
+		const cyaml_schema_field_t *field,
+		uint8_t *data)
+{
+	const cyaml_schema_value_t *schema = &field->value;
+	const cyaml_data_t *schema_default;
+	uint64_t seq_count = 0;
+	cyaml_err_t err;
+	bool ptr;
+
+	switch (schema->type) {
+	case CYAML_INT:    /* Fall through */
+	case CYAML_UINT:   /* Fall through */
+	case CYAML_BOOL:   /* Fall through */
+	case CYAML_ENUM:   /* Fall through */
+	case CYAML_FLAGS:  /* Fall through */
+	case CYAML_FLOAT:  /* Fall through */
+	case CYAML_STRING: /* Fall through */
+	case CYAML_BITFIELD:
+		return cyaml__field_scalar_apply_default(ctx, field, data);
+	case CYAML_MAPPING:
+		if (schema->mapping.missing == NULL) {
+			return CYAML_OK;
+		}
+		schema_default = schema->mapping.missing;
+		break;
+	case CYAML_SEQUENCE: /* Fall through */
+	case CYAML_SEQUENCE_FIXED:
+		if (schema->sequence.missing == NULL) {
+			return CYAML_OK;
+		}
+		schema_default = schema->sequence.missing;
+		if (schema->type == CYAML_SEQUENCE) {
+			seq_count = schema->sequence.missing_count;
+		} else {
+			seq_count = schema->sequence.max;
+		}
+		break;
+	case CYAML_IGNORE:
+		return CYAML_OK;
+	default:
+		return CYAML_ERR_BAD_TYPE_IN_SCHEMA;
+	}
+
+	ptr = cyaml__flag_check_all(schema->flags, CYAML_FLAG_POINTER);
+	err = cyaml_copy(ctx->config, schema,
+			schema_default,
+			(unsigned) seq_count,
+			ptr ? (cyaml_data_t **) data :
+			      (cyaml_data_t **)&data);
+	if (err != CYAML_OK) {
+		cyaml__log(ctx->config, CYAML_LOG_ERROR,
+					"Load: Failed to copy default value "
+					"for field %s to %p\n",
+					field->key, data);
+		goto exit;
+	}
+
+	if (schema->type == CYAML_SEQUENCE) {
+		err = cyaml_data_write(seq_count,
+				field->count_size,
+				ctx->state->data + field->count_offset);
+		if (err != CYAML_OK) {
+			cyaml__log(ctx->config, CYAML_LOG_ERROR,
+				"Load: Failed writing sequence count\n");
+		}
+	}
+
+exit:
+	return err;
+}
+
+/**
  * Check a mapping had all the required fields.
  *
  * Checks all the bits are set in the bitfield, which correspond to
@@ -1141,6 +1333,15 @@ static cyaml_err_t cyaml__mapping_bitfieid_validate(
 		}
 		if (cyaml__flag_check_all(field->value.flags,
 				CYAML_FLAG_OPTIONAL)) {
+			cyaml_err_t err;
+			cyaml__log(ctx->config, CYAML_LOG_DEBUG,
+					"Load: Using default value for: %s\n",
+					field->key);
+			err = cyaml__field_apply_default(ctx, field,
+					state->data + field->data_offset);
+			if (err != CYAML_OK) {
+				return err;
+			}
 			continue;
 		}
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
