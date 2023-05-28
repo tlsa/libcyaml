@@ -1,6 +1,17 @@
 LibCYAML: Change Log
 ====================
 
+## LibCYAML v1.4.1
+
+* **Loading**:
+  * Log valid enum values on error parsing enums.
+  * Split out storage of scaler values to client data structure.
+* **General**:
+  * Updated code coverage CI to latest action versions.
+
+No changes are required for client applications to upgrade.
+
+
 ## LibCYAML v1.4.0
 
 * **Loading**:
@@ -16,6 +27,7 @@ LibCYAML: Change Log
   * Minor CI updates.
 
 No changes are required for client applications to upgrade.
+
 
 ## LibCYAML v1.3.1
 
