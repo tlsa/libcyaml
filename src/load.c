@@ -1670,6 +1670,39 @@ static void cyaml__backtrace(
 }
 
 /**
+ * Check that \ref CYAML_INT value within range mandated by the value's schema.
+ *
+ * \param[in]  ctx     The CYAML loading context.
+ * \param[in]  schema  The schema for the value.
+ * \param[in]  value   The value to check.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static inline cyaml_err_t cyaml__validate_range_constraint_int(
+		const cyaml_ctx_t *ctx,
+		const cyaml_schema_value_t *schema,
+		int64_t value)
+{
+	int64_t min = schema->integer.min;
+	int64_t max = schema->integer.max;
+
+	assert(schema->type == CYAML_INT);
+
+	if (min == 0 && max == 0) {
+		return CYAML_OK;
+	}
+
+	if (value < min || value > max) {
+		cyaml__log(ctx->config, CYAML_LOG_ERROR,
+				"Load: INT value '%" PRIi64 "' out of range "
+				"(min: %" PRIi64 " max: % " PRIi64 ")\n",
+				value, min, max);
+		return CYAML_ERR_INVALID_VALUE;
+	}
+
+	return CYAML_OK;
+}
+
+/**
  * Read a value of type \ref CYAML_INT.
  *
  * \param[in]  ctx     The CYAML loading context.
@@ -1695,6 +1728,15 @@ static cyaml_err_t cyaml__read_int(
 				"Load: Invalid INT value: '%s'\n",
 				value);
 		return CYAML_ERR_INVALID_VALUE;
+	}
+
+	if (schema->type == CYAML_INT) {
+		cyaml_err_t err;
+
+		err = cyaml__validate_range_constraint_int(ctx, schema, temp);
+		if (err != CYAML_OK) {
+			return err;
+		}
 	}
 
 	return cyaml__store_int(ctx, schema, (int64_t)temp, data);
@@ -1731,6 +1773,39 @@ static inline cyaml_err_t cyaml__read_uint64_t(
 }
 
 /**
+ * Check that \ref CYAML_UINT value within range mandated by the value's schema.
+ *
+ * \param[in]  ctx     The CYAML loading context.
+ * \param[in]  schema  The schema for the value.
+ * \param[in]  value   The value to check.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static inline cyaml_err_t cyaml__validate_range_constraint_uint(
+		const cyaml_ctx_t *ctx,
+		const cyaml_schema_value_t *schema,
+		uint64_t value)
+{
+	uint64_t min = schema->unsigned_integer.min;
+	uint64_t max = schema->unsigned_integer.max;
+
+	assert(schema->type == CYAML_UINT);
+
+	if (min == 0 && max == 0) {
+		return CYAML_OK;
+	}
+
+	if (value < min || value > max) {
+		cyaml__log(ctx->config, CYAML_LOG_ERROR,
+				"Load: UINT value '%" PRIu64 "' out of range "
+				"(min: %" PRIu64 " max: % " PRIu64 ")\n",
+				value, min, max);
+		return CYAML_ERR_INVALID_VALUE;
+	}
+
+	return CYAML_OK;
+}
+
+/**
  * Read a value of type \ref CYAML_UINT.
  *
  * \param[in]  ctx     The CYAML loading context.
@@ -1751,6 +1826,13 @@ static cyaml_err_t cyaml__read_uint(
 	err = cyaml__read_uint64_t(ctx, value, &temp);
 	if (err != CYAML_OK) {
 		return err;
+	}
+
+	if (schema->type == CYAML_UINT) {
+		err = cyaml__validate_range_constraint_uint(ctx, schema, temp);
+		if (err != CYAML_OK) {
+			return err;
+		}
 	}
 
 	return cyaml__store_uint(ctx, schema, temp, data);
