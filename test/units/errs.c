@@ -995,6 +995,63 @@ static bool test_err_load_schema_bad_type(
 }
 
 /**
+ * Test loading with schema default value with bad type.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_bad_type_default(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"{}\n";
+	struct target_struct {
+		int value;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		{
+			.key = "key",
+			.value = {
+				.type = 99999,
+				.flags = CYAML_FLAG_OPTIONAL,
+				.data_size = sizeof(data_tgt->value),
+			},
+			.data_offset = offsetof(struct target_struct, value),
+		},
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_BAD_TYPE_IN_SCHEMA) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test saving with schema with bad type.
  *
  * \param[in]  report  The test report context.
@@ -1810,6 +1867,80 @@ static bool test_err_load_schema_bad_data_size_9(
 }
 
 /**
+ * Test loading with schema with data size (9) for sequence count.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_bad_data_size_10(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const int missing[] = { 1, 2, 3, 4 };
+	static const unsigned char yaml[] =
+		"{}\n";
+	struct target_struct {
+		int value[4];
+		unsigned value_count;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, int),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		{
+			.key = "key",
+			.value = {
+				.type = CYAML_SEQUENCE,
+				.flags = CYAML_FLAG_OPTIONAL,
+				.data_size = sizeof(*(data_tgt->value)),
+				.sequence = {
+					.min = 0,
+					.max = 4,
+					.entry = &entry_schema,
+					.missing = missing,
+					.missing_count =
+						CYAML_ARRAY_LEN(missing),
+				},
+			},
+			.data_offset = offsetof(struct target_struct, value),
+			.count_size = 9,
+			.count_offset = offsetof(
+					struct target_struct,
+					value_count),
+		},
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_DATA_SIZE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test saving with schema with data size (0).
  *
  * \param[in]  report  The test report context.
@@ -2212,7 +2343,6 @@ static bool test_err_save_schema_bad_data_size_7(
 					.entry = &entry_schema,
 					.min = 0,
 					.max = 10,
-
 				},
 			},
 			.data_offset = offsetof(struct target_struct, seq),
@@ -6460,6 +6590,7 @@ static bool test_err_load_alloc_oom_1(
 		const cyaml_config_t *config)
 {
 	cyaml_config_t cfg = *config;
+	static const int test[] = { 99, 98, 97 };
 	static const unsigned char yaml[] =
 		"animals:\n"
 		"  - kind: cat\n"
@@ -6472,6 +6603,9 @@ static bool test_err_load_alloc_oom_1(
 		char *kind;
 		char *sound;
 		int *position;
+		int *default_int;
+		int *default_sequence;
+		unsigned default_sequence_count;
 	};
 	struct target_struct {
 		struct animal_s **animal;
@@ -6488,6 +6622,18 @@ static bool test_err_load_alloc_oom_1(
 		CYAML_FIELD_SEQUENCE_FIXED("position", CYAML_FLAG_POINTER,
 				struct animal_s, position,
 				&position_entry_schema, 3),
+		CYAML_FIELD_PTR(INT, "default_int",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct animal_s, default_int,
+				{ .missing = 9 }),
+		CYAML_FIELD_PTR(SEQUENCE, "default_sequence",
+				CYAML_FLAG_OPTIONAL | CYAML_FLAG_POINTER,
+				struct animal_s, default_sequence,
+				{ .entry = &position_entry_schema,
+				  .min = CYAML_ARRAY_LEN(test),
+				  .max = CYAML_ARRAY_LEN(test),
+				  .missing = test,
+				  .missing_count = CYAML_ARRAY_LEN(test) }),
 		CYAML_FIELD_END
 	};
 	static const struct cyaml_schema_value animal_entry_schema = {
@@ -8297,9 +8443,11 @@ bool errs_tests(
 	pass &= test_err_save_schema_bad_data_size_7(rc, &config);
 	pass &= test_err_save_schema_bad_data_size_8(rc, &config);
 	pass &= test_err_copy_schema_bad_data_size_1(rc, &config);
+	pass &= test_err_load_schema_bad_data_size_10(rc, &config);
 	pass &= test_err_load_schema_sequence_min_max(rc, &config);
 	pass &= test_err_save_schema_sequence_min_max(rc, &config);
 	pass &= test_err_copy_schema_sequence_min_max(rc, &config);
+	pass &= test_err_load_schema_bad_type_default(rc, &config);
 	pass &= test_err_load_schema_bad_data_size_float(rc, &config);
 	pass &= test_err_load_schema_sequence_in_sequence(rc, &config);
 	pass &= test_err_save_schema_sequence_in_sequence(rc, &config);

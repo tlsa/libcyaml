@@ -22,6 +22,7 @@ extern "C"
 #include <stdarg.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 /**
  * CYAML library version string.
@@ -382,6 +383,50 @@ typedef struct cyaml_schema_value {
 	uint32_t data_size;
 	/** Anonymous union containing type-specific attributes. */
 	union {
+		/** \ref CYAML_INT type-specific schema data. */
+		struct {
+			/**
+			 * Value to use for missing YAML field.
+			 *
+			 * This is only used when the value is used for a
+			 * mapping field with the \ref CYAML_FLAG_OPTIONAL flag
+			 * set.
+			 */
+			int64_t missing;
+		} integer;
+		/** \ref CYAML_UINT type-specific schema data. */
+		struct {
+			/**
+			 * Value to use for missing YAML field.
+			 *
+			 * This is only used when the value is used for a
+			 * mapping field with the \ref CYAML_FLAG_OPTIONAL flag
+			 * set.
+			 */
+			uint64_t missing;
+		} unsigned_integer;
+		/** \ref CYAML_BOOL type-specific schema data. */
+		struct {
+			/**
+			 * Value to use for missing YAML field.
+			 *
+			 * This is only used when the value is used for a
+			 * mapping field with the \ref CYAML_FLAG_OPTIONAL flag
+			 * set.
+			 */
+			bool missing;
+		} boolean;
+		/** \ref CYAML_FLOAT type-specific schema data. */
+		struct {
+			/**
+			 * Value to use for missing YAML field.
+			 *
+			 * This is only used when the value is used for a
+			 * mapping field with the \ref CYAML_FLAG_OPTIONAL flag
+			 * set.
+			 */
+			double missing;
+		} floating_point;
 		/** \ref CYAML_STRING type-specific schema data. */
 		struct {
 			/**
@@ -398,6 +443,17 @@ typedef struct cyaml_schema_value {
 			 *       must be no more than `data_size - 1`.
 			 */
 			uint32_t max;
+			/**
+			 * Value to use for missing YAML field.
+			 *
+			 * This is only used when the value is used for a
+			 * mapping field with the \ref CYAML_FLAG_OPTIONAL flag
+			 * set.
+			 *
+			 * \note This is may be NULL, if no default sequence is
+			 *       wanted for a missing field in the YAML.
+			 */
+			const char *missing;
 		} string;
 		/** \ref CYAML_MAPPING type-specific schema data. */
 		struct {
@@ -409,6 +465,17 @@ typedef struct cyaml_schema_value {
 			 * and \ref CYAML_FIELD_END for more info.
 			 */
 			const struct cyaml_schema_field *fields;
+			/**
+			 * Value to use for missing YAML field.
+			 *
+			 * This is only used when the value is used for a
+			 * mapping field with the \ref CYAML_FLAG_OPTIONAL flag
+			 * set.
+			 *
+			 * \note This is may be NULL, if no default sequence is
+			 *       wanted for a missing field in the YAML.
+			 */
+			const void *missing;
 		} mapping;
 		/** \ref CYAML_BITFIELD type-specific schema data. */
 		struct {
@@ -416,6 +483,14 @@ typedef struct cyaml_schema_value {
 			const struct cyaml_bitdef *bitdefs;
 			/** Entry count for bitdefs array. */
 			uint32_t count;
+			/**
+			 * Value to use for missing YAML field.
+			 *
+			 * This is only used when the value is used for a
+			 * mapping field with the \ref CYAML_FLAG_OPTIONAL flag
+			 * set.
+			 */
+			uint64_t missing;
 		} bitfield;
 		/**
 		 * \ref CYAML_SEQUENCE and \ref CYAML_SEQUENCE_FIXED
@@ -447,6 +522,21 @@ typedef struct cyaml_schema_value {
 			 *       CYAML_SEQUENCE_FIXED.
 			 */
 			uint32_t max;
+			/**
+			 * Value to use for missing YAML field.
+			 *
+			 * This is only used when the value is used for a
+			 * mapping field with the \ref CYAML_FLAG_OPTIONAL flag
+			 * set.
+			 *
+			 * \note This is may be NULL, if no default sequence is
+			 *       wanted for a missing field in the YAML.
+			 */
+			const void *missing;
+			/**
+			 * Number of entries in missing array.
+			 */
+			uint32_t missing_count;
 		} sequence;
 		/**
 		 * \ref CYAML_ENUM and \ref CYAML_FLAGS type-specific schema
@@ -457,6 +547,14 @@ typedef struct cyaml_schema_value {
 			const cyaml_strval_t *strings;
 			/** Entry count for strings array. */
 			uint32_t count;
+			/**
+			 * Value to use for missing YAML field.
+			 *
+			 * This is only used when the value is used for a
+			 * mapping field with the \ref CYAML_FLAG_OPTIONAL flag
+			 * set.
+			 */
+			int64_t missing;
 		} enumeration;
 	};
 } cyaml_schema_value_t;
@@ -640,17 +738,17 @@ typedef enum cyaml_err {
 	((_flags) & (~CYAML_FLAG_POINTER))
 
 /** Type to \ref cyaml_schema_value union member for INT. */
-#define CYAML__UNION_MEMBER_INT            .enumeration
+#define CYAML__UNION_MEMBER_INT            .integer
 /** Type to \ref cyaml_schema_value union member for UINT. */
-#define CYAML__UNION_MEMBER_UINT           .enumeration
+#define CYAML__UNION_MEMBER_UINT           .unsigned_integer
 /** Type to \ref cyaml_schema_value union member for BOOL. */
-#define CYAML__UNION_MEMBER_BOOL           .enumeration
+#define CYAML__UNION_MEMBER_BOOL           .boolean
 /** Type to \ref cyaml_schema_value union member for ENUM. */
 #define CYAML__UNION_MEMBER_ENUM           .enumeration
 /** Type to \ref cyaml_schema_value union member for FLAGS. */
 #define CYAML__UNION_MEMBER_FLAGS          .enumeration
 /** Type to \ref cyaml_schema_value union member for FLOAT. */
-#define CYAML__UNION_MEMBER_FLOAT          .enumeration
+#define CYAML__UNION_MEMBER_FLOAT          .floating_point
 /** Type to \ref cyaml_schema_value union member for STRING. */
 #define CYAML__UNION_MEMBER_STRING         .string
 /** Type to \ref cyaml_schema_value union member for MAPPING. */
