@@ -1183,8 +1183,8 @@ static cyaml_err_t cyaml__write_mapping(
 				return err;
 			}
 			cyaml__log(ctx->config, CYAML_LOG_INFO,
-					"Save: Sequence entry count: %u\n",
-					seq_count);
+					"Save: Sequence entry count: "
+					"%"PRIu64"\n", seq_count);
 
 		} else if (field->value.type == CYAML_SEQUENCE_FIXED) {
 			seq_count = field->value.sequence.min;
