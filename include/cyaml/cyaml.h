@@ -388,6 +388,26 @@ typedef struct cyaml_schema_value {
 		/** \ref CYAML_INT type-specific schema data. */
 		struct {
 			/**
+			 * Minimum allowed value.
+			 *
+			 * Setting `INT64_MIN` is equivalent to having no
+			 * minimum constraint.
+			 *
+			 * \note If both `min` and `max` are set to zero,
+			 *       no range constraint is applied.
+			 */
+			int64_t min;
+			/**
+			 * Maximum allowed value.
+			 *
+			 * Setting `INT64_MAX` is equivalent to having no
+			 * maximum constraint.
+			 *
+			 * \note If both `min` and `max` are set to zero,
+			 *       no range constraint is applied.
+			 */
+			int64_t max;
+			/**
 			 * Value to use for missing YAML field.
 			 *
 			 * This is only used when the value is used for a
@@ -398,6 +418,26 @@ typedef struct cyaml_schema_value {
 		} integer;
 		/** \ref CYAML_UINT type-specific schema data. */
 		struct {
+			/**
+			 * Minimum allowed value.
+			 *
+			 * Setting `0` is equivalent to having no minimum
+			 * constraint.
+			 *
+			 * \note If both `min` and `max` are set to zero,
+			 *       no range constraint is applied.
+			 */
+			uint64_t min;
+			/**
+			 * Maximum allowed value.
+			 *
+			 * Setting `UINT64_MAX` is equivalent to having no
+			 * maximum constraint.
+			 *
+			 * \note If both `min` and `max` are set to zero,
+			 *       no range constraint is applied.
+			 */
+			uint64_t max;
 			/**
 			 * Value to use for missing YAML field.
 			 *
