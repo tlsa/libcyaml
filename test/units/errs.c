@@ -5333,6 +5333,202 @@ static bool test_err_load_schema_invalid_value_int64_limit_pos(
 }
 
 /**
+ * Test loading a positive signed integer with a range constraint.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_invalid_value_range_int_1(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"test: 90\n";
+	struct target_struct {
+		int test;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD(INT, "test", CYAML_FLAG_DEFAULT,
+				struct target_struct, test, {
+					.min = -16,
+					.max =  64,
+				}),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a negative signed integer with a range constraint.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_invalid_value_range_int_2(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"test: -9000\n";
+	struct target_struct {
+		int test;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD(INT, "test", CYAML_FLAG_DEFAULT,
+				struct target_struct, test, {
+					.min = -16,
+					.max =  64,
+				}),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading an unsigned integer with a range constraint.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_invalid_value_range_uint_1(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"test: 10\n";
+	struct target_struct {
+		unsigned test;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD(UINT, "test", CYAML_FLAG_DEFAULT,
+				struct target_struct, test, {
+					.min =  50,
+					.max = 100,
+				}),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading an unsigned integer with a range constraint.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_invalid_value_range_uint_2(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"test: 200\n";
+	struct target_struct {
+		unsigned test;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD(UINT, "test", CYAML_FLAG_DEFAULT,
+				struct target_struct, test, {
+					.min =  50,
+					.max = 100,
+				}),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading when schema expects string, but it's too short.
  *
  * \param[in]  report  The test report context.
@@ -8503,6 +8699,13 @@ bool errs_tests(
 	pass &= test_err_load_schema_invalid_value_int32_limit_pos(rc, &config);
 	pass &= test_err_load_schema_invalid_value_int64_limit_neg(rc, &config);
 	pass &= test_err_load_schema_invalid_value_int64_limit_pos(rc, &config);
+
+	ttest_heading(rc, "YAML / schema mismatch: Integer range constraints");
+
+	pass &= test_err_load_schema_invalid_value_range_int_1(rc, &config);
+	pass &= test_err_load_schema_invalid_value_range_int_2(rc, &config);
+	pass &= test_err_load_schema_invalid_value_range_uint_1(rc, &config);
+	pass &= test_err_load_schema_invalid_value_range_uint_2(rc, &config);
 
 	ttest_heading(rc, "YAML / schema mismatch: string lengths");
 
