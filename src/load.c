@@ -222,8 +222,8 @@ static inline cyaml_err_t cyaml__store_int(
 
 	if (value < min || value > max) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
-				"Load: INT value out of range: '%" PRId64 "'\n",
-				value);
+				"Load: %s value out of range: '%" PRId64 "'\n",
+				cyaml__type_to_str(schema->type), value);
 		return CYAML_ERR_INVALID_VALUE;
 	}
 
@@ -301,8 +301,8 @@ static inline cyaml_err_t cyaml__store_uint(
 	max = (~(uint64_t)0) >> ((8 - schema->data_size) * 8);
 	if (value > max) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
-				"Load: Invalid UINT value: '%" PRIu64 "'\n",
-				value);
+				"Load: Invalid %s value: '%" PRIu64 "'\n",
+				cyaml__type_to_str(schema->type), value);
 		return CYAML_ERR_INVALID_VALUE;
 	}
 
