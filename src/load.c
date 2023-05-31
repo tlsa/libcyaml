@@ -161,19 +161,54 @@ typedef struct cyaml_ctx {
 } cyaml_ctx_t;
 
 /**
+ * Check that \ref CYAML_INT value value is allowed by client.
+ *
+ * \param[in]  ctx     The CYAML loading context.
+ * \param[in]  schema  The schema for the value.
+ * \param[in]  value   The value to check.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static inline cyaml_err_t cyaml__validate_int(
+		const cyaml_ctx_t *ctx,
+		const cyaml_schema_value_t *schema,
+		int64_t value)
+{
+	int64_t min = schema->integer.min;
+	int64_t max = schema->integer.max;
+
+	assert(schema->type == CYAML_INT);
+
+	if (min == 0 && max == 0) {
+		return CYAML_OK;
+	}
+
+	if (value < min || value > max) {
+		cyaml__log(ctx->config, CYAML_LOG_ERROR,
+				"Load: INT value '%" PRIi64 "' out of range "
+				"(min: %" PRIi64 " max: % " PRIi64 ")\n",
+				value, min, max);
+		return CYAML_ERR_INVALID_VALUE;
+	}
+
+	return CYAML_OK;
+}
+
+/**
  * Store a signed integer to client data structure according to schema.
  *
  * \param[in]  ctx       The CYAML loading context.
  * \param[in]  schema    The schema for the value to be stored.
- * \param[in]  value     The value to store.
  * \param[in]  location  The place to write the value in the output data.
+ * \param[in]  value     The value to store.
+ * \param[in]  validate  Whether to validate the value before storing it.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
 static inline cyaml_err_t cyaml__store_int(
 		const cyaml_ctx_t *ctx,
 		const cyaml_schema_value_t *schema,
+		uint8_t *location,
 		int64_t value,
-		uint8_t *location)
+		bool validate)
 {
 	int64_t max;
 	int64_t min;
@@ -192,7 +227,51 @@ static inline cyaml_err_t cyaml__store_int(
 		return CYAML_ERR_INVALID_VALUE;
 	}
 
+	if (validate) {
+		cyaml_err_t err;
+
+		if (schema->type == CYAML_INT) {
+			err = cyaml__validate_int(ctx, schema, value);
+			if (err != CYAML_OK) {
+				return err;
+			}
+		}
+	}
+
 	return cyaml_data_write((uint64_t)value, schema->data_size, location);
+}
+
+/**
+ * Check that \ref CYAML_UINT value is allowed by client.
+ *
+ * \param[in]  ctx     The CYAML loading context.
+ * \param[in]  schema  The schema for the value.
+ * \param[in]  value   The value to check.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static inline cyaml_err_t cyaml__validate_uint(
+		const cyaml_ctx_t *ctx,
+		const cyaml_schema_value_t *schema,
+		uint64_t value)
+{
+	uint64_t min = schema->unsigned_integer.min;
+	uint64_t max = schema->unsigned_integer.max;
+
+	assert(schema->type == CYAML_UINT);
+
+	if (min == 0 && max == 0) {
+		return CYAML_OK;
+	}
+
+	if (value < min || value > max) {
+		cyaml__log(ctx->config, CYAML_LOG_ERROR,
+				"Load: UINT value '%" PRIu64 "' out of range "
+				"(min: %" PRIu64 " max: % " PRIu64 ")\n",
+				value, min, max);
+		return CYAML_ERR_INVALID_VALUE;
+	}
+
+	return CYAML_OK;
 }
 
 /**
@@ -200,15 +279,17 @@ static inline cyaml_err_t cyaml__store_int(
  *
  * \param[in]  ctx       The CYAML loading context.
  * \param[in]  schema    The schema for the value to be stored.
- * \param[in]  value     The value to store.
  * \param[in]  location  The place to write the value in the output data.
+ * \param[in]  value     The value to store.
+ * \param[in]  validate  Whether to validate the value before storing it.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
 static inline cyaml_err_t cyaml__store_uint(
 		const cyaml_ctx_t *ctx,
 		const cyaml_schema_value_t *schema,
+		uint8_t *location,
 		uint64_t value,
-		uint8_t *location)
+		bool validate)
 {
 	uint64_t max;
 
@@ -224,6 +305,17 @@ static inline cyaml_err_t cyaml__store_uint(
 		return CYAML_ERR_INVALID_VALUE;
 	}
 
+	if (validate) {
+		cyaml_err_t err;
+
+		if (schema->type == CYAML_UINT) {
+			err = cyaml__validate_uint(ctx, schema, value);
+			if (err != CYAML_OK) {
+				return err;
+			}
+		}
+	}
+
 	return cyaml_data_write(value, schema->data_size, location);
 }
 
@@ -232,15 +324,15 @@ static inline cyaml_err_t cyaml__store_uint(
  *
  * \param[in]  ctx       The CYAML loading context.
  * \param[in]  schema    The schema for the value to be stored.
- * \param[in]  value     The value to store.
  * \param[in]  location  The place to write the value in the output data.
+ * \param[in]  value     The value to store.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
 static inline cyaml_err_t cyaml__store_bool(
 		const cyaml_ctx_t *ctx,
 		const cyaml_schema_value_t *schema,
-		bool value,
-		uint8_t *location)
+		uint8_t *location,
+		bool value)
 {
 	CYAML_UNUSED(ctx);
 
@@ -252,15 +344,15 @@ static inline cyaml_err_t cyaml__store_bool(
  *
  * \param[in]  ctx       The CYAML loading context.
  * \param[in]  schema    The schema for the value to be stored.
- * \param[in]  value     The value to store.
  * \param[in]  location  The place to write the value in the output data.
+ * \param[in]  value     The value to store.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
 static cyaml_err_t cyaml__store_float(
 		const cyaml_ctx_t *ctx,
 		const cyaml_schema_value_t *schema,
-		double value,
-		uint8_t *location)
+		uint8_t *location,
+		double value)
 {
 	CYAML_UNUSED(ctx);
 
@@ -290,15 +382,15 @@ static cyaml_err_t cyaml__store_float(
  *
  * \param[in]  ctx       The CYAML loading context.
  * \param[in]  schema    The schema for the value to be stored.
- * \param[in]  value     The value to store.
  * \param[in]  location  The place to write the value in the output data.
+ * \param[in]  value     The value to store.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
 static cyaml_err_t cyaml__store_string(
 		const cyaml_ctx_t *ctx,
 		const cyaml_schema_value_t *schema,
-		const char *value,
-		uint8_t *location)
+		uint8_t *location,
+		const char *value)
 {
 	size_t str_len = strlen(value);
 
@@ -1196,29 +1288,29 @@ static cyaml_err_t cyaml__field_scalar_apply_default(
 
 	switch (schema->type) {
 	case CYAML_INT:
-		return cyaml__store_int(ctx, schema,
-				schema->integer.missing, data);
+		return cyaml__store_int(ctx, schema, data,
+				schema->integer.missing, false);
 	case CYAML_ENUM:
-		return cyaml__store_int(ctx, schema,
-				schema->enumeration.missing, data);
+		return cyaml__store_int(ctx, schema, data,
+				schema->enumeration.missing, false);
 	case CYAML_UINT:
-		return cyaml__store_uint(ctx, schema,
-				schema->unsigned_integer.missing, data);
+		return cyaml__store_uint(ctx, schema, data,
+				schema->unsigned_integer.missing, false);
 	case CYAML_FLAGS:
-		return cyaml__store_int(ctx, schema,
-				schema->enumeration.missing, data);
+		return cyaml__store_int(ctx, schema, data,
+				schema->enumeration.missing, false);
 	case CYAML_BITFIELD:
-		return cyaml__store_uint(ctx, schema,
-				schema->bitfield.missing, data);
+		return cyaml__store_uint(ctx, schema, data,
+				schema->bitfield.missing, false);
 	case CYAML_BOOL:
-		return cyaml__store_bool(ctx, schema,
-				schema->boolean.missing, data);
+		return cyaml__store_bool(ctx, schema, data,
+				schema->boolean.missing);
 	case CYAML_FLOAT:
-		return cyaml__store_float(ctx, schema,
-				schema->floating_point.missing, data);
+		return cyaml__store_float(ctx, schema, data,
+				schema->floating_point.missing);
 	case CYAML_STRING:
-		return cyaml__store_string(ctx, schema,
-				schema->string.missing, data);
+		return cyaml__store_string(ctx, schema, data,
+				schema->string.missing);
 	default:
 		return CYAML_ERR_INTERNAL_ERROR;
 	}
@@ -1670,39 +1762,6 @@ static void cyaml__backtrace(
 }
 
 /**
- * Check that \ref CYAML_INT value within range mandated by the value's schema.
- *
- * \param[in]  ctx     The CYAML loading context.
- * \param[in]  schema  The schema for the value.
- * \param[in]  value   The value to check.
- * \return \ref CYAML_OK on success, or appropriate error code otherwise.
- */
-static inline cyaml_err_t cyaml__validate_range_constraint_int(
-		const cyaml_ctx_t *ctx,
-		const cyaml_schema_value_t *schema,
-		int64_t value)
-{
-	int64_t min = schema->integer.min;
-	int64_t max = schema->integer.max;
-
-	assert(schema->type == CYAML_INT);
-
-	if (min == 0 && max == 0) {
-		return CYAML_OK;
-	}
-
-	if (value < min || value > max) {
-		cyaml__log(ctx->config, CYAML_LOG_ERROR,
-				"Load: INT value '%" PRIi64 "' out of range "
-				"(min: %" PRIi64 " max: % " PRIi64 ")\n",
-				value, min, max);
-		return CYAML_ERR_INVALID_VALUE;
-	}
-
-	return CYAML_OK;
-}
-
-/**
  * Read a value of type \ref CYAML_INT.
  *
  * \param[in]  ctx     The CYAML loading context.
@@ -1730,16 +1789,7 @@ static cyaml_err_t cyaml__read_int(
 		return CYAML_ERR_INVALID_VALUE;
 	}
 
-	if (schema->type == CYAML_INT) {
-		cyaml_err_t err;
-
-		err = cyaml__validate_range_constraint_int(ctx, schema, temp);
-		if (err != CYAML_OK) {
-			return err;
-		}
-	}
-
-	return cyaml__store_int(ctx, schema, (int64_t)temp, data);
+	return cyaml__store_int(ctx, schema, data, (int64_t)temp, true);
 }
 
 /**
@@ -1773,39 +1823,6 @@ static inline cyaml_err_t cyaml__read_uint64_t(
 }
 
 /**
- * Check that \ref CYAML_UINT value within range mandated by the value's schema.
- *
- * \param[in]  ctx     The CYAML loading context.
- * \param[in]  schema  The schema for the value.
- * \param[in]  value   The value to check.
- * \return \ref CYAML_OK on success, or appropriate error code otherwise.
- */
-static inline cyaml_err_t cyaml__validate_range_constraint_uint(
-		const cyaml_ctx_t *ctx,
-		const cyaml_schema_value_t *schema,
-		uint64_t value)
-{
-	uint64_t min = schema->unsigned_integer.min;
-	uint64_t max = schema->unsigned_integer.max;
-
-	assert(schema->type == CYAML_UINT);
-
-	if (min == 0 && max == 0) {
-		return CYAML_OK;
-	}
-
-	if (value < min || value > max) {
-		cyaml__log(ctx->config, CYAML_LOG_ERROR,
-				"Load: UINT value '%" PRIu64 "' out of range "
-				"(min: %" PRIu64 " max: % " PRIu64 ")\n",
-				value, min, max);
-		return CYAML_ERR_INVALID_VALUE;
-	}
-
-	return CYAML_OK;
-}
-
-/**
  * Read a value of type \ref CYAML_UINT.
  *
  * \param[in]  ctx     The CYAML loading context.
@@ -1828,14 +1845,7 @@ static cyaml_err_t cyaml__read_uint(
 		return err;
 	}
 
-	if (schema->type == CYAML_UINT) {
-		err = cyaml__validate_range_constraint_uint(ctx, schema, temp);
-		if (err != CYAML_OK) {
-			return err;
-		}
-	}
-
-	return cyaml__store_uint(ctx, schema, temp, data);
+	return cyaml__store_uint(ctx, schema, data, temp, true);
 }
 
 /**
@@ -1865,7 +1875,7 @@ static cyaml_err_t cyaml__read_bool(
 		}
 	}
 
-	return cyaml__store_bool(ctx, schema, temp, data);
+	return cyaml__store_bool(ctx, schema, data, temp);
 }
 
 /**
@@ -1888,8 +1898,8 @@ static cyaml_err_t cyaml__read_enum(
 	for (uint32_t i = 0; i < schema->enumeration.count; i++) {
 		if (cyaml__strcmp(ctx->config, schema,
 				value, strings[i].str) == 0) {
-			return cyaml__store_int(ctx, schema,
-					strings[i].val, data);
+			return cyaml__store_int(ctx, schema, data,
+					strings[i].val, true);
 		}
 	}
 
@@ -1966,7 +1976,7 @@ static cyaml_err_t cyaml__read_float(
 		}
 	}
 
-	return cyaml__store_float(ctx, schema, temp, data);
+	return cyaml__store_float(ctx, schema, data, temp);
 }
 
 /**
@@ -1984,7 +1994,7 @@ static cyaml_err_t cyaml__read_string(
 		const char *value,
 		uint8_t *data)
 {
-	return cyaml__store_string(ctx, schema, value, data);
+	return cyaml__store_string(ctx, schema, data, value);
 }
 
 /**
