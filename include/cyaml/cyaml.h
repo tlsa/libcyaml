@@ -46,6 +46,14 @@ extern const char *cyaml_version_str;
  */
 extern const uint32_t cyaml_version;
 
+typedef struct cyaml_schema_value cyaml_schema_value_t;
+
+/**
+ * Data loaded or saved by CYAML has this type.  CYAML schemas are used
+ * to describe the data contained.
+ */
+typedef void cyaml_data_t;
+
 /**
  * CYAML value types.
  *
@@ -349,6 +357,112 @@ typedef struct cyaml_bitdef {
 } cyaml_bitdef_t;
 
 /**
+ * Value validation callback function for \ref CYAML_INT.
+ *
+ * Clients provide this for values of type \ref CYAML_INT.
+ * When called, return `false` to reject the value as invalid or true to
+ * accept it as valid.
+ *
+ * \param[in] ctx     Client's private validation context.
+ * \param[in] schema  The schema for the value.
+ * \param[in] value   The value to be validated.
+ * \return `true` if values is valid, `false` otherwise.
+ */
+typedef bool (*cyaml_validate_int_fn_t)(
+		void *ctx,
+		const cyaml_schema_value_t *schema,
+		int64_t value);
+
+/**
+ * Value validation callback function for \ref CYAML_UINT.
+ *
+ * Clients provide this for values of type \ref CYAML_UINT.
+ * When called, return `false` to reject the value as invalid or true to
+ * accept it as valid.
+ *
+ * \param[in] ctx     Client's private validation context.
+ * \param[in] schema  The schema for the value.
+ * \param[in] value   The value to be validated.
+ * \return `true` if values is valid, `false` otherwise.
+ */
+typedef bool (*cyaml_validate_uint_fn_t)(
+		void *ctx,
+		const cyaml_schema_value_t *schema,
+		uint64_t value);
+
+/**
+ * Value validation callback function for \ref CYAML_FLOAT.
+ *
+ * Clients provide this for values of type \ref CYAML_FLOAT.
+ * When called, return `false` to reject the value as invalid or true to
+ * accept it as valid.
+ *
+ * \param[in] ctx     Client's private validation context.
+ * \param[in] schema  The schema for the value.
+ * \param[in] value   The value to be validated.
+ * \return `true` if values is valid, `false` otherwise.
+ */
+typedef bool (*cyaml_validate_float_fn_t)(
+		void *ctx,
+		const cyaml_schema_value_t *schema,
+		double value);
+
+/**
+ * Value validation callback function for \ref CYAML_STRING.
+ *
+ * Clients provide this for values of type \ref CYAML_STRING.
+ * When called, return `false` to reject the value as invalid or true to
+ * accept it as valid.
+ *
+ * \param[in] ctx     Client's private validation context.
+ * \param[in] schema  The schema for the value.
+ * \param[in] value   The value to be validated.
+ * \return `true` if values is valid, `false` otherwise.
+ */
+typedef bool (*cyaml_validate_string_fn_t)(
+		void *ctx,
+		const cyaml_schema_value_t *schema,
+		const char *value);
+
+/**
+ * Value validation callback function for \ref CYAML_MAPPING.
+ *
+ * Clients provide this for values of type \ref CYAML_MAPPING.
+ * When called, return `false` to reject the value as invalid or true to
+ * accept it as valid.
+ *
+ * \param[in] ctx     Client's private validation context.
+ * \param[in] schema  The schema for the value.
+ * \param[in] value   The value to be validated.
+ * \return `true` if values is valid, `false` otherwise.
+ */
+typedef bool (*cyaml_validate_mapping_fn_t)(
+		void *ctx,
+		const cyaml_schema_value_t *schema,
+		const cyaml_data_t *value);
+
+/**
+ * Value validation callback function for \ref CYAML_SEQUENCE and
+ * \ref CYAML_SEQUENCE_FIXED.
+ *
+ * Clients provide this for values of type \ref CYAML_SEQUENCE or
+ * \ref CYAML_SEQUENCE_FIXED.
+ * When called, return `false` to reject the value as invalid or true to
+ * accept it as valid.
+ *
+ * \param[in] ctx       Client's private validation context.
+ * \param[in] schema    The schema for the value.
+ * \param[in] seq       The value to be validated.
+ * \param[in] seq_count Number of entries in seq.
+ * \return `true` if values is valid, `false` otherwise.
+ */
+typedef bool (*cyaml_validate_sequence_fn_t)(
+		void *ctx,
+		const cyaml_schema_value_t *schema,
+		const cyaml_data_t *seq,
+		size_t seq_count);
+
+/**
  * Schema definition for a value.
  *
  * \note There are convenience macros for each of the types to assist in
@@ -408,6 +522,12 @@ typedef struct cyaml_schema_value {
 			 */
 			int64_t max;
 			/**
+			 * Optional client value validation callback.
+			 *
+			 * May be NULL.
+			 */
+			cyaml_validate_int_fn_t validation_cb;
+			/**
 			 * Value to use for missing YAML field.
 			 *
 			 * This is only used when the value is used for a
@@ -439,6 +559,12 @@ typedef struct cyaml_schema_value {
 			 */
 			uint64_t max;
 			/**
+			 * Optional client value validation callback.
+			 *
+			 * May be NULL.
+			 */
+			cyaml_validate_uint_fn_t validation_cb;
+			/**
 			 * Value to use for missing YAML field.
 			 *
 			 * This is only used when the value is used for a
@@ -460,6 +586,12 @@ typedef struct cyaml_schema_value {
 		} boolean;
 		/** \ref CYAML_FLOAT type-specific schema data. */
 		struct {
+			/**
+			 * Optional client value validation callback.
+			 *
+			 * May be NULL.
+			 */
+			cyaml_validate_float_fn_t validation_cb;
 			/**
 			 * Value to use for missing YAML field.
 			 *
@@ -486,6 +618,12 @@ typedef struct cyaml_schema_value {
 			 */
 			uint32_t max;
 			/**
+			 * Optional client value validation callback.
+			 *
+			 * May be NULL.
+			 */
+			cyaml_validate_string_fn_t validation_cb;
+			/**
 			 * Value to use for missing YAML field.
 			 *
 			 * This is only used when the value is used for a
@@ -508,6 +646,12 @@ typedef struct cyaml_schema_value {
 			 */
 			const struct cyaml_schema_field *fields;
 			/**
+			 * Optional client value validation callback.
+			 *
+			 * May be NULL.
+			 */
+			cyaml_validate_mapping_fn_t validation_cb;
+			/**
 			 * Value to use for missing YAML field.
 			 *
 			 * This is only used when the value is used for a
@@ -525,6 +669,12 @@ typedef struct cyaml_schema_value {
 			const struct cyaml_bitdef *bitdefs;
 			/** Entry count for bitdefs array. */
 			uint32_t count;
+			/**
+			 * Optional client value validation callback.
+			 *
+			 * May be NULL.
+			 */
+			cyaml_validate_uint_fn_t validation_cb;
 			/**
 			 * Value to use for missing YAML field.
 			 *
@@ -565,6 +715,12 @@ typedef struct cyaml_schema_value {
 			 */
 			uint32_t max;
 			/**
+			 * Optional client value validation callback.
+			 *
+			 * May be NULL.
+			 */
+			cyaml_validate_sequence_fn_t validation_cb;
+			/**
 			 * Value to use for missing YAML field.
 			 *
 			 * This is only used when the value is used for a
@@ -589,6 +745,12 @@ typedef struct cyaml_schema_value {
 			const cyaml_strval_t *strings;
 			/** Entry count for strings array. */
 			uint32_t count;
+			/**
+			 * Optional client value validation callback.
+			 *
+			 * May be NULL.
+			 */
+			cyaml_validate_int_fn_t validation_cb;
 			/**
 			 * Value to use for missing YAML field.
 			 *
@@ -1528,12 +1690,6 @@ typedef enum cyaml_err {
  */
 #define CYAML_ARRAY_LEN(_a) ((sizeof(_a)) / (sizeof(_a[0])))
 
-/**
- * Data loaded or saved by CYAML has this type.  CYAML schemas are used
- * to describe the data contained.
- */
-typedef void cyaml_data_t;
-
 /** CYAML logging levels. */
 typedef enum cyaml_log_e {
 	CYAML_LOG_DEBUG,   /**< Debug level logging. */
@@ -1632,6 +1788,13 @@ typedef struct cyaml_config {
 	 * allocation context, so pass NULL for the mem_ctx if using that.
 	 */
 	void *mem_ctx;
+	/**
+	 * Client value validation callback context pointer.
+	 *
+	 * Clients setting their own value validation callbacks in the schema
+	 * will be called back with this validation context pointer.
+	 */
+	void *validation_ctx;
 	/**
 	 * Minimum logging priority level to be issued.
 	 *
