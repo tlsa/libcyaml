@@ -178,11 +178,8 @@ static inline cyaml_err_t cyaml__validate_int(
 
 	assert(schema->type == CYAML_INT);
 
-	if (min == 0 && max == 0) {
-		return CYAML_OK;
-	}
-
-	if (value < min || value > max) {
+	/* If both min and max are zero, the range constraint is not applied. */
+	if ((min != 0 || max != 0) && (value < min || value > max)) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
 				"Load: INT value '%" PRIi64 "' out of range "
 				"(min: %" PRIi64 " max: % " PRIi64 ")\n",
@@ -262,11 +259,8 @@ static inline cyaml_err_t cyaml__validate_uint(
 
 	assert(schema->type == CYAML_UINT);
 
-	if (min == 0 && max == 0) {
-		return CYAML_OK;
-	}
-
-	if (value < min || value > max) {
+	/* If both min and max are zero, the range constraint is not applied. */
+	if ((min != 0 || max != 0) && (value < min || value > max)) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
 				"Load: UINT value '%" PRIu64 "' out of range "
 				"(min: %" PRIu64 " max: % " PRIu64 ")\n",
