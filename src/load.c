@@ -178,6 +178,9 @@ static inline cyaml_err_t cyaml__store_int(
 	int64_t max;
 	int64_t min;
 
+	assert(schema->type == CYAML_INT ||
+	       schema->type == CYAML_ENUM);
+
 	if (schema->data_size == 0 || schema->data_size > sizeof(value)) {
 		return CYAML_ERR_INVALID_DATA_SIZE;
 	}
@@ -211,6 +214,10 @@ static inline cyaml_err_t cyaml__store_uint(
 		uint64_t value)
 {
 	uint64_t max;
+
+	assert(schema->type == CYAML_UINT ||
+	       schema->type == CYAML_FLAGS ||
+	       schema->type == CYAML_BITFIELD);
 
 	if (schema->data_size == 0 || schema->data_size > sizeof(value)) {
 		return CYAML_ERR_INVALID_DATA_SIZE;
