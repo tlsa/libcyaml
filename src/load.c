@@ -2279,7 +2279,7 @@ static cyaml_err_t cyaml__read_bitfield_value(
 		}
 	}
 
-	err = cyaml_data_write(value, schema->data_size, data);
+	err = cyaml__store_uint(ctx, schema, data, value, true);
 	if (err != CYAML_OK) {
 		return err;
 	}
