@@ -213,7 +213,10 @@ static inline cyaml_err_t cyaml__store_int(
 	int64_t max;
 	int64_t min;
 
-	if (schema->data_size == 0 || schema->data_size > sizeof(uint64_t)) {
+	assert(schema->type == CYAML_INT ||
+	       schema->type == CYAML_ENUM);
+
+	if (schema->data_size == 0 || schema->data_size > sizeof(value)) {
 		return CYAML_ERR_INVALID_DATA_SIZE;
 	}
 
@@ -293,7 +296,11 @@ static inline cyaml_err_t cyaml__store_uint(
 {
 	uint64_t max;
 
-	if (schema->data_size == 0) {
+	assert(schema->type == CYAML_UINT ||
+	       schema->type == CYAML_FLAGS ||
+	       schema->type == CYAML_BITFIELD);
+
+	if (schema->data_size == 0 || schema->data_size > sizeof(value)) {
 		return CYAML_ERR_INVALID_DATA_SIZE;
 	}
 
@@ -1297,8 +1304,8 @@ static cyaml_err_t cyaml__field_scalar_apply_default(
 		return cyaml__store_uint(ctx, schema, data,
 				schema->unsigned_integer.missing, false);
 	case CYAML_FLAGS:
-		return cyaml__store_int(ctx, schema, data,
-				schema->enumeration.missing, false);
+		return cyaml__store_uint(ctx, schema, data,
+				(uint64_t)schema->enumeration.missing, false);
 	case CYAML_BITFIELD:
 		return cyaml__store_uint(ctx, schema, data,
 				schema->bitfield.missing, false);
@@ -2130,7 +2137,7 @@ static cyaml_err_t cyaml__read_flags_value(
 		}
 	}
 
-	err = cyaml_data_write(value, schema->data_size, data);
+	err = cyaml__store_uint(ctx, schema, data, value, true);
 	if (err != CYAML_OK) {
 		return err;
 	}
@@ -2279,7 +2286,7 @@ static cyaml_err_t cyaml__read_bitfield_value(
 		}
 	}
 
-	err = cyaml_data_write(value, schema->data_size, data);
+	err = cyaml__store_uint(ctx, schema, data, value, true);
 	if (err != CYAML_OK) {
 		return err;
 	}
