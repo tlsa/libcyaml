@@ -1297,8 +1297,8 @@ static cyaml_err_t cyaml__field_scalar_apply_default(
 		return cyaml__store_uint(ctx, schema, data,
 				schema->unsigned_integer.missing, false);
 	case CYAML_FLAGS:
-		return cyaml__store_int(ctx, schema, data,
-				schema->enumeration.missing, false);
+		return cyaml__store_uint(ctx, schema, data,
+				(uint64_t)schema->enumeration.missing, false);
 	case CYAML_BITFIELD:
 		return cyaml__store_uint(ctx, schema, data,
 				schema->bitfield.missing, false);
