@@ -175,19 +175,24 @@ static inline cyaml_err_t cyaml__validate_int(
 {
 	int64_t min = schema->integer.min;
 	int64_t max = schema->integer.max;
+	cyaml_validate_int_fn_t validate_cb =
+			schema->integer.validation_cb;
 
 	assert(schema->type == CYAML_INT);
 
-	if (min == 0 && max == 0) {
-		return CYAML_OK;
-	}
-
-	if (value < min || value > max) {
+	/* If both min and max are zero, the range constraint is not applied. */
+	if ((min != 0 || max != 0) && (value < min || value > max)) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
 				"Load: INT value '%" PRIi64 "' out of range "
 				"(min: %" PRIi64 " max: % " PRIi64 ")\n",
 				value, min, max);
 		return CYAML_ERR_INVALID_VALUE;
+	}
+
+	if (validate_cb != NULL) {
+		if (!validate_cb(ctx->config->validation_ctx, schema, value)) {
+			return CYAML_ERR_INVALID_VALUE;
+		}
 	}
 
 	return CYAML_OK;
@@ -225,8 +230,8 @@ static inline cyaml_err_t cyaml__store_int(
 
 	if (value < min || value > max) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
-				"Load: INT value out of range: '%" PRId64 "'\n",
-				value);
+				"Load: %s value out of range: '%" PRId64 "'\n",
+				cyaml__type_to_str(schema->type), value);
 		return CYAML_ERR_INVALID_VALUE;
 	}
 
@@ -237,6 +242,19 @@ static inline cyaml_err_t cyaml__store_int(
 			err = cyaml__validate_int(ctx, schema, value);
 			if (err != CYAML_OK) {
 				return err;
+			}
+
+		}
+
+		if (schema->type == CYAML_ENUM) {
+			cyaml_validate_int_fn_t validate_cb =
+					schema->enumeration.validation_cb;
+
+			if (validate_cb != NULL) {
+				if (!validate_cb(ctx->config->validation_ctx,
+						schema, value)) {
+					return CYAML_ERR_INVALID_VALUE;
+				}
 			}
 		}
 	}
@@ -259,19 +277,24 @@ static inline cyaml_err_t cyaml__validate_uint(
 {
 	uint64_t min = schema->unsigned_integer.min;
 	uint64_t max = schema->unsigned_integer.max;
+	cyaml_validate_uint_fn_t validate_cb =
+			schema->unsigned_integer.validation_cb;
 
 	assert(schema->type == CYAML_UINT);
 
-	if (min == 0 && max == 0) {
-		return CYAML_OK;
-	}
-
-	if (value < min || value > max) {
+	/* If both min and max are zero, the range constraint is not applied. */
+	if ((min != 0 || max != 0) && (value < min || value > max)) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
 				"Load: UINT value '%" PRIu64 "' out of range "
 				"(min: %" PRIu64 " max: % " PRIu64 ")\n",
 				value, min, max);
 		return CYAML_ERR_INVALID_VALUE;
+	}
+
+	if (validate_cb != NULL) {
+		if (!validate_cb(ctx->config->validation_ctx, schema, value)) {
+			return CYAML_ERR_INVALID_VALUE;
+		}
 	}
 
 	return CYAML_OK;
@@ -307,8 +330,8 @@ static inline cyaml_err_t cyaml__store_uint(
 	max = (~(uint64_t)0) >> ((8 - schema->data_size) * 8);
 	if (value > max) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
-				"Load: Invalid UINT value: '%" PRIu64 "'\n",
-				value);
+				"Load: Invalid %s value: '%" PRIu64 "'\n",
+				cyaml__type_to_str(schema->type), value);
 		return CYAML_ERR_INVALID_VALUE;
 	}
 
@@ -319,6 +342,32 @@ static inline cyaml_err_t cyaml__store_uint(
 			err = cyaml__validate_uint(ctx, schema, value);
 			if (err != CYAML_OK) {
 				return err;
+			}
+
+		}
+
+		if (schema->type == CYAML_FLAGS) {
+			cyaml_validate_int_fn_t validate_cb =
+					schema->enumeration.validation_cb;
+
+			if (validate_cb != NULL) {
+				if (!validate_cb(ctx->config->validation_ctx,
+						schema, (int64_t) value)) {
+					return CYAML_ERR_INVALID_VALUE;
+				}
+			}
+
+		}
+
+		if (schema->type == CYAML_BITFIELD) {
+			cyaml_validate_uint_fn_t validate_cb =
+					schema->bitfield.validation_cb;
+
+			if (validate_cb != NULL) {
+				if (!validate_cb(ctx->config->validation_ctx,
+						schema, value)) {
+					return CYAML_ERR_INVALID_VALUE;
+				}
 			}
 		}
 	}
@@ -361,6 +410,9 @@ static cyaml_err_t cyaml__store_float(
 		uint8_t *location,
 		double value)
 {
+	cyaml_validate_float_fn_t validate_cb =
+			schema->floating_point.validation_cb;
+
 	CYAML_UNUSED(ctx);
 
 	if (schema->data_size == sizeof(float)) {
@@ -373,9 +425,24 @@ static cyaml_err_t cyaml__store_float(
 		}
 
 		fvalue = (float)value;
+
+		if (validate_cb != NULL) {
+			if (!validate_cb(ctx->config->validation_ctx,
+					schema, fvalue)) {
+				return CYAML_ERR_INVALID_VALUE;
+			}
+		}
+
 		memcpy(location, &fvalue, schema->data_size);
 
 	} else if (schema->data_size == sizeof(double)) {
+		if (validate_cb != NULL) {
+			if (!validate_cb(ctx->config->validation_ctx,
+					schema, value)) {
+				return CYAML_ERR_INVALID_VALUE;
+			}
+		}
+
 		memcpy(location, &value, schema->data_size);
 	} else {
 		return CYAML_ERR_INVALID_DATA_SIZE;
@@ -400,6 +467,7 @@ static cyaml_err_t cyaml__store_string(
 		const char *value)
 {
 	size_t str_len = strlen(value);
+	cyaml_validate_string_fn_t validate_cb = schema->string.validation_cb;
 
 	CYAML_UNUSED(ctx);
 
@@ -415,6 +483,12 @@ static cyaml_err_t cyaml__store_string(
 				"Load: STRING length > %"PRIu32": %s\n",
 				schema->string.max, value);
 		return CYAML_ERR_STRING_LENGTH_MAX;
+	}
+
+	if (validate_cb != NULL) {
+		if (!validate_cb(ctx->config->validation_ctx, schema, value)) {
+			return CYAML_ERR_INVALID_VALUE;
+		}
 	}
 
 	memcpy(location, value, str_len + 1);
@@ -2667,12 +2741,22 @@ static cyaml_err_t cyaml__map_end(
 		const yaml_event_t *event)
 {
 	cyaml_err_t err;
+	const cyaml_state_t *state = ctx->state;
+	const cyaml_schema_value_t *schema = state->schema;
 
 	CYAML_UNUSED(event);
 
 	err = cyaml__mapping_bitfieid_validate(ctx);
 	if (err != CYAML_OK) {
 		return err;
+	}
+
+	if (schema->mapping.validation_cb != NULL) {
+		if (!schema->mapping.validation_cb(
+				ctx->config->validation_ctx,
+				schema, state->data)) {
+			return CYAML_ERR_INVALID_VALUE;
+		}
 	}
 
 	cyaml__stack_pop(ctx);
@@ -2783,7 +2867,8 @@ static cyaml_err_t cyaml__seq_end(
 		cyaml_ctx_t *ctx,
 		const yaml_event_t *event)
 {
-	cyaml_state_t *state = ctx->state;
+	const cyaml_state_t *state = ctx->state;
+	const cyaml_schema_value_t *schema = state->schema;
 
 	CYAML_UNUSED(event);
 
@@ -2795,6 +2880,15 @@ static cyaml_err_t cyaml__seq_end(
 				state->schema->sequence.min);
 		return CYAML_ERR_SEQUENCE_ENTRIES_MIN;
 	}
+
+	if (schema->sequence.validation_cb != NULL) {
+		if (!schema->sequence.validation_cb(
+				ctx->config->validation_ctx,
+				schema, state->data, state->sequence.count)) {
+			return CYAML_ERR_INVALID_VALUE;
+		}
+	}
+
 	cyaml__log(ctx->config, CYAML_LOG_DEBUG, "Load: Sequence count: %u\n",
 			state->sequence.count);
 
