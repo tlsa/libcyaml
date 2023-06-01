@@ -9,11 +9,16 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 
 #include <cyaml/cyaml.h>
 
 #include "ttest.h"
 #include "test.h"
+
+#ifndef M_PI
+#define M_PI (3.14159265358979323846)
+#endif
 
 /** Macro to squash unused variable compiler warnings. */
 #define UNUSED(_x) ((void)(_x))
@@ -5529,6 +5534,759 @@ static bool test_err_load_schema_invalid_value_range_uint_2(
 }
 
 /**
+ * Integer validation callback.
+ *
+ * \param[in] ctx     Client's private validation context.
+ * \param[in] schema  The schema for the value.
+ * \param[in] value   The value to be validated.
+ * \return `true` if values is valid, `false` otherwise.
+ */
+static bool test__int_is_even(void *ctx,
+		const cyaml_schema_value_t *schema,
+		int64_t value)
+{
+	UNUSED(ctx);
+	UNUSED(schema);
+
+	return !(value & 1);
+}
+
+/**
+ * Integer validation callback.
+ *
+ * \param[in] ctx     Client's private validation context.
+ * \param[in] schema  The schema for the value.
+ * \param[in] value   The value to be validated.
+ * \return `true` if values is valid, `false` otherwise.
+ */
+static bool test__uint_is_power_of_2(void *ctx,
+		const cyaml_schema_value_t *schema,
+		uint64_t value)
+{
+	UNUSED(ctx);
+	UNUSED(schema);
+
+	return (value & (value - 1)) == 0;
+}
+
+/**
+ * Floating point validation callback.
+ *
+ * \param[in] ctx     Client's private validation context.
+ * \param[in] schema  The schema for the value.
+ * \param[in] value   The value to be validated.
+ * \return `true` if values is valid, `false` otherwise.
+ */
+static bool test__float_near_pi(void *ctx,
+		const cyaml_schema_value_t *schema,
+		double value)
+{
+	UNUSED(ctx);
+	UNUSED(schema);
+
+	return fabs(value - M_PI) < 0.01;
+}
+
+/**
+ * String validation callback.
+ *
+ * \param[in] ctx     Client's private validation context.
+ * \param[in] schema  The schema for the value.
+ * \param[in] value   The value to be validated.
+ * \return `true` if values is valid, `false` otherwise.
+ */
+static bool test__string_has_no_spaces(void *ctx,
+		const cyaml_schema_value_t *schema,
+		const char *value)
+{
+	UNUSED(ctx);
+	UNUSED(schema);
+
+	while (*value != '\0') {
+		if (*value == ' ') {
+			return false;
+		}
+		value++;
+	}
+
+	return true;
+}
+
+enum test_animal_e {
+	TEST_ANIMAL_BAT,
+	TEST_ANIMAL_DOG,
+	TEST_ANIMAL_CAT,
+};
+
+struct test_animal_s {
+	enum test_animal_e animal;
+	char *noise;
+};
+
+/**
+ * Mapping validation callback.
+ *
+ * \param[in] ctx     Client's private validation context.
+ * \param[in] schema  The schema for the value.
+ * \param[in] value   The value to be validated.
+ * \return `true` if values is valid, `false` otherwise.
+ */
+static bool test__mapping_cat_validator(void *ctx,
+		const cyaml_schema_value_t *schema,
+		const cyaml_data_t *value)
+{
+	const struct test_animal_s *animal = value;
+
+	UNUSED(ctx);
+	UNUSED(schema);
+
+	if (animal->animal == TEST_ANIMAL_CAT) {
+		if (strcmp(animal->noise, "meow") == 0 ||
+		    strcmp(animal->noise, "purr") == 0) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/**
+ * Sequence validation callback.
+ *
+ * \param[in] ctx     Client's private validation context.
+ * \param[in] schema  The schema for the value.
+ * \param[in] seq       The value to be validated.
+ * \param[in] seq_count Number of entries in seq.
+ * \return `true` if values is valid, `false` otherwise.
+ */
+static bool test__sequence_is_fibonacci(void *ctx,
+		const cyaml_schema_value_t *schema,
+		const cyaml_data_t *seq,
+		size_t seq_count)
+{
+	const int8_t *data = seq;
+
+	UNUSED(ctx);
+	UNUSED(schema);
+
+	if (seq_count > 2) {
+		for (size_t i = 2; i < seq_count; i++) {
+			if (data[i] != data[i - 2] + data[i - 1]) {
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
+/**
+ * Test loading a signed integer with a validation callback.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_validation_cb_int(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"test: 91\n";
+	struct target_struct {
+		int test;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD(INT, "test", CYAML_FLAG_DEFAULT,
+				struct target_struct, test, {
+					.validation_cb = test__int_is_even,
+				}),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading an unsigned integer with a validation callback.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_validation_cb_uint(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"test: 65\n";
+	struct target_struct {
+		unsigned test;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD(UINT, "test", CYAML_FLAG_DEFAULT,
+				struct target_struct, test, {
+					.validation_cb =
+						test__uint_is_power_of_2,
+				}),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading an enum with a validation callback.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_validation_cb_enum(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	enum enum_test {
+		ENUM_TEST_BAT,
+		ENUM_TEST_DOG,
+		ENUM_TEST_CAT,
+	};
+	static const cyaml_strval_t enum_test_schema[] = {
+		{ .str = "cat", .val = ENUM_TEST_CAT },
+		{ .str = "bat", .val = ENUM_TEST_BAT },
+		{ .str = "dog", .val = ENUM_TEST_DOG },
+	};
+	static const unsigned char yaml[] =
+		"test: dog\n";
+	struct target_struct {
+		enum enum_test test;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD(ENUM, "test", CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .strings = enum_test_schema,
+				  .count = CYAML_ARRAY_LEN(enum_test_schema),
+				  .validation_cb = test__int_is_even,
+				}),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a flags with a validation callback.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_validation_cb_flags(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	enum flags_test {
+		FLAGS_TEST_BAT = 1 << 0,
+		FLAGS_TEST_DOG = 1 << 1,
+		FLAGS_TEST_CAT = 1 << 2,
+	};
+	static const cyaml_strval_t flags_test_schema[] = {
+		{ .str = "cat", .val = FLAGS_TEST_CAT },
+		{ .str = "bat", .val = FLAGS_TEST_BAT },
+		{ .str = "dog", .val = FLAGS_TEST_DOG },
+	};
+	static const unsigned char yaml[] =
+		"test: [ bat ]\n";
+	struct target_struct {
+		enum flags_test test;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD(FLAGS, "test", CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .strings = flags_test_schema,
+				  .count = CYAML_ARRAY_LEN(flags_test_schema),
+				  .validation_cb = test__int_is_even,
+				}),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a bitfield with a validation callback.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_validation_cb_bitfield(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const cyaml_bitdef_t bitvals[] = {
+		{ .name = "a", .offset =  0, .bits =  3 },
+		{ .name = "b", .offset =  3, .bits =  7 },
+		{ .name = "c", .offset = 10, .bits = 32 },
+		{ .name = "d", .offset = 42, .bits =  8 },
+		{ .name = "e", .offset = 50, .bits = 14 },
+	};
+	static const unsigned char yaml[] =
+		"test: { b: 1, c: 8 }\n";
+	struct target_struct {
+		uint8_t before;
+		uint64_t test;
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD(BITFIELD, "test", CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .bitdefs = bitvals,
+				  .count = CYAML_ARRAY_LEN(bitvals),
+				  .validation_cb = test__uint_is_power_of_2,
+				}),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a float with a validation callback.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_validation_cb_float(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"test: 3.1\n";
+	struct target_struct {
+		float test;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD(FLOAT, "test", CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .validation_cb = test__float_near_pi }),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a double with a validation callback.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_validation_cb_double(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"test: 3.1\n";
+	struct target_struct {
+		double test;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD(FLOAT, "test", CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .validation_cb = test__float_near_pi }),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a string with a validation callback.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_validation_cb_string(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"test: Cats are the best\n";
+	struct target_struct {
+		char *test;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_PTR(STRING, "test",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct target_struct, test,
+				{ .min = 0, .max = CYAML_UNLIMITED,
+				  .validation_cb = test__string_has_no_spaces,
+				}),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a mapping with a validation callback.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_validation_cb_mapping(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const cyaml_strval_t enum_test_schema[] = {
+		{ .str = "cat", .val = TEST_ANIMAL_CAT },
+		{ .str = "bat", .val = TEST_ANIMAL_BAT },
+		{ .str = "dog", .val = TEST_ANIMAL_DOG },
+	};
+	static const unsigned char yaml[] =
+		"animal: cat\n"
+		"noise: bark\n";
+	struct test_animal_s *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD(ENUM, "animal", CYAML_FLAG_OPTIONAL,
+				struct test_animal_s, animal,
+				{ .strings = enum_test_schema,
+				  .count = CYAML_ARRAY_LEN(enum_test_schema),
+				}),
+		CYAML_FIELD_PTR(STRING, "noise",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct test_animal_s, noise,
+				{ .min = 0, .max = CYAML_UNLIMITED }),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE(MAPPING, CYAML_FLAG_POINTER,
+				struct test_animal_s, {
+					.fields = mapping_schema,
+					.validation_cb =
+						test__mapping_cat_validator,
+				}),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a sequence with a validation callback.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_validation_cb_sequence(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	int8_t ref[] = { 1, 1, 2, 4, 5, 8 };
+	static const unsigned char yaml[] =
+		"sequence:\n"
+		"    - 1\n"
+		"    - 1\n"
+		"    - 2\n"
+		"    - 4\n"
+		"    - 5\n"
+		"    - 8\n";
+	struct target_struct {
+		int8_t seq[CYAML_ARRAY_LEN(ref)];
+		uint32_t seq_count;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, *(data_tgt->seq)),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_PTR(SEQUENCE, "sequence", CYAML_FLAG_DEFAULT,
+				struct target_struct, seq, {
+					.entry = &entry_schema,
+					.min = 0,
+					.max = CYAML_ARRAY_LEN(ref),
+					.validation_cb =
+						test__sequence_is_fibonacci,
+				}),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a sequence with a validation callback.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_validation_cb_sequence_fixed(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	int8_t ref[] = { 1, 1, 2, 4, 5, 8 };
+	static const unsigned char yaml[] =
+		"sequence:\n"
+		"    - 1\n"
+		"    - 1\n"
+		"    - 2\n"
+		"    - 4\n"
+		"    - 5\n"
+		"    - 8\n";
+	struct target_struct {
+		int8_t seq[CYAML_ARRAY_LEN(ref)];
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_value entry_schema = {
+		CYAML_VALUE_INT(CYAML_FLAG_DEFAULT, *(data_tgt->seq)),
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_PTR(SEQUENCE_FIXED, "sequence", CYAML_FLAG_DEFAULT,
+				struct target_struct, seq, {
+					.entry = &entry_schema,
+					.min = CYAML_ARRAY_LEN(ref),
+					.max = CYAML_ARRAY_LEN(ref),
+					.validation_cb =
+						test__sequence_is_fibonacci,
+				}),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading when schema expects string, but it's too short.
  *
  * \param[in]  report  The test report context.
@@ -8706,6 +9464,20 @@ bool errs_tests(
 	pass &= test_err_load_schema_invalid_value_range_int_2(rc, &config);
 	pass &= test_err_load_schema_invalid_value_range_uint_1(rc, &config);
 	pass &= test_err_load_schema_invalid_value_range_uint_2(rc, &config);
+
+	ttest_heading(rc, "YAML / schema mismatch: Validation callbacks");
+
+	pass &= test_err_load_schema_validation_cb_int(rc, &config);
+	pass &= test_err_load_schema_validation_cb_uint(rc, &config);
+	pass &= test_err_load_schema_validation_cb_enum(rc, &config);
+	pass &= test_err_load_schema_validation_cb_flags(rc, &config);
+	pass &= test_err_load_schema_validation_cb_float(rc, &config);
+	pass &= test_err_load_schema_validation_cb_double(rc, &config);
+	pass &= test_err_load_schema_validation_cb_string(rc, &config);
+	pass &= test_err_load_schema_validation_cb_mapping(rc, &config);
+	pass &= test_err_load_schema_validation_cb_bitfield(rc, &config);
+	pass &= test_err_load_schema_validation_cb_sequence(rc, &config);
+	pass &= test_err_load_schema_validation_cb_sequence_fixed(rc, &config);
 
 	ttest_heading(rc, "YAML / schema mismatch: string lengths");
 
