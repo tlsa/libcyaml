@@ -639,16 +639,18 @@ static cyaml_err_t cyaml__write_int(
 {
 	cyaml_err_t err;
 	int64_t number;
+	uint64_t raw;
 
-	number = cyaml_sign_pad(
-			cyaml_data_read(schema->data_size, data, &err),
-			schema->data_size);
-	if (err == CYAML_OK) {
-		const char *string = cyaml__get_int(number);
-		err = cyaml__emit_scalar(ctx, schema, string, YAML_INT_TAG);
+	raw = cyaml_data_read(schema->data_size, data, &err);
+	if (err != CYAML_OK) {
+		return err;
 	}
 
-	return err;
+	number = cyaml_sign_pad(raw, schema->data_size);
+
+	return cyaml__emit_scalar(ctx, schema,
+			cyaml__get_int(number),
+			YAML_INT_TAG);
 }
 
 /**
