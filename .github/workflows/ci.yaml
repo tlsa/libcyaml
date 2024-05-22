@@ -1,14 +1,26 @@
 name: CI
-on:
-  push:
-    branches:
-    - main
+on: [push]
 jobs:
-  linux-gcc:
-    runs-on: ubuntu-latest
+  linux:
+    name: '${{ matrix.os }}: ${{ matrix.compiler.vendor }}'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-22.04
+          - ubuntu-20.04
+        compiler:
+          - vendor: gnu
+            env: { CC: gcc }
+          - vendor: llvm
+            env: { CC: clang, CFLAGS: -gdwarf-4 }
     steps:
-    - uses: actions/checkout@v3
-    - name: apt-get install packages
+    - name: checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 1
+    - name: deps
       run: sudo apt-get update -qq &&
            sudo apt-get install --no-install-recommends -y
                gcc
@@ -17,60 +29,44 @@ jobs:
                make
                valgrind
     - name: build
+      env: ${{ matrix.compiler.env }}
       run: make
-    - name: test
+    - name: tests
+      env: ${{ matrix.compiler.env }}
       run: make test
-    - name: valgrind test
+    - name: valgrind
+      env: ${{ matrix.compiler.env }}
       run: make valgrind-quiet
-    - name: sanitize test
+    - name: sanitize
+      env: ${{ matrix.compiler.env }}
       run: make VARIANT=san test
-  linux-clang:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: apt-get install packages
-      run: sudo apt-get update -qq &&
-           sudo apt-get install --no-install-recommends -y
-               clang
-               git
-               libyaml-dev
-               make
-               valgrind
-    - name: build
-      run: make CC=clang
-    - name: test
-      run: make test CC=clang
-    - name: valgrind test
-      run: CFLAGS=-gdwarf-4 make -B valgrind-quiet CC=clang
-    - name: sanitize test
-      run: make CC=clang VARIANT=san test
-  mac-gcc:
+
+  mac:
+    name: 'macos: ${{ matrix.compiler.vendor }}'
     runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler:
+          - vendor: gnu
+            env: { CC: gcc }
+          - vendor: llvm
+            env: { CC: clang }
     steps:
-    - uses: actions/checkout@v3
-    - name: brew install deps
+    - name: checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 1
+    - name: deps
       run: brew update && brew install
                libyaml
     - name: build
+      env: ${{ matrix.compiler.env }}
       run: LDFLAGS="-L$(brew --prefix)/lib"
            CFLAGS="-I$(brew --prefix)/include"
            make
     - name: test
+      env: ${{ matrix.compiler.env }}
       run: LDFLAGS="-L$(brew --prefix)/lib"
            CFLAGS="-I$(brew --prefix)/include"
            make test
-  mac-clang:
-    runs-on: macos-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: brew install deps
-      run: brew update && brew install
-               libyaml
-    - name: build
-      run: LDFLAGS="-L$(brew --prefix)/lib"
-           CFLAGS="-I$(brew --prefix)/include"
-           make CC=clang
-    - name: test
-      run: LDFLAGS="-L$(brew --prefix)/lib"
-           CFLAGS="-I$(brew --prefix)/include"
-           make test CC=clang
