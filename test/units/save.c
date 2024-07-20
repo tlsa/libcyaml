@@ -280,6 +280,68 @@ static bool test_save_mapping_entry_string(
 }
 
 /**
+ * Test saving a binary.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_mapping_entry_binary(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char ref[] =
+		"---\n"
+		"test_data: d2FsdGhhemFyYm9iYWx0aGF6YXI=\n"
+		"...\n";
+	static const struct target_struct {
+		char data[64];
+		size_t data_len;
+	} data = {
+		.data = "walthazarbobalthazar",
+		.data_len = 20,
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_BINARY("test_data", CYAML_FLAG_DEFAULT,
+				struct target_struct, data,
+				0, sizeof(data.data)),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer;
+	size_t len;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test saving a positive signed integer.
  *
  * \param[in]  report  The test report context.
@@ -4447,6 +4509,7 @@ bool save_tests(
 	pass &= test_save_mapping_entry_float(rc, &config);
 	pass &= test_save_mapping_entry_double(rc, &config);
 	pass &= test_save_mapping_entry_string(rc, &config);
+	pass &= test_save_mapping_entry_binary(rc, &config);
 	pass &= test_save_mapping_entry_int_64(rc, &config);
 	pass &= test_save_mapping_entry_int_pos(rc, &config);
 	pass &= test_save_mapping_entry_int_neg(rc, &config);
