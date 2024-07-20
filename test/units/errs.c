@@ -1946,6 +1946,213 @@ static bool test_err_load_schema_bad_data_size_10(
 }
 
 /**
+ * Test loading with schema with invalid data size for binary.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_bad_data_size_11(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"{key: Cat=}\n";
+	struct target_struct {
+		uint8_t value[64];
+		unsigned value_count;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		{
+			.key = "key",
+			.value = {
+				.type = CYAML_BINARY,
+				.flags = CYAML_FLAG_DEFAULT,
+				.data_size = 4,
+				.binary = {
+					.min = 0,
+					.max = 64,
+				},
+			},
+			.data_offset = offsetof(struct target_struct, value),
+			.count_size = sizeof(unsigned),
+			.count_offset = offsetof(
+					struct target_struct,
+					value_count),
+		},
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_DATA_SIZE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading with schema with invalid data size for binary.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_bad_data_size_12(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"{key: Cat=}\n";
+	struct target_struct {
+		uint8_t value[64];
+		unsigned value_count;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		{
+			.key = "key",
+			.value = {
+				.type = CYAML_BINARY,
+				.flags = CYAML_FLAG_DEFAULT,
+				.data_size = 1,
+				.binary = {
+					.min = 0,
+					.max = 64,
+				},
+			},
+			.data_offset = offsetof(struct target_struct, value),
+			.count_size = 9,
+			.count_offset = offsetof(
+					struct target_struct,
+					value_count),
+		},
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_DATA_SIZE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading with schema with invalid data size for binary.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_bad_data_size_13(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		uint8_t value[64];
+		unsigned value_count;
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		{
+			.key = "key",
+			.value = {
+				.type = CYAML_BINARY,
+				.flags = CYAML_FLAG_OPTIONAL,
+				.data_size = 1,
+				.binary = {
+					.min = 0,
+					.max = 64,
+					.missing = "walthazarbobalthazar",
+					.missing_len = YAML_LEN("walthazarbobalthazar"),
+				},
+			},
+			.data_offset = offsetof(struct target_struct, value),
+			.count_size = 9,
+			.count_offset = offsetof(
+					struct target_struct,
+					value_count),
+		},
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_DATA_SIZE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test saving with schema with data size (0).
  *
  * \param[in]  report  The test report context.
@@ -2456,6 +2663,74 @@ static bool test_err_save_schema_bad_data_size_8(
 }
 
 /**
+ * Test saving with schema with data size (0).
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_save_schema_bad_data_size_9(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const struct target_struct {
+		uint8_t value[64];
+		unsigned value_count;
+	} data = {
+		.value = { 0x01, 0x02, 0x03, 0x04, 0x05 },
+		.value_count = 5,
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		{
+			.key = "key",
+			.value = {
+				.type = CYAML_BINARY,
+				.flags = CYAML_FLAG_DEFAULT,
+				.data_size = 1,
+				.binary = {
+					.min = 0,
+					.max = 64,
+				},
+			},
+			.data_offset = offsetof(struct target_struct, value),
+			.count_size = 9,
+			.count_offset = offsetof(
+					struct target_struct,
+					value_count),
+		},
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_ERR_INVALID_DATA_SIZE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (buffer != NULL || len != 0) {
+		return ttest_fail(&tc, "Buffer/len not untouched.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test copying with schema with bad sequence count size.
  *
  * \param[in]  report  The test report context.
@@ -2494,6 +2769,144 @@ static bool test_err_copy_schema_bad_data_size_1(
 			},
 			.data_offset = offsetof(struct target_struct, seq),
 			.count_offset = offsetof(struct target_struct, seq_count),
+			.count_size = 9,
+		},
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	test_data_t td = {
+		.copy = (cyaml_data_t **) &copy,
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_copy(config, &top_schema,
+			(const cyaml_data_t  *) &data, 0,
+			(cyaml_data_t **) &copy);
+	if (err != CYAML_ERR_INVALID_DATA_SIZE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (buffer != NULL || len != 0) {
+		return ttest_fail(&tc, "Buffer/len not untouched.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test copying with schema with bad binary count size.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_copy_schema_bad_data_size_2(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct target_struct {
+		char data[64];
+		uint32_t data_len;
+	} data = {
+		.data = "walthazarbobalthazar",
+		.data_len = strlen("walthazarbobalthazar"),
+	};
+	struct target_struct *copy = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		{
+			.key = "data",
+			.value = {
+				.type = CYAML_BINARY,
+				.flags = CYAML_FLAG_DEFAULT,
+				.data_size = sizeof(*(data.data)),
+				.binary = {
+					.min = 0,
+					.max = sizeof(data.data),
+				},
+			},
+			.data_offset = offsetof(struct target_struct, data),
+			.count_offset = offsetof(struct target_struct, data_len),
+			.count_size = 9,
+		},
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer = NULL;
+	size_t len = 0;
+	test_data_t td = {
+		.copy = (cyaml_data_t **) &copy,
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_copy(config, &top_schema,
+			(const cyaml_data_t  *) &data, 0,
+			(cyaml_data_t **) &copy);
+	if (err != CYAML_ERR_INVALID_DATA_SIZE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (buffer != NULL || len != 0) {
+		return ttest_fail(&tc, "Buffer/len not untouched.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test copying with schema with bad binary pointer count size.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_copy_schema_bad_data_size_3(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct target_struct {
+		char *data;
+		uint32_t data_len;
+	} data = {
+		.data = (char *)"walthazarbobalthazar",
+		.data_len = strlen("walthazarbobalthazar"),
+	};
+	struct target_struct *copy = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		{
+			.key = "data",
+			.value = {
+				.type = CYAML_BINARY,
+				.flags = CYAML_FLAG_POINTER,
+				.data_size = sizeof(*(data.data)),
+				.binary = {
+					.min = 0,
+					.max = CYAML_UNLIMITED,
+				},
+			},
+			.data_offset = offsetof(struct target_struct, data),
+			.count_offset = offsetof(struct target_struct, data_len),
 			.count_size = 9,
 		},
 		CYAML_FIELD_END
@@ -3005,6 +3418,129 @@ static bool test_err_copy_schema_required_mapping_missing(
 			(cyaml_data_t **) &data_cpy);
 	if (err != CYAML_ERR_MAPPING_FIELD_MISSING) {
 		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test copying with schema with a data type without mapping parent.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_copy_schema_required_mapping_missing2(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static int values[] = { 10, 20 };
+	static const struct target_struct {
+		int *value;
+		unsigned value_count;
+	} val = {
+		.value = values,
+		.value_count = CYAML_ARRAY_LEN(values),
+	};
+	static const struct cyaml_schema_value entry_schema = {
+		.type = CYAML_BINARY,
+		.flags = CYAML_FLAG_POINTER,
+		.data_size = 8,
+		.binary = {
+			.min = 0,
+			.max = CYAML_UNLIMITED,
+			.validation_cb = NULL,
+			.missing = NULL,
+			.missing_len = 0,
+		},
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_SEQUENCE(CYAML_FLAG_POINTER, int,
+				&entry_schema, 0, CYAML_UNLIMITED),
+	};
+	struct target_struct *data_tgt = NULL;
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_copy(config, &top_schema,
+			(const cyaml_data_t *) &val, 2,
+			(cyaml_data_t **) &data_tgt);
+	if (err != CYAML_ERR_MAPPING_REQUIRED) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving with schema with a data type without mapping parent.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_save_schema_required_mapping_missing(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static int values[] = { 10, 20 };
+	static const struct target_struct {
+		int *value;
+		unsigned value_count;
+	} data = {
+		.value = values,
+		.value_count = CYAML_ARRAY_LEN(values),
+	};
+	static const struct cyaml_schema_value entry_schema = {
+		.type = CYAML_BINARY,
+		.flags = CYAML_FLAG_POINTER,
+		.data_size = 8,
+		.binary = {
+			.min = 0,
+			.max = CYAML_UNLIMITED,
+			.validation_cb = NULL,
+			.missing = NULL,
+			.missing_len = 0,
+		},
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_SEQUENCE(CYAML_FLAG_POINTER, int,
+				&entry_schema, 0, CYAML_UNLIMITED),
+	};
+	char *buffer = NULL;
+	size_t len;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema, &data, 2);
+	if (err != CYAML_ERR_MAPPING_REQUIRED) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (buffer != NULL) {
+		return ttest_fail(&tc, "Output non-NULL on error.");
 	}
 
 	return ttest_pass(&tc);
@@ -6072,6 +6608,85 @@ static bool test_err_load_schema_validation_cb_string(
 				struct target_struct, test,
 				{ .min = 0, .max = CYAML_UNLIMITED,
 				  .validation_cb = test__string_has_no_spaces,
+				}),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Binary validation callback.
+ *
+ * \param[in] ctx     Client's private validation context.
+ * \param[in] schema  The schema for the value.
+ * \param[in] value   The value to be validated.
+ * \param[in] len     Number bytes in value.
+ * \return `true` if values is valid, `false` otherwise.
+ */
+static bool test__binary_is_valid(
+		void *ctx,
+		const cyaml_schema_value_t *schema,
+		const uint8_t *value,
+		size_t len)
+{
+	UNUSED(ctx);
+	UNUSED(schema);
+
+	if (value != NULL && len > 3) {
+		if (memcmp(value, "wal", 3) == 0) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/**
+ * Test loading a binary value with a validation callback.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_validation_cb_binary(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"test_data: S2l0dHk=\n";
+	struct target_struct {
+		char data[64];
+		size_t data_len;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_PTR(BINARY, "test_data", CYAML_FLAG_OPTIONAL,
+				struct target_struct, data,
+				{
+					.min = 0,
+					.max = sizeof(data_tgt->data),
+					.validation_cb = test__binary_is_valid,
 				}),
 		CYAML_FIELD_END
 	};
@@ -9396,8 +10011,14 @@ bool errs_tests(
 	pass &= test_err_save_schema_bad_data_size_6(rc, &config);
 	pass &= test_err_save_schema_bad_data_size_7(rc, &config);
 	pass &= test_err_save_schema_bad_data_size_8(rc, &config);
+	pass &= test_err_save_schema_bad_data_size_9(rc, &config);
 	pass &= test_err_copy_schema_bad_data_size_1(rc, &config);
+	pass &= test_err_copy_schema_bad_data_size_2(rc, &config);
+	pass &= test_err_copy_schema_bad_data_size_3(rc, &config);
 	pass &= test_err_load_schema_bad_data_size_10(rc, &config);
+	pass &= test_err_load_schema_bad_data_size_11(rc, &config);
+	pass &= test_err_load_schema_bad_data_size_12(rc, &config);
+	pass &= test_err_load_schema_bad_data_size_13(rc, &config);
 	pass &= test_err_load_schema_sequence_min_max(rc, &config);
 	pass &= test_err_save_schema_sequence_min_max(rc, &config);
 	pass &= test_err_copy_schema_sequence_min_max(rc, &config);
@@ -9406,7 +10027,9 @@ bool errs_tests(
 	pass &= test_err_load_schema_sequence_in_sequence(rc, &config);
 	pass &= test_err_save_schema_sequence_in_sequence(rc, &config);
 	pass &= test_err_copy_schema_sequence_in_sequence(rc, &config);
+	pass &= test_err_save_schema_required_mapping_missing(rc, &config);
 	pass &= test_err_copy_schema_required_mapping_missing(rc, &config);
+	pass &= test_err_copy_schema_required_mapping_missing2(rc, &config);
 
 	ttest_heading(rc, "YAML / schema mismatch: bad values");
 
@@ -9474,6 +10097,7 @@ bool errs_tests(
 	pass &= test_err_load_schema_validation_cb_float(rc, &config);
 	pass &= test_err_load_schema_validation_cb_double(rc, &config);
 	pass &= test_err_load_schema_validation_cb_string(rc, &config);
+	pass &= test_err_load_schema_validation_cb_binary(rc, &config);
 	pass &= test_err_load_schema_validation_cb_mapping(rc, &config);
 	pass &= test_err_load_schema_validation_cb_bitfield(rc, &config);
 	pass &= test_err_load_schema_validation_cb_sequence(rc, &config);
