@@ -22,6 +22,7 @@
 #include "mem.h"
 #include "data.h"
 #include "util.h"
+#include "base64.h"
 
 /**
  * A CYAML save state machine stack entry.
@@ -799,6 +800,52 @@ static cyaml_err_t cyaml__write_scalar_value(
 }
 
 /**
+ * Write a binary value.
+ *
+ * \param[in]  ctx     The CYAML saving context.
+ * \param[in]  schema  The schema for the value to be written.
+ * \param[in]  data    The place to read the value from in the client data.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__write_binary_value(
+		const cyaml_ctx_t *ctx,
+		const cyaml_schema_value_t *schema,
+		const cyaml_data_t *data)
+{
+	const cyaml_state_t *state = ctx->state;
+	const cyaml_schema_field_t *field;
+	cyaml_err_t err;
+	size_t data_len;
+	size_t str_len;
+	char *str;
+
+	assert(schema->type == CYAML_BINARY);
+	assert(state->state == CYAML_STATE_IN_MAP_KEY);
+
+	field = CYAML_FIELD_OF_VALUE(schema);
+	data_len = cyaml_data_read(field->count_size,
+			state->data + field->count_offset, &err);
+	if (err != CYAML_OK) {
+		return err;
+	}
+
+	str_len = cyaml_base64_calc_encoded_size(data_len);
+	str = cyaml__alloc(ctx->config, str_len + 1, false);
+	if (str == NULL) {
+		return CYAML_ERR_OOM;
+	}
+
+	cyaml_base64_encode(data, data_len, str);
+	str[str_len] = '\0';
+
+	err = cyaml__emit_scalar(ctx, schema, str, "tag:yaml.org,2002:binary");
+	/* Whether err is an error or not, we have to free str and return err */
+
+	cyaml__free(ctx->config, str);
+	return err;
+}
+
+/**
  * Emit a sequence of flag values.
  *
  * \param[in]  ctx     The CYAML saving context.
@@ -991,6 +1038,12 @@ static cyaml_err_t cyaml__write_value(
 			cyaml__type_to_str(schema->type),
 			schema->flags & CYAML_FLAG_POINTER ? " (pointer)" : "");
 
+	if (schema->type == CYAML_BINARY) {
+		if (ctx->state->state != CYAML_STATE_IN_MAP_KEY) {
+			return CYAML_ERR_MAPPING_REQUIRED;
+		}
+	}
+
 	data = cyaml_data_save_handle_pointer(ctx->config, schema,
 			data, "Save");
 
@@ -1016,6 +1069,9 @@ static cyaml_err_t cyaml__write_value(
 	case CYAML_FLOAT: /* Fall through. */
 	case CYAML_STRING:
 		err = cyaml__write_scalar_value(ctx, schema, data);
+		break;
+	case CYAML_BINARY:
+		err = cyaml__write_binary_value(ctx, schema, data);
 		break;
 	case CYAML_FLAGS:
 		err = cyaml__write_flags_value(ctx, schema, data);
