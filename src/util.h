@@ -27,6 +27,17 @@
 #define CYAML_UNUSED(_x) ((void)(_x))
 
 /**
+ * Macro to get a cyaml_schema_field_t container of a cyaml_schema_value_t
+ *
+ * \param[in]  _value  The value MUST be a member of a mapping field.
+ * \return The mapping field schema for the value.
+ */
+#define CYAML_FIELD_OF_VALUE(_value) \
+	(const cyaml_schema_field_t *)( \
+		(char *)_value - offsetof(cyaml_schema_field_t, value) \
+	)
+
+/**
  * Check whether the host is little endian.
  *
  * Checks whether least significant bit is in the first byte of a `uint16_t`.
