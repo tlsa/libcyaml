@@ -9037,6 +9037,7 @@ static bool test_err_load_alloc_oom_2(
 		"  - &a1 {"
 		"      kind: cat,\n"
 		"      sound: meow,\n"
+		"      bin: d2FsdGhhemFyYm9iYWx0aGF6YXI=,\n"
 		"      position: &a2 [ 1, &my_value 2, 1],\n"
 		"      flags: &a3 [\n"
 		"        first,\n"
@@ -9047,6 +9048,7 @@ static bool test_err_load_alloc_oom_2(
 		"    }\n"
 		"  - kind: snake\n"
 		"    sound: &a5 hiss\n"
+		"    bin: &a8 d2FsdGhhemFyYm9iYWx0aGF6YXI=\n"
 		"    position: &a6 [ 3, 1, 0]\n"
 		"    flags: &a7 [\n"
 		"      first,\n"
@@ -9058,6 +9060,7 @@ static bool test_err_load_alloc_oom_2(
 		"  - *a1\n"
 		"  - kind: snake\n"
 		"    sound: *a5\n"
+		"    bin: *a8\n"
 		"    position: *a6\n"
 		"    flags: *a7\n"
 		"    value: *my_value\n";
@@ -9065,6 +9068,8 @@ static bool test_err_load_alloc_oom_2(
 		char *kind;
 		char *sound;
 		int **position;
+		uint8_t *bin;
+		size_t bin_len;
 		unsigned position_count;
 		enum test_f *flags;
 		int value;
@@ -9084,6 +9089,8 @@ static bool test_err_load_alloc_oom_2(
 		CYAML_FIELD_SEQUENCE("position", CYAML_FLAG_POINTER,
 				struct animal_s, position,
 				&position_entry_schema, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_BINARY("bin", CYAML_FLAG_POINTER,
+				struct animal_s, bin, 0, CYAML_UNLIMITED),
 		CYAML_FIELD_FLAGS("flags",
 				CYAML_FLAG_STRICT | CYAML_FLAG_POINTER,
 				struct animal_s, flags, strings, 4),
@@ -9322,6 +9329,7 @@ static bool test_err_save_alloc_oom_2(
 		"animals:\n"
 		"  - kind: cat\n"
 		"    sound: meow\n"
+		"    bin: d2FsdGhhemFyYm9iYWx0aGF6YXI=\n"
 		"    position: [ 1, 2, 1]\n"
 		"    flags:\n"
 		"      - first\n"
@@ -9330,6 +9338,7 @@ static bool test_err_save_alloc_oom_2(
 		"      - fourth\n"
 		"  - kind: snake\n"
 		"    sound: hiss\n"
+		"    bin: d2FsdGhhemFyYm9iYWx0aGF6YXI=\n"
 		"    position: [ 3, 1, 0]\n"
 		"    flags:\n"
 		"      - first\n"
@@ -9340,6 +9349,8 @@ static bool test_err_save_alloc_oom_2(
 		char *kind;
 		char *sound;
 		int **position;
+		uint8_t *bin;
+		size_t bin_len;
 		unsigned position_count;
 		enum test_f *flags;
 	};
@@ -9358,6 +9369,8 @@ static bool test_err_save_alloc_oom_2(
 		CYAML_FIELD_SEQUENCE("position", CYAML_FLAG_POINTER,
 				struct animal_s, position,
 				&position_entry_schema, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_BINARY("bin", CYAML_FLAG_POINTER,
+				struct animal_s, bin, 0, CYAML_UNLIMITED),
 		CYAML_FIELD_FLAGS("flags",
 				CYAML_FLAG_STRICT | CYAML_FLAG_POINTER,
 				struct animal_s, flags, strings, 4),
@@ -9602,6 +9615,7 @@ static bool test_err_copy_alloc_oom_2(
 		"animals:\n"
 		"  - kind: cat\n"
 		"    sound: meow\n"
+		"    bin: d2FsdGhhemFyYm9iYWx0aGF6YXI=\n"
 		"    position: [ 1, 2, 1]\n"
 		"    flags:\n"
 		"      - first\n"
@@ -9610,6 +9624,7 @@ static bool test_err_copy_alloc_oom_2(
 		"      - fourth\n"
 		"  - kind: snake\n"
 		"    sound: hiss\n"
+		"    bin: d2FsdGhhemFyYm9iYWx0aGF6YXI=\n"
 		"    position: [ 3, 1, 0]\n"
 		"    flags:\n"
 		"      - first\n"
@@ -9620,6 +9635,8 @@ static bool test_err_copy_alloc_oom_2(
 		char *kind;
 		char *sound;
 		int **position;
+		uint8_t *bin;
+		size_t bin_len;
 		unsigned position_count;
 		enum test_f *flags;
 	};
@@ -9639,6 +9656,8 @@ static bool test_err_copy_alloc_oom_2(
 		CYAML_FIELD_SEQUENCE("position", CYAML_FLAG_POINTER,
 				struct animal_s, position,
 				&position_entry_schema, 0, CYAML_UNLIMITED),
+		CYAML_FIELD_BINARY("bin", CYAML_FLAG_POINTER,
+				struct animal_s, bin, 0, CYAML_UNLIMITED),
 		CYAML_FIELD_FLAGS("flags",
 				CYAML_FLAG_STRICT | CYAML_FLAG_POINTER,
 				struct animal_s, flags, strings, 4),
