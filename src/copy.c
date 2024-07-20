@@ -421,16 +421,6 @@ static cyaml_err_t cyaml__clone_value(
 			cyaml__type_to_str(schema->type),
 			schema->flags & CYAML_FLAG_POINTER ? " (pointer)" : "");
 
-//	if (schema->type == CYAML_MAPPING &&
-//	    schema->flags & CYAML_FLAG_POINTER) {
-//		const uint8_t *mapping_data = data;
-//		mapping_data = cyaml_data_save_handle_pointer(ctx->config,
-//				schema, mapping_data, "Copy");
-//		if (mapping_data == NULL) {
-//			return CYAML_ERR_BAD_PARAM_NULL_DATA;
-//		}
-//	}
-
 	if (!cyaml__is_sequence(schema)) {
 		/* Since sequences extend their allocation for each entry,
 		 * they're handled in the sequence-specific code.
