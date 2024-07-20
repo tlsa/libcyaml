@@ -96,7 +96,7 @@ endif
 BUILDDIR_SHARED = $(BUILDDIR)/shared
 BUILDDIR_STATIC = $(BUILDDIR)/static
 
-LIB_SRC_FILES = mem.c free.c load.c save.c copy.c util.c utf8.c
+LIB_SRC_FILES = base64.c mem.c free.c load.c save.c copy.c util.c utf8.c
 LIB_SRC := $(addprefix src/,$(LIB_SRC_FILES))
 LIB_OBJ = $(patsubst %.c,%.o, $(addprefix $(BUILDDIR)/,$(LIB_SRC)))
 LIB_DEP = $(patsubst %.c,%.d, $(addprefix $(BUILDDIR)/,$(LIB_SRC)))
