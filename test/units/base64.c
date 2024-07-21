@@ -180,7 +180,15 @@ static bool test_base64_decode_odd(
 			.err = CYAML_OK,
 		},
 		{
-			.name = "no_padding",
+			.name = "no_padding_1",
+			.enc = "S2l0dHk",
+			.enc_len = 7,
+			.dec = "Kitty",
+			.dec_len = 5,
+			.err = CYAML_OK,
+		},
+		{
+			.name = "no_padding_2",
 			.enc = "8J+YuA",
 			.enc_len = 6,
 			.dec = "😸",
