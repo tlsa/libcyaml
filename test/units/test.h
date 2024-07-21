@@ -31,6 +31,12 @@ extern bool utf8_tests(
 		cyaml_log_t log_level,
 		cyaml_log_fn_t log_fn);
 
+/** In base64.c */
+extern bool base64_tests(
+		ttest_report_ctx_t *rc,
+		cyaml_log_t log_level,
+		cyaml_log_fn_t log_fn);
+
 /** In util.c */
 extern bool util_tests(
 		ttest_report_ctx_t *rc,
