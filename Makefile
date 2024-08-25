@@ -143,6 +143,7 @@ valgrind valgrind-quiet valgrind-verbose valgrind-debug: $(TEST_BINS)
 check: test
 
 $(BUILDDIR)/$(LIB_PKGCON): $(LIB_PKGCON).in
+	$(Q)$(MKDIR) $(dir $@)
 	sed \
 		-e 's#PREFIX#$(PREFIX)#' \
 		-e 's#LIBDIR#$(LIBDIR)#' \
