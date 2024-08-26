@@ -142,6 +142,7 @@ valgrind valgrind-quiet valgrind-verbose valgrind-debug: $(TEST_BINS)
 check: test
 
 $(BUILDDIR)/$(LIB_PKGCON): $(LIB_PKGCON).in
+	$(Q)$(MKDIR) $(dir $@)
 	sed \
 		-e 's#PREFIX#$(PREFIX)#' \
 		-e 's#LIBDIR#$(LIBDIR)#' \
@@ -172,17 +173,23 @@ docs:
 clean:
 	rm -rf build/
 
-install: $(BUILDDIR)/$(LIB_SH_MAJ) $(BUILDDIR)/$(LIB_STATIC) $(BUILDDIR)/$(LIB_PKGCON)
+install-common: $(BUILDDIR)/$(LIB_PKGCON)
+	$(INSTALL) -d $(DESTDIR)$(PREFIX)/$(INCLUDEDIR)/cyaml
+	$(INSTALL) -d $(DESTDIR)$(PREFIX)/$(LIBDIR)/pkgconfig
+	$(INSTALL) -m 644 include/cyaml/* $(DESTDIR)$(PREFIX)/$(INCLUDEDIR)/cyaml
+	$(INSTALL) -m 644 $(BUILDDIR)/$(LIB_PKGCON) $(DESTDIR)$(PREFIX)/$(LIBDIR)/pkgconfig/$(LIB_PKGCON)
+
+install-static: $(BUILDDIR)/$(LIB_STATIC) install-common
+	$(INSTALL) -d $(DESTDIR)$(PREFIX)/$(LIBDIR)
+	$(INSTALL) -m 644 $(BUILDDIR)/$(LIB_STATIC) $(DESTDIR)$(PREFIX)/$(LIBDIR)/$(LIB_STATIC)
+
+install-shared: $(BUILDDIR)/$(LIB_SH_MAJ) install-common
 	$(INSTALL) -d $(DESTDIR)$(PREFIX)/$(LIBDIR)
 	$(INSTALL) $(BUILDDIR)/$(LIB_SH_MAJ) $(DESTDIR)$(PREFIX)/$(LIBDIR)/$(LIB_SH_VER)
 	(cd $(DESTDIR)$(PREFIX)/$(LIBDIR) && { ln -s -f $(LIB_SH_VER) $(LIB_SH_MAJ) || { rm -f $(LIB_SH_MAJ) && ln -s $(LIB_SH_VER) $(LIB_SH_MAJ); }; })
 	(cd $(DESTDIR)$(PREFIX)/$(LIBDIR) && { ln -s -f $(LIB_SH_VER) $(LIB_SHARED) || { rm -f $(LIB_SHARED) && ln -s $(LIB_SH_VER) $(LIB_SHARED); }; })
-	$(INSTALL) $(BUILDDIR)/$(LIB_STATIC) $(DESTDIR)$(PREFIX)/$(LIBDIR)/$(LIB_STATIC)
-	chmod 644 $(DESTDIR)$(PREFIX)/$(LIBDIR)/$(LIB_STATIC)
-	$(INSTALL) -d $(DESTDIR)$(PREFIX)/$(INCLUDEDIR)/cyaml
-	$(INSTALL) -m 644 include/cyaml/* $(DESTDIR)$(PREFIX)/$(INCLUDEDIR)/cyaml
-	$(INSTALL) -d $(DESTDIR)$(PREFIX)/$(LIBDIR)/pkgconfig
-	$(INSTALL) -m 644 $(BUILDDIR)/$(LIB_PKGCON) $(DESTDIR)$(PREFIX)/$(LIBDIR)/pkgconfig/$(LIB_PKGCON)
+
+install: install-shared install-static
 
 examples: $(BUILDDIR)/planner $(BUILDDIR)/numerical
 
@@ -194,9 +201,9 @@ $(BUILDDIR)/numerical: examples/numerical/main.c $(BUILDDIR)/$(LIB_STATIC)
 
 -include $(LIB_DEP_SHARED) $(LIB_DEP_STATIC) $(TEST_DEP)
 
-.PHONY: all test test-quiet test-verbose test-debug \
+.PHONY: all clean coverage docs install install-static install-shared \
 		valgrind valgrind-quiet valgrind-verbose valgrind-debug \
-		clean coverage docs install examples check
+		test test-quiet test-verbose test-debug examples check
 
 $(BUILDDIR)/test/units/cyaml-static: $(TEST_OBJ) $(BUILDDIR)/$(LIB_STATIC)
 	$(CC) $(LDFLAGS_COV) -o $@ $^ $(LDFLAGS)
