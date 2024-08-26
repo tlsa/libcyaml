@@ -52,9 +52,13 @@ jobs:
       run: brew update && brew install
                libyaml
     - name: build
-      run: make
+      run: LDFLAGS="-L$(brew --prefix)/lib"
+           CFLAGS="-I$(brew --prefix)/include"
+           make
     - name: test
-      run: make test
+      run: LDFLAGS="-L$(brew --prefix)/lib"
+           CFLAGS="-I$(brew --prefix)/include"
+           make test
   mac-clang:
     runs-on: macos-latest
     steps:
@@ -63,6 +67,10 @@ jobs:
       run: brew update && brew install
                libyaml
     - name: build
-      run: make CC=clang
+      run: LDFLAGS="-L$(brew --prefix)/lib"
+           CFLAGS="-I$(brew --prefix)/include"
+           make CC=clang
     - name: test
-      run: make test CC=clang
+      run: LDFLAGS="-L$(brew --prefix)/lib"
+           CFLAGS="-I$(brew --prefix)/include"
+           make test CC=clang
