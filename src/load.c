@@ -165,20 +165,23 @@ typedef struct cyaml_ctx {
  *
  * \param[in]  ctx       The CYAML loading context.
  * \param[in]  schema    The schema for the value to be stored.
- * \param[in]  value     The value to store.
  * \param[in]  location  The place to write the value in the output data.
+ * \param[in]  value     The value to store.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
 static inline cyaml_err_t cyaml__store_int(
 		const cyaml_ctx_t *ctx,
 		const cyaml_schema_value_t *schema,
-		int64_t value,
-		uint8_t *location)
+		uint8_t *location,
+		int64_t value)
 {
 	int64_t max;
 	int64_t min;
 
-	if (schema->data_size == 0 || schema->data_size > sizeof(uint64_t)) {
+	assert(schema->type == CYAML_INT ||
+	       schema->type == CYAML_ENUM);
+
+	if (schema->data_size == 0 || schema->data_size > sizeof(value)) {
 		return CYAML_ERR_INVALID_DATA_SIZE;
 	}
 
@@ -200,19 +203,23 @@ static inline cyaml_err_t cyaml__store_int(
  *
  * \param[in]  ctx       The CYAML loading context.
  * \param[in]  schema    The schema for the value to be stored.
- * \param[in]  value     The value to store.
  * \param[in]  location  The place to write the value in the output data.
+ * \param[in]  value     The value to store.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
 static inline cyaml_err_t cyaml__store_uint(
 		const cyaml_ctx_t *ctx,
 		const cyaml_schema_value_t *schema,
-		uint64_t value,
-		uint8_t *location)
+		uint8_t *location,
+		uint64_t value)
 {
 	uint64_t max;
 
-	if (schema->data_size == 0) {
+	assert(schema->type == CYAML_UINT ||
+	       schema->type == CYAML_FLAGS ||
+	       schema->type == CYAML_BITFIELD);
+
+	if (schema->data_size == 0 || schema->data_size > sizeof(value)) {
 		return CYAML_ERR_INVALID_DATA_SIZE;
 	}
 
@@ -232,15 +239,15 @@ static inline cyaml_err_t cyaml__store_uint(
  *
  * \param[in]  ctx       The CYAML loading context.
  * \param[in]  schema    The schema for the value to be stored.
- * \param[in]  value     The value to store.
  * \param[in]  location  The place to write the value in the output data.
+ * \param[in]  value     The value to store.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
 static inline cyaml_err_t cyaml__store_bool(
 		const cyaml_ctx_t *ctx,
 		const cyaml_schema_value_t *schema,
-		bool value,
-		uint8_t *location)
+		uint8_t *location,
+		bool value)
 {
 	CYAML_UNUSED(ctx);
 
@@ -252,15 +259,15 @@ static inline cyaml_err_t cyaml__store_bool(
  *
  * \param[in]  ctx       The CYAML loading context.
  * \param[in]  schema    The schema for the value to be stored.
- * \param[in]  value     The value to store.
  * \param[in]  location  The place to write the value in the output data.
+ * \param[in]  value     The value to store.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
 static cyaml_err_t cyaml__store_float(
 		const cyaml_ctx_t *ctx,
 		const cyaml_schema_value_t *schema,
-		double value,
-		uint8_t *location)
+		uint8_t *location,
+		double value)
 {
 	CYAML_UNUSED(ctx);
 
@@ -290,15 +297,15 @@ static cyaml_err_t cyaml__store_float(
  *
  * \param[in]  ctx       The CYAML loading context.
  * \param[in]  schema    The schema for the value to be stored.
- * \param[in]  value     The value to store.
  * \param[in]  location  The place to write the value in the output data.
+ * \param[in]  value     The value to store.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
 static cyaml_err_t cyaml__store_string(
 		const cyaml_ctx_t *ctx,
 		const cyaml_schema_value_t *schema,
-		const char *value,
-		uint8_t *location)
+		uint8_t *location,
+		const char *value)
 {
 	size_t str_len = strlen(value);
 
@@ -1493,7 +1500,7 @@ static cyaml_err_t cyaml__read_int(
 		return CYAML_ERR_INVALID_VALUE;
 	}
 
-	return cyaml__store_int(ctx, schema, (int64_t)temp, data);
+	return cyaml__store_int(ctx, schema, data, (int64_t)temp);
 }
 
 /**
@@ -1549,7 +1556,7 @@ static cyaml_err_t cyaml__read_uint(
 		return err;
 	}
 
-	return cyaml__store_uint(ctx, schema, temp, data);
+	return cyaml__store_uint(ctx, schema, data, temp);
 }
 
 /**
@@ -1579,7 +1586,7 @@ static cyaml_err_t cyaml__read_bool(
 		}
 	}
 
-	return cyaml__store_bool(ctx, schema, temp, data);
+	return cyaml__store_bool(ctx, schema, data, temp);
 }
 
 /**
@@ -1603,7 +1610,7 @@ static cyaml_err_t cyaml__read_enum(
 		if (cyaml__strcmp(ctx->config, schema,
 				value, strings[i].str) == 0) {
 			return cyaml__store_int(ctx, schema,
-					strings[i].val, data);
+					data, strings[i].val);
 		}
 	}
 
@@ -1680,7 +1687,7 @@ static cyaml_err_t cyaml__read_float(
 		}
 	}
 
-	return cyaml__store_float(ctx, schema, temp, data);
+	return cyaml__store_float(ctx, schema, data, temp);
 }
 
 /**
@@ -1698,7 +1705,7 @@ static cyaml_err_t cyaml__read_string(
 		const char *value,
 		uint8_t *data)
 {
-	return cyaml__store_string(ctx, schema, value, data);
+	return cyaml__store_string(ctx, schema, data, value);
 }
 
 /**
@@ -1834,7 +1841,7 @@ static cyaml_err_t cyaml__read_flags_value(
 		}
 	}
 
-	err = cyaml_data_write(value, schema->data_size, data);
+	err = cyaml__store_uint(ctx, schema, data, value);
 	if (err != CYAML_OK) {
 		return err;
 	}
@@ -1983,7 +1990,7 @@ static cyaml_err_t cyaml__read_bitfield_value(
 		}
 	}
 
-	err = cyaml_data_write(value, schema->data_size, data);
+	err = cyaml__store_uint(ctx, schema, data, value);
 	if (err != CYAML_OK) {
 		return err;
 	}
