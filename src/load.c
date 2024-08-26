@@ -178,7 +178,7 @@ static inline cyaml_err_t cyaml__store_int(
 	int64_t max;
 	int64_t min;
 
-	if (schema->data_size == 0 || schema->data_size > sizeof(uint64_t)) {
+	if (schema->data_size == 0 || schema->data_size > sizeof(value)) {
 		return CYAML_ERR_INVALID_DATA_SIZE;
 	}
 
@@ -212,7 +212,7 @@ static inline cyaml_err_t cyaml__store_uint(
 {
 	uint64_t max;
 
-	if (schema->data_size == 0) {
+	if (schema->data_size == 0 || schema->data_size > sizeof(value)) {
 		return CYAML_ERR_INVALID_DATA_SIZE;
 	}
 
