@@ -1,6 +1,20 @@
 LibCYAML: Change Log
 ====================
 
+## LibCYAML v1.4.2
+
+* **Buildsystem**
+  * Add explicit shared and static library install targets.
+* **General**
+  * Small code cleanups.
+  * Reverted to C89-compatible static assertion macro.
+    Fixes build on quirky platforms.
+  * Rationalised GitHub actions.
+  * Fixed CI for MacOS.
+
+No changes are required for client applications to upgrade.
+
+
 ## LibCYAML v1.4.1
 
 * **Loading**:
