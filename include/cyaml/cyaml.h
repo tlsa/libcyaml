@@ -84,6 +84,18 @@ typedef enum cyaml_type {
 	CYAML_FLOAT,    /**< Value is floating point. */
 	CYAML_STRING,   /**< Value is a string. */
 	/**
+	 * Value is binary data, encoded in the YAML as a Base64 string.
+	 *
+	 * Values of this type must be the direct children of a mapping.
+	 * They require:
+	 *
+	 * - Offset to the array entry count member in the mapping structure.
+	 * - Size in bytes of the count member in the mapping structure.
+	 * - The minimum and maximum number allowed size.
+	 *   Use \ref CYAML_UNLIMITED to have no maximum limit.
+	 */
+	CYAML_BINARY,
+	/**
 	 * Value is a mapping.  Values of this type require mapping schema
 	 * array in the schema entry.
 	 */
@@ -425,6 +437,25 @@ typedef bool (*cyaml_validate_string_fn_t)(
 		const char *value);
 
 /**
+ * Value validation callback function for \ref CYAML_BINARY.
+ *
+ * Clients may provide this for values of type \ref CYAML_BINARY.
+ * When called, return `false` to reject the value as invalid or `true` to
+ * accept it as valid.
+ *
+ * \param[in] ctx     Client's private validation context.
+ * \param[in] schema  The schema for the value.
+ * \param[in] value   The binary data value to be validated.
+ * \param[in] len     The length of the binary data.
+ * \return `true` if values is valid, `false` otherwise.
+ */
+typedef bool (*cyaml_validate_binary_fn_t)(
+		void *ctx,
+		const cyaml_schema_value_t *schema,
+		const uint8_t *value,
+		size_t len);
+
+/**
  * Value validation callback function for \ref CYAML_MAPPING.
  *
  * Clients provide this for values of type \ref CYAML_MAPPING.
@@ -635,6 +666,44 @@ typedef struct cyaml_schema_value {
 			 */
 			const char *missing;
 		} string;
+		/** \ref CYAML_BINARY type-specific schema data. */
+		struct {
+			/**
+			 * Minimum string length (bytes).
+			 *
+			 * \note Excludes trailing NUL.
+			 */
+			uint32_t min;
+			/**
+			 * Maximum string length (bytes).
+			 *
+			 * \note Excludes trailing NULL, so for character array
+			 *       strings (rather than pointer strings), this
+			 *       must be no more than `data_size - 1`.
+			 */
+			uint32_t max;
+			/**
+			 * Optional client value validation callback.
+			 *
+			 * May be NULL.
+			 */
+			cyaml_validate_binary_fn_t validation_cb;
+			/**
+			 * Value to use for missing YAML field.
+			 *
+			 * This is only used when the value is used for a
+			 * mapping field with the \ref CYAML_FLAG_OPTIONAL flag
+			 * set.
+			 *
+			 * \note This is may be NULL, if no default sequence is
+			 *       wanted for a missing field in the YAML.
+			 */
+			const void *missing;
+			/**
+			 * Number of entries in missing array.
+			 */
+			size_t missing_len;
+		} binary;
 		/** \ref CYAML_MAPPING type-specific schema data. */
 		struct {
 			/**
@@ -893,6 +962,9 @@ typedef enum cyaml_err {
 	CYAML_ERR_INVALID_VALUE,         /**< Value rejected by schema. */
 	CYAML_ERR_INVALID_ALIAS,         /**< No anchor found for alias. */
 	CYAML_ERR_INTERNAL_ERROR,        /**< Internal error in LibCYAML. */
+	CYAML_ERR_INVALID_BASE64,        /**< Invalid Base64 string. */
+	CYAML_ERR_BASE64_MAX_LEN,        /**< Too much base64 data. */
+	CYAML_ERR_MAPPING_REQUIRED,      /**< Value requires parent mapping. */
 	CYAML_ERR_UNEXPECTED_EVENT,      /**< YAML event rejected by schema. */
 	CYAML_ERR_STRING_LENGTH_MIN,     /**< String length too short. */
 	CYAML_ERR_STRING_LENGTH_MAX,     /**< String length too long. */
@@ -1498,6 +1570,90 @@ typedef enum cyaml_err {
 			.max = _max, \
 		} \
 	)
+
+/**
+ * Mapping schema helper macro for keys with \ref CYAML_BINARY type.
+ *
+ * To use this, there must be a member in {_structure} called "{_member}_len",
+ * for storing the byte length of the data.
+ *
+ * For example, for the following structure:
+ *
+ * ```
+ * struct my_structure {
+ *         uint8_t *my_data;
+ *         size_t   my_data_len;
+ * };
+ * ```
+ *
+ * Pass the following as parameters:
+ *
+ * | Parameter  | Value                 |
+ * | ---------- | --------------------- |
+ * | _structure | `struct my_structure` |
+ * | _member    | `my_data`             |
+ *
+ * If you want to call the structure member for storing the sequence entry
+ * count something else, then use \ref CYAML_FIELD_BINARY_LENGTH instead.
+ *
+ * \param[in]  _key        String defining the YAML mapping key for this value.
+ * \param[in]  _flags      Any behavioural flags relevant to this value.
+ * \param[in]  _structure  The structure containing the binary value.
+ * \param[in]  _member     The member in _structure for this binary value.
+ * \param[in]  _min        Minimum binary data length in bytes.
+ * \param[in]  _max        Maximum binary data length in bytes.
+ */
+#define CYAML_FIELD_BINARY( \
+		_key, _flags, _structure, _member, _min, _max) \
+	CYAML_FIELD_PTR(BINARY, _key, _flags, _structure, _member, \
+		{ \
+			.min   = _min, \
+			.max   = _max, \
+		} \
+	)
+
+/**
+ * Mapping schema helper macro for keys with \ref CYAML_BINARY type.
+ *
+ * Compared to .\ref CYAML_FIELD_BINARY, this macro takes an extra `_length`
+ * parameter, allowing the structure member name for storing the byte length
+ * of the data to be provided explicitly.
+ *
+ * For example, for the following structure:
+ *
+ * ```
+ * struct my_structure {
+ *         uint8_t *my_data;
+ *         size_t   length;
+ * };
+ * ```
+ *
+ * Pass the following as parameters:
+ *
+ * | Parameter  | Value                 |
+ * | ---------- | --------------------- |
+ * | _structure | `struct my_structure` |
+ * | _member    | `my_data`             |
+ * | _length    | `length`              |
+ *
+ * \param[in]  _key        String defining the YAML mapping key for this value.
+ * \param[in]  _flags      Any behavioural flags relevant to this value.
+ * \param[in]  _structure  The structure containing the binary value.
+ * \param[in]  _member     The member in _structure for this binary value.
+ * \param[in]  _length     The member in _structure for this data's byte length.
+ * \param[in]  _min        Minimum binary data length in bytes.
+ * \param[in]  _max        Maximum binary data length in bytes.
+ */
+#define CYAML_FIELD_BINARY_LENGTH( \
+		_key, _flags, _structure, _member, _length, _min, _max) \
+	CYAML_FIELD_PTR_COUNT(BINARY, \
+			_key, _flags, _structure, _member, _length, \
+		{ \
+			.min   = _min, \
+			.max   = _max, \
+		} \
+	)
+
 
 /**
  * Mapping schema helper macro for keys with \ref CYAML_MAPPING type.

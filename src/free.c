@@ -62,6 +62,12 @@ static void cyaml__free_sequence(
 	const cyaml_schema_value_t *schema = sequence_schema->sequence.entry;
 	uint32_t data_size = schema->data_size;
 
+	if (schema->type == CYAML_BINARY) {
+		cyaml__log(cfg, CYAML_LOG_ERROR,
+			"Free: Invalid schema; binary outside mapping\n");
+		return;
+	}
+
 	cyaml__log(cfg, CYAML_LOG_DEBUG,
 			"Free: Freeing sequence with count: %u\n", count);
 
