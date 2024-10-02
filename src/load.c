@@ -305,6 +305,7 @@ static inline cyaml_err_t cyaml__validate_uint(
  *
  * \param[in]  ctx       The CYAML loading context.
  * \param[in]  schema    The schema for the value to be stored.
+ * \param[in]  value_str The value to store's string form, or NULL if none.
  * \param[in]  location  The place to write the value in the output data.
  * \param[in]  value     The value to store.
  * \param[in]  validate  Whether to validate the value before storing it.
@@ -313,6 +314,7 @@ static inline cyaml_err_t cyaml__validate_uint(
 static inline cyaml_err_t cyaml__store_uint(
 		const cyaml_ctx_t *ctx,
 		const cyaml_schema_value_t *schema,
+		const char *value_str,
 		uint8_t *location,
 		uint64_t value,
 		bool validate)
@@ -329,9 +331,20 @@ static inline cyaml_err_t cyaml__store_uint(
 
 	max = (~(uint64_t)0) >> ((8 - schema->data_size) * 8);
 	if (value > max) {
-		cyaml__log(ctx->config, CYAML_LOG_ERROR,
-				"Load: Invalid %s value: '%" PRIu64 "'\n",
-				cyaml__type_to_str(schema->type), value);
+		if (value_str != NULL) {
+			cyaml__log(ctx->config, CYAML_LOG_ERROR,
+					"Load: %s value out of range: '%s'\n",
+					cyaml__type_to_str(
+							schema->type),
+							value_str);
+		} else {
+			cyaml__log(ctx->config, CYAML_LOG_ERROR,
+					"Load: %s value out of range: '%"
+							PRIu64 "'\n",
+					cyaml__type_to_str(
+							schema->type),
+							value);
+		}
 		return CYAML_ERR_INVALID_VALUE;
 	}
 
@@ -1375,13 +1388,13 @@ static cyaml_err_t cyaml__field_scalar_apply_default(
 		return cyaml__store_int(ctx, schema, data,
 				schema->enumeration.missing, false);
 	case CYAML_UINT:
-		return cyaml__store_uint(ctx, schema, data,
+		return cyaml__store_uint(ctx, schema, NULL, data,
 				schema->unsigned_integer.missing, false);
 	case CYAML_FLAGS:
-		return cyaml__store_uint(ctx, schema, data,
+		return cyaml__store_uint(ctx, schema, NULL, data,
 				(uint64_t)schema->enumeration.missing, false);
 	case CYAML_BITFIELD:
-		return cyaml__store_uint(ctx, schema, data,
+		return cyaml__store_uint(ctx, schema, NULL, data,
 				schema->bitfield.missing, false);
 	case CYAML_BOOL:
 		return cyaml__store_bool(ctx, schema, data,
@@ -1926,7 +1939,7 @@ static cyaml_err_t cyaml__read_uint(
 		return err;
 	}
 
-	return cyaml__store_uint(ctx, schema, data, temp, true);
+	return cyaml__store_uint(ctx, schema, value, data, temp, true);
 }
 
 /**
@@ -2211,7 +2224,7 @@ static cyaml_err_t cyaml__read_flags_value(
 		}
 	}
 
-	err = cyaml__store_uint(ctx, schema, data, value, true);
+	err = cyaml__store_uint(ctx, schema, NULL, data, value, true);
 	if (err != CYAML_OK) {
 		return err;
 	}
@@ -2360,7 +2373,7 @@ static cyaml_err_t cyaml__read_bitfield_value(
 		}
 	}
 
-	err = cyaml__store_uint(ctx, schema, data, value, true);
+	err = cyaml__store_uint(ctx, schema, NULL, data, value, true);
 	if (err != CYAML_OK) {
 		return err;
 	}
