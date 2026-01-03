@@ -24,7 +24,7 @@ jobs:
                libyaml-dev
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2
+      uses: github/codeql-action/init@v4
       with:
         languages: ${{ matrix.language }}
 
@@ -32,7 +32,7 @@ jobs:
        make
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
+      uses: github/codeql-action/analyze@v4
 
   scan-build:
     name: scan-build
@@ -61,6 +61,6 @@ jobs:
        scan-build -sarif -o build/sarif make
 
     - name: upload scan-build
-      uses: github/codeql-action/upload-sarif@v2
+      uses: github/codeql-action/upload-sarif@v4
       with:
         sarif_file: build/sarif
