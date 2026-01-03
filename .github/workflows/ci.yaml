@@ -9,7 +9,7 @@ jobs:
       matrix:
         os:
           - ubuntu-22.04
-          - ubuntu-20.04
+          - ubuntu-24.04
         compiler:
           - vendor: gnu
             env: { CC: gcc }
