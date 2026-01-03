@@ -59,6 +59,16 @@ with valgrind) can be built with:
 
     make VARIANT=san
 
+
+To build on Windows use CMake in conjunction with vcpkg
+
+    mkdir build; cd build
+    cmake .. -DCMAKE_TOOLCHAIN_FILE=\path\to\toolchain\file\vcpkg.cmake
+    cmake --build .
+
+Note:
+    This does not currently build any tests etc, only static and dynamic libs.
+
 Installation
 ------------
 
