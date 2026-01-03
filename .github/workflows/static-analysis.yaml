@@ -58,9 +58,4 @@ jobs:
     - name: scan-build
       run: |
        make clean
-       scan-build -sarif -o build/sarif make
-
-    - name: upload scan-build
-      uses: github/codeql-action/upload-sarif@v4
-      with:
-        sarif_file: build/sarif
+       scan-build make
