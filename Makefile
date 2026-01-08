@@ -96,7 +96,7 @@ endif
 BUILDDIR_SHARED = $(BUILDDIR)/shared
 BUILDDIR_STATIC = $(BUILDDIR)/static
 
-LIB_SRC_FILES = mem.c free.c load.c save.c copy.c util.c utf8.c
+LIB_SRC_FILES = base64.c mem.c free.c load.c save.c copy.c util.c utf8.c
 LIB_SRC := $(addprefix src/,$(LIB_SRC_FILES))
 LIB_OBJ = $(patsubst %.c,%.o, $(addprefix $(BUILDDIR)/,$(LIB_SRC)))
 LIB_DEP = $(patsubst %.c,%.d, $(addprefix $(BUILDDIR)/,$(LIB_SRC)))
@@ -117,7 +117,7 @@ endif
 
 TEST_SRC_FILES = units/free.c units/load.c units/test.c units/util.c \
 		units/errs.c units/file.c units/save.c units/copy.c \
-		units/utf8.c
+		units/utf8.c units/base64.c
 TEST_SRC := $(addprefix test/,$(TEST_SRC_FILES))
 TEST_OBJ = $(patsubst %.c,%.o, $(addprefix $(BUILDDIR)/,$(TEST_SRC)))
 TEST_DEP = $(patsubst %.c,%.d, $(addprefix $(BUILDDIR)/,$(TEST_SRC)))

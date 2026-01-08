@@ -52,6 +52,8 @@ extern "C"
 #define CYAML__UNION_MEMBER_FLOAT          .floating_point
 /** Type to \ref cyaml_schema_value union member for STRING. */
 #define CYAML__UNION_MEMBER_STRING         .string
+/** Type to \ref cyaml_schema_value union member for BINARY. */
+#define CYAML__UNION_MEMBER_BINARY         .binary
 /** Type to \ref cyaml_schema_value union member for MAPPING. */
 #define CYAML__UNION_MEMBER_MAPPING        .mapping
 /** Type to \ref cyaml_schema_value union member for BITFIELD. */
@@ -75,6 +77,8 @@ extern "C"
 #define CYAML__SEQUENCE_COUNT_FLOAT(_member, _count)          _member
 /** Fake a valid sequence count member for STRING. */
 #define CYAML__SEQUENCE_COUNT_STRING(_member, _count)         _member
+/** Fake a valid sequence count member for BINARY. */
+#define CYAML__SEQUENCE_COUNT_BINARY(_member, _count)         _member ## _len
 /** Fake a valid sequence count member for MAPPING. */
 #define CYAML__SEQUENCE_COUNT_MAPPING(_member, _count)        _member
 /** Fake a valid sequence count member for BITFIELD. */
@@ -98,6 +102,8 @@ extern "C"
 #define CYAML__HANDLE_PTR_FLOAT(_flags)          CYAML__POINTER_ADD(_flags)
 /** Adapt flags for mapping schema building macro for STRING. */
 #define CYAML__HANDLE_PTR_STRING(_flags)         CYAML__POINTER_ADD(_flags)
+/** Adapt flags for mapping schema building macro for BINARY. */
+#define CYAML__HANDLE_PTR_BINARY(_flags)         _flags
 /** Adapt flags for mapping schema building macro for MAPPING. */
 #define CYAML__HANDLE_PTR_MAPPING(_flags)        CYAML__POINTER_ADD(_flags)
 /** Adapt flags for mapping schema building macro for BITFIELD. */

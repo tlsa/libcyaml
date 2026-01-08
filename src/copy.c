@@ -243,8 +243,10 @@ static cyaml_err_t cyaml__data_handle_pointer(
 
 	if (schema->flags & CYAML_FLAG_POINTER) {
 		/* Need to create/extend an allocation. */
+		const cyaml_schema_field_t *field;
 		size_t delta = schema->data_size;
 		uint8_t *value_copy = NULL;
+		cyaml_err_t err;
 
 		if (*value_data_io == NULL) {
 			return CYAML_ERR_BAD_PARAM_NULL_DATA;
@@ -255,6 +257,15 @@ static cyaml_err_t cyaml__data_handle_pointer(
 			/* For a string the allocation size is the string
 			 * size from the event, plus trailing NULL. */
 			delta = strlen((const char *) *value_data_io) + 1;
+			break;
+		case CYAML_BINARY:
+			field = CYAML_FIELD_OF_VALUE(schema);
+			delta = cyaml_data_read(field->count_size,
+					state->data + field->count_offset,
+					&err);
+			if (err != CYAML_OK) {
+				return err;
+			}
 			break;
 		case CYAML_SEQUENCE:
 			delta *= state->sequence.count;
@@ -368,6 +379,44 @@ static cyaml_err_t cyaml__clone_string(
 }
 
 /**
+ * Read a value of type \ref CYAML_BINARY.
+ *
+ * \param[in]  ctx     The CYAML copying context.
+ * \param[in]  schema  The schema for the value to be copied.
+ * \param[in]  data    The place to read the value from in the client data.
+ * \param[in]  copy    The place to write the value to in the client data.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__clone_binary(
+		const cyaml_ctx_t *ctx,
+		const cyaml_schema_value_t *schema,
+		const uint8_t *data,
+		uint8_t *copy)
+{
+	const cyaml_state_t *state = ctx->state;
+	const cyaml_schema_field_t *field;
+	cyaml_err_t err;
+	size_t len;
+
+	assert(schema->type == CYAML_BINARY);
+	assert(state->state == CYAML_STATE_IN_MAP_KEY);
+
+	field = CYAML_FIELD_OF_VALUE(schema);
+	len = cyaml_data_read(field->count_size,
+			state->data + field->count_offset, &err);
+	if (err != CYAML_OK) {
+		return err;
+	}
+
+	memcpy(copy, data, len);
+
+	memcpy(state->copy + field->count_offset,
+	       state->data + field->count_offset, field->count_size);
+
+	return CYAML_OK;
+}
+
+/**
  * Write a sequence entry count to the client data structure.
  *
  * \param[in]  ctx        The CYAML copying context.
@@ -421,6 +470,12 @@ static cyaml_err_t cyaml__clone_value(
 			cyaml__type_to_str(schema->type),
 			schema->flags & CYAML_FLAG_POINTER ? " (pointer)" : "");
 
+	if (schema->type == CYAML_BINARY) {
+		if (ctx->state->state != CYAML_STATE_IN_MAP_KEY) {
+			return CYAML_ERR_MAPPING_REQUIRED;
+		}
+	}
+
 	if (!cyaml__is_sequence(schema)) {
 		/* Since sequences extend their allocation for each entry,
 		 * they're handled in the sequence-specific code.
@@ -443,6 +498,9 @@ static cyaml_err_t cyaml__clone_value(
 		break;
 	case CYAML_STRING:
 		err = cyaml__clone_string(ctx, schema, data, copy);
+		break;
+	case CYAML_BINARY:
+		err = cyaml__clone_binary(ctx, schema, data, copy);
 		break;
 	case CYAML_MAPPING:
 		err = cyaml__stack_push(ctx, CYAML_STATE_IN_MAP_KEY,

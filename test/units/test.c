@@ -71,6 +71,7 @@ int main(int argc, char *argv[])
 
 	rc = ttest_init(test_list, quiet);
 
+	pass &= base64_tests(&rc, log_level, log_fn);
 	pass &= utf8_tests(&rc, log_level, log_fn);
 	pass &= util_tests(&rc, log_level, log_fn);
 	pass &= free_tests(&rc, log_level, log_fn);
