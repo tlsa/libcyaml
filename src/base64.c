@@ -139,8 +139,8 @@ cyaml_err_t cyaml_base64_calc_decoded_size(
 {
 	const uint8_t *raw = (const uint8_t *) str;
 	size_t padding = 0;
-	size_t extra = 0;
 	size_t len = 0;
+	size_t extra;
 
 	for (size_t i = 0; i < str_len; i++) {
 		switch (dec[raw[i]]) {
@@ -163,29 +163,12 @@ cyaml_err_t cyaml_base64_calc_decoded_size(
 		}
 	}
 
-	switch (len & 0x3U) {
-		case 3:
-			if (padding && padding != 1) {
-				return CYAML_ERR_INVALID_BASE64;
-			}
-			extra = 2;
-			break;
-		case 2:
-			if (padding && padding != 2) {
-				return CYAML_ERR_INVALID_BASE64;
-			}
-			extra = 1;
-			break;
-		case 1:
-			return CYAML_ERR_INVALID_BASE64;
-		case 0:
-			if (padding != 0) {
-				return CYAML_ERR_INVALID_BASE64;
-			}
-			break;
+	extra = len & 0x3U;
+	if (extra == 1 || (padding != 0 && padding != 4 - extra)) {
+		return CYAML_ERR_INVALID_BASE64;
 	}
 
-	*size = len / 4 * 3 + extra;
+	*size = len / 4 * 3 + (extra != 0 ? extra - 1 : 0);
 	return CYAML_OK;
 }
 
