@@ -3486,6 +3486,58 @@ static bool test_err_copy_schema_required_mapping_missing2(
 }
 
 /**
+ * Test copying a required binary pointer with NULL data and non-zero length.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_copy_schema_required_binary_missing(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct target_struct {
+		uint8_t *data;
+		size_t data_len;
+	} data = {
+		.data = NULL,
+		.data_len = 3,
+	};
+	struct target_struct *data_cpy = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_BINARY("data", CYAML_FLAG_POINTER,
+				struct target_struct, data,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = NULL,
+		.copy = (cyaml_data_t **) &data_cpy,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_copy(config, &top_schema,
+			(cyaml_data_t  *) &data, 0,
+			(cyaml_data_t **) &data_cpy);
+	if (err != CYAML_ERR_MAPPING_FIELD_MISSING) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test saving with schema with a data type without mapping parent.
  *
  * \param[in]  report  The test report context.
@@ -11143,6 +11195,7 @@ bool errs_tests(
 	pass &= test_err_save_schema_required_mapping_missing(rc, &config);
 	pass &= test_err_copy_schema_required_mapping_missing(rc, &config);
 	pass &= test_err_copy_schema_required_mapping_missing2(rc, &config);
+	pass &= test_err_copy_schema_required_binary_missing(rc, &config);
 
 	ttest_heading(rc, "YAML / schema mismatch: bad values");
 
