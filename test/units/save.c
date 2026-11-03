@@ -292,14 +292,14 @@ static bool test_save_mapping_entry_binary_empty(
 {
 	static const unsigned char ref1[] =
 		"---\n"
-		"ptr: \n"
-		"arr: \n"
+		"ptr: !!binary \n"
+		"arr: !!binary \n"
 		"...\n";
 	/* libyaml 0.2.5 stopped emitting trailing spaces. */
 	static const unsigned char ref2[] =
 		"---\n"
-		"ptr:\n"
-		"arr:\n"
+		"ptr: !!binary\n"
+		"arr: !!binary\n"
 		"...\n";
 	struct target_struct {
 		uint8_t *ptr;
@@ -383,7 +383,7 @@ static bool test_save_mapping_entry_binary(
 {
 	static const unsigned char ref[] =
 		"---\n"
-		"test_data: d2FsdGhhemFyYm9iYWx0aGF6YXI=\n"
+		"test_data: !!binary d2FsdGhhemFyYm9iYWx0aGF6YXI=\n"
 		"...\n";
 	static const struct target_struct {
 		char data[64];
