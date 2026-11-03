@@ -243,26 +243,8 @@ static cyaml_err_t cyaml__data_handle_pointer(
 
 	if (schema->flags & CYAML_FLAG_POINTER) {
 		/* Need to create/extend an allocation. */
-		const cyaml_schema_field_t *field;
 		size_t delta = schema->data_size;
 		uint8_t *value_copy = NULL;
-		cyaml_err_t err;
-
-		if (schema->type == CYAML_BINARY) {
-			field = CYAML_FIELD_OF_VALUE(schema);
-			delta = cyaml_data_read(field->count_size,
-					state->data + field->count_offset,
-					&err);
-			if (err != CYAML_OK) {
-				return err;
-			}
-			if (delta == 0) {
-				/* Empty binary data has no allocation. */
-				cyaml_data_write_pointer(NULL, *value_copy_io);
-				*value_copy_io = NULL;
-				return CYAML_OK;
-			}
-		}
 
 		if (*value_data_io == NULL) {
 			return CYAML_ERR_BAD_PARAM_NULL_DATA;
@@ -273,9 +255,6 @@ static cyaml_err_t cyaml__data_handle_pointer(
 			/* For a string the allocation size is the string
 			 * size from the event, plus trailing NULL. */
 			delta = strlen((const char *) *value_data_io) + 1;
-			break;
-		case CYAML_BINARY:
-			/* Already set, above. */
 			break;
 		case CYAML_SEQUENCE:
 			delta *= state->sequence.count;
@@ -391,6 +370,8 @@ static cyaml_err_t cyaml__clone_string(
 /**
  * Copy a value of type \ref CYAML_BINARY.
  *
+ * Creates allocation for non-empty \ref CYAML_FLAG_POINTER values.
+ *
  * \param[in]  ctx     The CYAML copying context.
  * \param[in]  schema  The schema for the value to be copied.
  * \param[in]  data    The place to read the value from in the client data.
@@ -416,6 +397,32 @@ static cyaml_err_t cyaml__clone_binary(
 			state->data + field->count_offset, &err);
 	if (err != CYAML_OK) {
 		return err;
+	}
+
+	if (schema->flags & CYAML_FLAG_POINTER) {
+		uint8_t *allocation = NULL;
+
+		data = cyaml_data_save_handle_pointer(ctx->config, schema,
+				data, "Copy");
+
+		/* Empty binary data has no allocation. */
+		if (len > 0) {
+			if (data == NULL) {
+				return CYAML_ERR_BAD_PARAM_NULL_DATA;
+			}
+
+			allocation = cyaml__alloc(ctx->config, len, false);
+			if (allocation == NULL) {
+				return CYAML_ERR_OOM;
+			}
+
+			cyaml__log(ctx->config, CYAML_LOG_DEBUG,
+					"Copy: Allocation: %p (%zu bytes)\n",
+					allocation, len);
+		}
+
+		cyaml_data_write_pointer(allocation, copy);
+		copy = allocation;
 	}
 
 	if (len > 0) {
@@ -488,9 +495,11 @@ static cyaml_err_t cyaml__clone_value(
 		}
 	}
 
-	if (!cyaml__is_sequence(schema)) {
+	if (!cyaml__is_sequence(schema) && schema->type != CYAML_BINARY) {
 		/* Since sequences extend their allocation for each entry,
 		 * they're handled in the sequence-specific code.
+		 *
+		 * Binary values handle their own allocation.
 		 */
 		err = cyaml__data_handle_pointer(ctx, schema, &data, &copy);
 		if (err != CYAML_OK) {
