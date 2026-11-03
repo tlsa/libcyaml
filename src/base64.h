@@ -39,7 +39,7 @@ void cyaml_base64_encode(
 		char *str);
 
 /**
- * Calculate the size of a decoded base64 string.
+ * Validate a base64 string and calculate its decoded size.
  *
  * \param[in]  str      The base64 string to decode.
  * \param[in]  str_len  The length of the base64 string to decode.
@@ -53,6 +53,8 @@ cyaml_err_t cyaml_base64_calc_decoded_size(
 
 /**
  * Decode a base64 string.
+ *
+ * The string must have been validated by cyaml_base64_calc_decoded_size().
  *
  * \param[in]  str      The base64 string to decode.
  * \param[in]  str_len  The length of the base64 string to decode.

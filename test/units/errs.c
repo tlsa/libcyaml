@@ -5002,6 +5002,116 @@ static bool test_err_load_schema_invalid_base64_padding(
 }
 
 /**
+ * Test loading binary values containing invalid characters.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_invalid_base64_chars(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const struct {
+		const char *name;
+		const char *yaml;
+	} yaml[] = {
+		{
+			.name = "punctuation",
+			.yaml = "test_data: Q2F0!\n"
+		},
+		{
+			.name = "hyphen",
+			.yaml = "test_data: Q2F0-cw==\n"
+		},
+		{
+			.name = "url_safe",
+			.yaml = "test_data: Q2F0_w==\n"
+		},
+		{
+			.name = "vertical_tab",
+			.yaml = "test_data: \"Q2F0\\vcw==\"\n"
+		},
+		{
+			.name = "form_feed",
+			.yaml = "test_data: \"Q2F0\\fcw==\"\n"
+		},
+		{
+			.name = "nbsp",
+			.yaml = "test_data: \"Q2F0\\_cw==\"\n"
+		},
+		{
+			.name = "non_ascii",
+			.yaml = "test_data: Q2F0\xC3\xA9" "cw==\n"
+		},
+		{
+			.name = "escaped_nel",
+			.yaml = "test_data: \"Q2F0\\Ncw==\"\n"
+		},
+		{
+			.name = "escaped_ls",
+			.yaml = "test_data: \"Q2F0\\Lcw==\"\n"
+		},
+		{
+			.name = "escaped_ps",
+			.yaml = "test_data: \"Q2F0\\Pcw==\"\n"
+		},
+		{
+			.name = "literal_ls",
+			.yaml = "test_data: |\n  Q2F0\xE2\x80\xA8" "cw==\n"
+		},
+		{
+			.name = "literal_ps",
+			.yaml = "test_data: |\n  Q2F0\xE2\x80\xA9" "cw==\n"
+		},
+	};
+	struct target_struct {
+		uint8_t *data;
+		size_t data_len;
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_BINARY("test_data", CYAML_FLAG_POINTER,
+				struct target_struct, data,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	bool pass = true;
+
+	for (unsigned i = 0; i < CYAML_ARRAY_LEN(yaml); i++) {
+		struct target_struct *data_tgt = NULL;
+		test_data_t td = {
+			.data = (cyaml_data_t **) &data_tgt,
+			.config = config,
+			.schema = &top_schema,
+		};
+		char name[sizeof(__func__) + 64];
+		cyaml_err_t err;
+		ttest_ctx_t tc;
+
+		sprintf(name, "%s_%s", __func__, yaml[i].name);
+		if (!ttest_start(report, name, cyaml_cleanup, &td, &tc)) {
+			continue;
+		}
+
+		err = cyaml_load_data((const uint8_t *) yaml[i].yaml,
+				strlen(yaml[i].yaml), config, &top_schema,
+				(cyaml_data_t **) &data_tgt, NULL);
+		if (err != CYAML_ERR_INVALID_BASE64) {
+			pass &= ttest_fail(&tc, cyaml_strerror(err));
+			continue;
+		}
+
+		pass &= ttest_pass(&tc);
+	}
+
+	return pass;
+}
+
+/**
  * Test loading a binary value.
  *
  * \param[in]  report  The test report context.
@@ -10818,6 +10928,7 @@ bool errs_tests(
 
 	pass &= test_err_load_schema_invalid_base64_length(rc, &config);
 	pass &= test_err_load_schema_invalid_base64_padding(rc, &config);
+	pass &= test_err_load_schema_invalid_base64_chars(rc, &config);
 	pass &= test_err_load_schema_invalid_base64_size_min(rc, &config);
 	pass &= test_err_load_schema_invalid_base64_size_max(rc, &config);
 	pass &= test_err_load_schema_invalid_base64_top_level(rc, &config);

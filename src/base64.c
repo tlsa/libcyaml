@@ -92,42 +92,43 @@ void cyaml_base64_encode(
 enum {
 	BAD = 64, /**< Invalid character. */
 	PAD = 65, /**< Padding character ('='). */
+	WSP = 66, /**< Whitespace character. */
 };
 
 /** Base64 character to value mapping. */
 static const uint8_t dec[256] = {
-	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* ....  .... */
-	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* ....  .... */
-	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* ....  .... */
-	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* ....  .... */
-	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* ....  .... */
-	BAD, BAD, BAD,  62,    BAD, BAD, BAD,  63, /* ...+  .../ */
-	 52,  53,  54,  55,     56,  57,  58,  59, /* 0123  4567 */
-	 60,  61, BAD, BAD,    BAD, PAD, BAD, BAD, /* 89..  .=.. */
-	BAD,   0,   1,   2,      3,   4,   5,   6, /* .ABC  DEFG */
-	  7,   8,   9,  10,     11,  12,  13,  14, /* HIJK  LMNO */
-	 15,  16,  17,  18,     19,  20,  21,  22, /* PQRS  TUVW */
-	 23,  24,  25, BAD,    BAD, BAD, BAD, BAD, /* XYZ.  .... */
-	BAD,  26,  27,  28,     29,  30,  31,  32, /* .abc  defg */
-	 33,  34,  35,  36,     37,  38,  39,  40, /* hijk  lmno */
-	 41,  42,  43,  44,     45,  46,  47,  48, /* pqrs  tuvw */
-	 49,  50,  51, BAD,    BAD, BAD, BAD, BAD, /* zyz.  .... */
-	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* ....  .... */
-	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* ....  .... */
-	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* ....  .... */
-	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* ....  .... */
-	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* ....  .... */
-	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* ....  .... */
-	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* ....  .... */
-	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* ....  .... */
-	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* ....  .... */
-	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* ....  .... */
-	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* ....  .... */
-	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* ....  .... */
-	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* ....  .... */
-	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* ....  .... */
-	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* ....  .... */
-	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* ....  .... */
+	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* . . . .   . . . . */
+	BAD, WSP, WSP, BAD,    BAD, WSP, BAD, BAD, /* . \t\n.   . \r. . */
+	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* . . . .   . . . . */
+	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* . . . .   . . . . */
+	WSP, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /*   . . .   . . . . */
+	BAD, BAD, BAD,  62,    BAD, BAD, BAD,  63, /* . . . +   . . . / */
+	 52,  53,  54,  55,     56,  57,  58,  59, /* 0 1 2 3   4 5 6 7 */
+	 60,  61, BAD, BAD,    BAD, PAD, BAD, BAD, /* 8 9 . .   . = . . */
+	BAD,   0,   1,   2,      3,   4,   5,   6, /* . A B C   D E F G */
+	  7,   8,   9,  10,     11,  12,  13,  14, /* H I J K   L M N O */
+	 15,  16,  17,  18,     19,  20,  21,  22, /* P Q R S   T U V W */
+	 23,  24,  25, BAD,    BAD, BAD, BAD, BAD, /* X Y Z .   . . . . */
+	BAD,  26,  27,  28,     29,  30,  31,  32, /* . a b c   d e f g */
+	 33,  34,  35,  36,     37,  38,  39,  40, /* h i j k   l m n o */
+	 41,  42,  43,  44,     45,  46,  47,  48, /* p q r s   t u v w */
+	 49,  50,  51, BAD,    BAD, BAD, BAD, BAD, /* x y z .   . . . . */
+	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* . . . .   . . . . */
+	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* . . . .   . . . . */
+	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* . . . .   . . . . */
+	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* . . . .   . . . . */
+	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* . . . .   . . . . */
+	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* . . . .   . . . . */
+	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* . . . .   . . . . */
+	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* . . . .   . . . . */
+	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* . . . .   . . . . */
+	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* . . . .   . . . . */
+	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* . . . .   . . . . */
+	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* . . . .   . . . . */
+	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* . . . .   . . . . */
+	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* . . . .   . . . . */
+	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* . . . .   . . . . */
+	BAD, BAD, BAD, BAD,    BAD, BAD, BAD, BAD, /* . . . .   . . . . */
 };
 
 /* Exported function, documented in base64.h. */
@@ -149,8 +150,10 @@ cyaml_err_t cyaml_base64_calc_decoded_size(
 			}
 			padding++;
 			break;
-		case BAD:
+		case WSP:
 			break;
+		case BAD:
+			return CYAML_ERR_INVALID_BASE64;
 		default:
 			if (padding) {
 				return CYAML_ERR_INVALID_BASE64;
