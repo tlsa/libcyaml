@@ -1842,8 +1842,7 @@ static cyaml_err_t cyaml__data_handle_pointer(
 			 * allocation it will need for the data. */
 			err = cyaml_base64_calc_decoded_size(
 					(const char *) event->data.scalar.value,
-					strlen((const char *)
-						event->data.scalar.value),
+					event->data.scalar.length,
 					&delta);
 			if (err != CYAML_OK) {
 				return err;
@@ -2251,7 +2250,7 @@ static cyaml_err_t cyaml__read_binary_value(
 		cyaml_data_t *data)
 {
 	const char *value = (const char *)event->data.scalar.value;
-	size_t value_len = strlen(value);
+	size_t value_len = event->data.scalar.length;
 	size_t decoded_size;
 	cyaml_err_t err;
 
@@ -2587,18 +2586,20 @@ static cyaml_err_t cyaml__consume_ignored_value(
 /**
  * Check whether a string represents a NULL value.
  *
- * \param[in]  schema  CYAML schema for the value to test.
- * \param[in]  value   String value to test.
+ * \param[in]  schema     CYAML schema for the value to test.
+ * \param[in]  value      String value to test.
+ * \param[in]  value_len  Length of value in bytes.
  * \return true if string represents a NULL, false otherwise.
  */
 static bool cyaml__string_is_null_ptr(
 		const cyaml_schema_value_t *schema,
-		const char *value)
+		const char *value,
+		size_t value_len)
 {
 	assert(value != NULL);
 
 	if (cyaml__flag_check_all(schema->flags, CYAML_FLAG_POINTER_NULL) &&
-			value[0] == '\0') {
+			value_len == 0) {
 		return true;
 	}
 
@@ -2607,13 +2608,13 @@ static bool cyaml__string_is_null_ptr(
 		return false;
 	}
 
-	switch (strlen(value)) {
+	switch (value_len) {
 	case 1:
-		return (strcmp(value, "~") == 0);
+		return (memcmp(value, "~", 1) == 0);
 	case 4:
-		return (strcmp(value, "null") == 0 ||
-			strcmp(value, "Null") == 0 ||
-			strcmp(value, "NULL") == 0);
+		return (memcmp(value, "null", 4) == 0 ||
+			memcmp(value, "Null", 4) == 0 ||
+			memcmp(value, "NULL", 4) == 0);
 	}
 
 	return false;
@@ -2649,8 +2650,10 @@ static cyaml_err_t cyaml__read_value(
 	}
 
 	if (cyaml_event == CYAML_EVT_SCALAR) {
-		if (cyaml__string_is_null_ptr(schema,
-				(const char *)event->data.scalar.value)) {
+		const char *value = (const char *)event->data.scalar.value;
+		size_t value_len = event->data.scalar.length;
+
+		if (cyaml__string_is_null_ptr(schema, value, value_len)) {
 			cyaml__log(ctx->config, CYAML_LOG_INFO,
 					"Load:   <NULL>\n");
 			return CYAML_OK;

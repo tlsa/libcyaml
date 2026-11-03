@@ -5064,6 +5064,22 @@ static bool test_err_load_schema_invalid_base64_chars(
 			.name = "literal_ps",
 			.yaml = "test_data: |\n  Q2F0\xE2\x80\xA9" "cw==\n"
 		},
+		{
+			.name = "nul_escape",
+			.yaml = "test_data: \"Q2F0\\0cw==\"\n"
+		},
+		{
+			.name = "nul_hex",
+			.yaml = "test_data: \"Q2F0\\x00cw==\"\n"
+		},
+		{
+			.name = "nul_unicode",
+			.yaml = "test_data: \"Q2F0\\u0000cw==\"\n"
+		},
+		{
+			.name = "nul_trailing",
+			.yaml = "test_data: \"Q2F0cw==\\0\"\n"
+		},
 	};
 	struct target_struct {
 		uint8_t *data;
@@ -5071,6 +5087,77 @@ static bool test_err_load_schema_invalid_base64_chars(
 	};
 	static const struct cyaml_schema_field mapping_schema[] = {
 		CYAML_FIELD_BINARY("test_data", CYAML_FLAG_POINTER,
+				struct target_struct, data,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	bool pass = true;
+
+	for (unsigned i = 0; i < CYAML_ARRAY_LEN(yaml); i++) {
+		struct target_struct *data_tgt = NULL;
+		test_data_t td = {
+			.data = (cyaml_data_t **) &data_tgt,
+			.config = config,
+			.schema = &top_schema,
+		};
+		char name[sizeof(__func__) + 64];
+		cyaml_err_t err;
+		ttest_ctx_t tc;
+
+		sprintf(name, "%s_%s", __func__, yaml[i].name);
+		if (!ttest_start(report, name, cyaml_cleanup, &td, &tc)) {
+			continue;
+		}
+
+		err = cyaml_load_data((const uint8_t *) yaml[i].yaml,
+				strlen(yaml[i].yaml), config, &top_schema,
+				(cyaml_data_t **) &data_tgt, NULL);
+		if (err != CYAML_ERR_INVALID_BASE64) {
+			pass &= ttest_fail(&tc, cyaml_strerror(err));
+			continue;
+		}
+
+		pass &= ttest_pass(&tc);
+	}
+
+	return pass;
+}
+
+/**
+ * Test loading binary values with NUL bytes that would look like NULL.
+ *
+ * With the \ref CYAML_FLAG_POINTER_NULL_STR flags, values like "" and "~"
+ * represent NULL.  Binary data must use the full scalar length, so values
+ * containing NUL bytes from YAML escapes must not be mistaken for those.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_invalid_base64_nul_null_ptr(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const struct {
+		const char *name;
+		const char *yaml;
+	} yaml[] = {
+		{ .name = "leading",   .yaml = "test_data: \"\\0Q2F0\"\n" },
+		{ .name = "only",      .yaml = "test_data: \"\\0\"\n" },
+		{ .name = "tilde",     .yaml = "test_data: \"~\\0\"\n" },
+		{ .name = "null",      .yaml = "test_data: \"null\\0\"\n" },
+		{ .name = "null_junk", .yaml = "test_data: \"null\\0!!!\"\n" },
+	};
+	struct target_struct {
+		uint8_t *data;
+		size_t data_len;
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_BINARY("test_data", CYAML_FLAG_POINTER_NULL_STR,
 				struct target_struct, data,
 				0, CYAML_UNLIMITED),
 		CYAML_FIELD_END
@@ -11101,6 +11188,7 @@ bool errs_tests(
 	pass &= test_err_load_schema_invalid_base64_length(rc, &config);
 	pass &= test_err_load_schema_invalid_base64_padding(rc, &config);
 	pass &= test_err_load_schema_invalid_base64_chars(rc, &config);
+	pass &= test_err_load_schema_invalid_base64_nul_null_ptr(rc, &config);
 	pass &= test_err_load_schema_invalid_base64_empty_min(rc, &config);
 	pass &= test_err_save_binary_null_with_length(rc, &config);
 	pass &= test_err_load_schema_invalid_base64_size_min(rc, &config);
