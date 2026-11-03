@@ -500,14 +500,15 @@ static cyaml_err_t cyaml__store_string(
 /**
  * Store a binary value to client data structure according to schema.
  *
+ * Creates allocation for non-empty \ref CYAML_FLAG_POINTER values.
+ *
  * Exactly one of `decoded` and `encoded` must be non-NULL.
  *
  * \param[in]  ctx          The CYAML loading context.
  * \param[in]  schema       The schema for the value to be stored.
- * \param[in]  location     The place to write the value in the output data.
- *                          May be NULL if `decoded_len` is zero.
+ * \param[in]  data         The place to write the value in the output data.
  * \param[in]  decoded      Decoded value to store, or NULL.
- * \param[in]  decoded_len  The length of the decoded value in bytes.
+ * \param[in]  len          The length of the decoded value in bytes.
  * \param[in]  encoded      Base64 encoded value to decode and store, or NULL.
  *                          Must have been validated by
  *                          cyaml_base64_calc_decoded_size().
@@ -517,9 +518,9 @@ static cyaml_err_t cyaml__store_string(
 static cyaml_err_t cyaml__store_binary(
 		const cyaml_ctx_t *ctx,
 		const cyaml_schema_value_t *schema,
-		uint8_t *location,
+		uint8_t *data,
 		const uint8_t *decoded,
-		size_t decoded_len,
+		size_t len,
 		const char *encoded,
 		size_t encoded_len)
 {
@@ -535,33 +536,52 @@ static cyaml_err_t cyaml__store_binary(
 
 	if (schema->binary.min > schema->binary.max) {
 		return CYAML_ERR_BAD_MIN_MAX_SCHEMA;
-	} else if (decoded_len < schema->binary.min) {
+	} else if (len < schema->binary.min) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
 				"Load: BINARY length < %"PRIu32"\n",
 				schema->binary.min);
 		return CYAML_ERR_BASE64_MIN_LEN;
-	} else if (decoded_len > schema->binary.max) {
+	} else if (len > schema->binary.max) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
 				"Load: BINARY length > %"PRIu32"\n",
 				schema->binary.max);
 		return CYAML_ERR_BASE64_MAX_LEN;
 	}
 
+	if (schema->flags & CYAML_FLAG_POINTER) {
+		uint8_t *allocation = NULL;
+
+		/* Empty binary data has no allocation. */
+		if (len > 0) {
+			allocation = cyaml__alloc(ctx->config, len, false);
+			if (allocation == NULL) {
+				return CYAML_ERR_OOM;
+			}
+
+			cyaml__log(ctx->config, CYAML_LOG_DEBUG,
+					"Load: Allocation: %p (%zu bytes)\n",
+					allocation, len);
+		}
+
+		cyaml_data_write_pointer(allocation, data);
+		data = allocation;
+	}
+
 	if (encoded != NULL) {
-		cyaml_base64_decode(encoded, encoded_len, location);
-	} else if (decoded_len > 0) {
-		memcpy(location, decoded, decoded_len);
+		cyaml_base64_decode(encoded, encoded_len, data);
+	} else if (len > 0) {
+		memcpy(data, decoded, len);
 	}
 
 	if (validate_cb != NULL) {
 		if (!validate_cb(ctx->config->validation_ctx, schema,
-				location, decoded_len)) {
+				data, len)) {
 			return CYAML_ERR_INVALID_VALUE;
 		}
 	}
 
 	field = CYAML_FIELD_OF_VALUE(schema);
-	err = cyaml_data_write(decoded_len, field->count_size,
+	err = cyaml_data_write(len, field->count_size,
 			state->data + field->count_offset);
 	if (err != CYAML_OK) {
 		return err;
@@ -1418,6 +1438,11 @@ static cyaml_err_t cyaml__field_scalar_apply_default(
 		if (schema->binary.missing == NULL) {
 			return CYAML_OK;
 		}
+
+		return cyaml__store_binary(ctx, schema, data,
+				schema->binary.missing,
+				schema->binary.missing_len,
+				NULL, 0);
 	}
 
 	if (schema->flags & CYAML_FLAG_POINTER) {
@@ -1428,27 +1453,20 @@ static cyaml_err_t cyaml__field_scalar_apply_default(
 		case CYAML_STRING:
 			size = strlen(schema->string.missing) + 1;
 			break;
-		case CYAML_BINARY:
-			size = schema->binary.missing_len;
-			break;
 		default:
 			size = schema->data_size;
 			break;
 		}
 
-		/* Only empty binary data can have zero size, and that
-		 * has no allocation. */
-		if (size > 0) {
-			value_data = cyaml__realloc(ctx->config, value_data,
-					0, size, true);
-			if (value_data == NULL) {
-				return CYAML_ERR_OOM;
-			}
-
-			cyaml__log(ctx->config, CYAML_LOG_DEBUG,
-					"Load: Allocation: %p (%zu bytes)\n",
-					value_data, size);
+		value_data = cyaml__realloc(ctx->config, value_data, 0,
+				size, true);
+		if (value_data == NULL) {
+			return CYAML_ERR_OOM;
 		}
+
+		cyaml__log(ctx->config, CYAML_LOG_DEBUG,
+				"Load: Allocation: %p (%zu bytes)\n",
+				value_data, size);
 
 		cyaml_data_write_pointer(value_data, data);
 		data = value_data;
@@ -1479,11 +1497,6 @@ static cyaml_err_t cyaml__field_scalar_apply_default(
 	case CYAML_STRING:
 		return cyaml__store_string(ctx, schema, data,
 				schema->string.missing);
-	case CYAML_BINARY:
-		return cyaml__store_binary(ctx, schema, data,
-				schema->binary.missing,
-				schema->binary.missing_len,
-				NULL, 0);
 	default:
 		return CYAML_ERR_INTERNAL_ERROR;
 	}
@@ -1821,7 +1834,6 @@ static cyaml_err_t cyaml__data_handle_pointer(
 		uint8_t **value_data_io)
 {
 	cyaml_state_t *state = ctx->state;
-	cyaml_err_t err;
 
 	if (schema->flags & CYAML_FLAG_POINTER) {
 		/* Need to create/extend an allocation. */
@@ -1836,30 +1848,6 @@ static cyaml_err_t cyaml__data_handle_pointer(
 			 * size from the event, plus trailing NULL. */
 			delta = strlen((const char *)
 					event->data.scalar.value) + 1;
-			break;
-		case CYAML_BINARY:
-			/* For binary data, we ask the decoder how big an
-			 * allocation it will need for the data. */
-			err = cyaml_base64_calc_decoded_size(
-					(const char *) event->data.scalar.value,
-					event->data.scalar.length,
-					&delta);
-			if (err != CYAML_OK) {
-				return err;
-			}
-			if (schema->binary.min > schema->binary.max) {
-				return CYAML_ERR_BAD_MIN_MAX_SCHEMA;
-			} else if (delta < schema->binary.min) {
-				return CYAML_ERR_BASE64_MIN_LEN;
-			} else if (delta > schema->binary.max) {
-				return CYAML_ERR_BASE64_MAX_LEN;
-			}
-			if (delta == 0) {
-				/* Empty binary data has no allocation. */
-				cyaml_data_write_pointer(NULL, *value_data_io);
-				*value_data_io = NULL;
-				return CYAML_OK;
-			}
 			break;
 		case CYAML_SEQUENCE:
 			/* Sequence; could be extending allocation. */
@@ -2665,9 +2653,12 @@ static cyaml_err_t cyaml__read_value(
 		return err;
 	}
 
-	if (cyaml__is_sequence(schema) == false) {
+	if (cyaml__is_sequence(schema) == false &&
+	    schema->type != CYAML_BINARY) {
 		/* Since sequences extend their allocation for each entry,
 		 * they're handled in the sequence-specific code.
+		 *
+		 * Binary values handle their own allocation.
 		 */
 		err = cyaml__data_handle_pointer(ctx, schema, event, &data);
 		if (err != CYAML_OK) {
