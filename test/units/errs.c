@@ -5152,7 +5152,7 @@ static bool test_err_load_schema_invalid_base64_size_min(
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
-	if (err != CYAML_ERR_BASE64_MAX_LEN) {
+	if (err != CYAML_ERR_BASE64_MIN_LEN) {
 		return ttest_fail(&tc, cyaml_strerror(err));
 	}
 
@@ -5330,7 +5330,55 @@ static bool test_err_load_schema_invalid_base64_ptr_size_min(
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
-	if (err != CYAML_ERR_BASE64_MAX_LEN) {
+	if (err != CYAML_ERR_BASE64_MIN_LEN) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a binary pointer value with a schema where min > max.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_invalid_base64_ptr_min_max(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"test_data: Cat=\n";
+	struct target_struct {
+		char *data;
+		size_t data_len;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_BINARY("test_data", CYAML_FLAG_POINTER,
+				struct target_struct, data,
+				64, 4),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_BAD_MIN_MAX_SCHEMA) {
 		return ttest_fail(&tc, cyaml_strerror(err));
 	}
 
@@ -5449,7 +5497,7 @@ static bool test_err_load_schema_invalid_base64_default_size_min(
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
-	if (err != CYAML_ERR_BASE64_MAX_LEN) {
+	if (err != CYAML_ERR_BASE64_MIN_LEN) {
 		return ttest_fail(&tc, cyaml_strerror(err));
 	}
 
@@ -5591,7 +5639,7 @@ static bool test_err_load_schema_invalid_base64_default_ptr_size_min(
 
 	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
 			(cyaml_data_t **) &data_tgt, NULL);
-	if (err != CYAML_ERR_BASE64_MAX_LEN) {
+	if (err != CYAML_ERR_BASE64_MIN_LEN) {
 		return ttest_fail(&tc, cyaml_strerror(err));
 	}
 
@@ -10934,6 +10982,7 @@ bool errs_tests(
 	pass &= test_err_load_schema_invalid_base64_top_level(rc, &config);
 	pass &= test_err_copy_schema_invalid_base64_top_level(rc, &config);
 	pass &= test_err_load_schema_invalid_base64_ptr_size_min(rc, &config);
+	pass &= test_err_load_schema_invalid_base64_ptr_min_max(rc, &config);
 	pass &= test_err_load_schema_invalid_base64_ptr_size_max(rc, &config);
 	pass &= test_err_load_schema_invalid_base64_default_min_max(rc, &config);
 	pass &= test_err_load_schema_invalid_base64_default_size_min(rc, &config);

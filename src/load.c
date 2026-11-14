@@ -538,7 +538,7 @@ static cyaml_err_t cyaml__store_binary(
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
 				"Load: BINARY length < %"PRIu32"\n",
 				schema->binary.min);
-		return CYAML_ERR_BASE64_MAX_LEN;
+		return CYAML_ERR_BASE64_MIN_LEN;
 	} else if (decoded_len > schema->binary.max) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
 				"Load: BINARY length > %"PRIu32"\n",
@@ -1837,8 +1837,11 @@ static cyaml_err_t cyaml__data_handle_pointer(
 			if (err != CYAML_OK) {
 				return err;
 			}
-			if (delta < schema->binary.min ||
-			    delta > schema->binary.max) {
+			if (schema->binary.min > schema->binary.max) {
+				return CYAML_ERR_BAD_MIN_MAX_SCHEMA;
+			} else if (delta < schema->binary.min) {
+				return CYAML_ERR_BASE64_MIN_LEN;
+			} else if (delta > schema->binary.max) {
 				return CYAML_ERR_BASE64_MAX_LEN;
 			}
 			break;

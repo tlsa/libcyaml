@@ -968,7 +968,8 @@ typedef enum cyaml_err {
 	CYAML_ERR_INVALID_ALIAS,         /**< No anchor found for alias. */
 	CYAML_ERR_INTERNAL_ERROR,        /**< Internal error in LibCYAML. */
 	CYAML_ERR_INVALID_BASE64,        /**< Invalid Base64 string. */
-	CYAML_ERR_BASE64_MAX_LEN,        /**< Too much base64 data. */
+	CYAML_ERR_BASE64_MIN_LEN,        /**< Binary data length too short. */
+	CYAML_ERR_BASE64_MAX_LEN,        /**< Binary data length too long. */
 	CYAML_ERR_MAPPING_REQUIRED,      /**< Value requires parent mapping. */
 	CYAML_ERR_UNEXPECTED_EVENT,      /**< YAML event rejected by schema. */
 	CYAML_ERR_STRING_LENGTH_MIN,     /**< String length too short. */
