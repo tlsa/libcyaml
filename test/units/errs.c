@@ -4342,6 +4342,61 @@ static bool test_err_load_schema_invalid_value_bitfield_6(
 }
 
 /**
+ * Test loading when a 64-bit bitfield entry value is negative.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_invalid_value_bitfield_7(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const cyaml_bitdef_t bitvals[] = {
+		{ .name = "a", .offset =  0, .bits = 64 },
+	};
+	static const unsigned char yaml[] =
+		"test_bitfield:\n"
+		"    a: -1\n";
+	struct target_struct {
+		uint64_t test_value_bitfield;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_BITFIELD("test_bitfield", CYAML_FLAG_DEFAULT,
+				struct target_struct, test_value_bitfield,
+				bitvals, CYAML_ARRAY_LEN(bitvals)),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading when schema expects bitfield, but value outside data.
  *
  * \param[in]  report  The test report context.
@@ -6402,6 +6457,106 @@ static bool test_err_load_schema_invalid_value_uint_junk(
 }
 
 /**
+ * Test loading when schema expects int but value has leading whitespace.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_invalid_value_int_space(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"a: \" 5\"\n";
+	struct target_struct {
+		int a;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_INT("a", CYAML_FLAG_DEFAULT,
+				struct target_struct, a),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading when schema expects uint but value has leading whitespace.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_invalid_value_uint_space(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"a: \" 5\"\n";
+	struct target_struct {
+		unsigned a;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("a", CYAML_FLAG_DEFAULT,
+				struct target_struct, a),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading when schema expects uint but value is out of range.
  *
  * \param[in]  report  The test report context.
@@ -6620,6 +6775,213 @@ static bool test_err_load_schema_invalid_value_uint_range_5(
 	static const struct cyaml_schema_field mapping_schema[] = {
 		CYAML_FIELD_UINT("a", CYAML_FLAG_DEFAULT,
 				struct target_struct, a),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading when schema expects 64-bit uint but value is negative.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_invalid_value_uint_range_6(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"a: -1\n";
+	struct target_struct {
+		uint64_t a;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("a", CYAML_FLAG_DEFAULT,
+				struct target_struct, a),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading when schema expects int but value is a sign with no digits.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_invalid_value_int_sign_only(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"a: \"-\"\n";
+	struct target_struct {
+		int a;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_INT("a", CYAML_FLAG_DEFAULT,
+				struct target_struct, a),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading when schema expects uint but value is a sign with no digits.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_invalid_value_uint_sign_only(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char yaml[] =
+		"a: \"+\"\n";
+	struct target_struct {
+		unsigned a;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("a", CYAML_FLAG_DEFAULT,
+				struct target_struct, a),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_ERR_INVALID_VALUE) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt != NULL) {
+		return ttest_fail(&tc, "Data non-NULL on error.");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading when combined flags value is too big for the data size.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_err_load_schema_invalid_value_flags_range(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const cyaml_strval_t strings[] = {
+		{ "small", (1 << 0) },
+		{ "big",   (1 << 8) },
+	};
+	static const unsigned char yaml[] =
+		"key:\n"
+		"    - small\n"
+		"    - big\n";
+	struct target_struct {
+		uint8_t a;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_FLAGS("key", CYAML_FLAG_DEFAULT,
+				struct target_struct, a,
+				strings, CYAML_ARRAY_LEN(strings)),
 		CYAML_FIELD_END
 	};
 	static const struct cyaml_schema_value top_schema = {
@@ -11208,6 +11570,8 @@ bool errs_tests(
 	pass &= test_err_save_schema_invalid_value_null_ptr(rc, &config);
 	pass &= test_err_load_schema_invalid_value_int_junk(rc, &config);
 	pass &= test_err_load_schema_invalid_value_uint_junk(rc, &config);
+	pass &= test_err_load_schema_invalid_value_int_space(rc, &config);
+	pass &= test_err_load_schema_invalid_value_uint_space(rc, &config);
 	pass &= test_err_load_schema_invalid_value_flags_junk(rc, &config);
 	pass &= test_err_load_schema_invalid_value_bitfield_1(rc, &config);
 	pass &= test_err_load_schema_invalid_value_bitfield_2(rc, &config);
@@ -11215,6 +11579,7 @@ bool errs_tests(
 	pass &= test_err_load_schema_invalid_value_bitfield_4(rc, &config);
 	pass &= test_err_load_schema_invalid_value_bitfield_5(rc, &config);
 	pass &= test_err_load_schema_invalid_value_bitfield_6(rc, &config);
+	pass &= test_err_load_schema_invalid_value_bitfield_7(rc, &config);
 	pass &= test_err_load_schema_invalid_value_float_junk(rc, &config);
 	pass &= test_err_load_schema_invalid_value_double_junk(rc, &config);
 	pass &= test_err_load_schema_invalid_value_int_range_1(rc, &config);
@@ -11227,6 +11592,8 @@ bool errs_tests(
 	pass &= test_err_load_schema_invalid_value_uint_range_3(rc, &config);
 	pass &= test_err_load_schema_invalid_value_uint_range_4(rc, &config);
 	pass &= test_err_load_schema_invalid_value_uint_range_5(rc, &config);
+	pass &= test_err_load_schema_invalid_value_uint_range_6(rc, &config);
+	pass &= test_err_load_schema_invalid_value_flags_range(rc, &config);
 	pass &= test_err_load_schema_invalid_value_float_range1(rc, &config);
 	pass &= test_err_load_schema_invalid_value_float_range2(rc, &config);
 	pass &= test_err_load_schema_invalid_value_float_range3(rc, &config);
@@ -11234,6 +11601,8 @@ bool errs_tests(
 	pass &= test_err_load_schema_invalid_value_double_range1(rc, &config);
 	pass &= test_err_load_schema_invalid_value_double_range2(rc, &config);
 	pass &= test_err_load_schema_invalid_value_float_invalid(rc, &config);
+	pass &= test_err_load_schema_invalid_value_int_sign_only(rc, &config);
+	pass &= test_err_load_schema_invalid_value_uint_sign_only(rc, &config);
 	pass &= test_err_load_schema_invalid_value_double_invalid(rc, &config);
 
 	ttest_heading(rc, "YAML / schema mismatch: bad base64");

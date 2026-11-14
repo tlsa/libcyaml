@@ -3436,6 +3436,108 @@ static bool test_load_mapping_entry_uint(
 }
 
 /**
+ * Test loading an unsigned integer with an explicit '+' sign.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_entry_uint_plus(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	unsigned value = 9999;
+	static const unsigned char yaml[] =
+		"test_uint: +9999\n";
+	struct target_struct {
+		unsigned test_value_uint;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("test_uint", CYAML_FLAG_DEFAULT,
+				struct target_struct, test_value_uint),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->test_value_uint != value) {
+		return ttest_fail(&tc, "Incorrect value");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a signed integer with an explicit '+' sign.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_entry_int_plus(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	int value = 90;
+	static const unsigned char yaml[] =
+		"test_int: +90\n";
+	struct target_struct {
+		int test_value_int;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_INT("test_int", CYAML_FLAG_DEFAULT,
+				struct target_struct, test_value_int),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->test_value_int != value) {
+		return ttest_fail(&tc, "Incorrect value");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading a pointer to an unsigned integer.
  *
  * \param[in]  report  The test report context.
@@ -12590,26 +12692,28 @@ bool load_tests(
 	pass &= test_load_mapping_entry_int_neg(rc, &config);
 	pass &= test_load_mapping_entry_enum_ptr(rc, &config);
 	pass &= test_load_mapping_entry_uint_ptr(rc, &config);
+	pass &= test_load_mapping_entry_int_plus(rc, &config);
+	pass &= test_load_mapping_entry_uint_plus(rc, &config);
 	pass &= test_load_mapping_entry_float_ptr(rc, &config);
 	pass &= test_load_mapping_entry_bool_true(rc, &config);
 	pass &= test_load_mapping_entry_bool_false(rc, &config);
 	pass &= test_load_mapping_entry_double_ptr(rc, &config);
 	pass &= test_load_mapping_entry_string_ptr(rc, &config);
 	pass &= test_load_mapping_entry_binary_ptr(rc, &config);
-	pass &= test_load_mapping_entry_binary_whitespace(rc, &config);
-	pass &= test_load_mapping_entry_binary_empty(rc, &config);
-	pass &= test_load_mapping_entry_binary_null_ptr(rc, &config);
 	pass &= test_load_mapping_entry_int_pos_ptr(rc, &config);
 	pass &= test_load_mapping_entry_int_neg_ptr(rc, &config);
 	pass &= test_load_mapping_entry_enum_sparse(rc, &config);
 	pass &= test_load_mapping_entry_ignore_deep(rc, &config);
+	pass &= test_load_mapping_entry_binary_empty(rc, &config);
 	pass &= test_load_mapping_entry_ignore_scalar(rc, &config);
 	pass &= test_load_mapping_entry_enum_fallback(rc, &config);
 	pass &= test_load_mapping_entry_bool_true_ptr(rc, &config);
 	pass &= test_load_mapping_entry_bool_false_ptr(rc, &config);
+	pass &= test_load_mapping_entry_binary_null_ptr(rc, &config);
 	pass &= test_load_mapping_entry_float_underflow(rc, &config);
 	pass &= test_load_mapping_entry_double_underflow(rc, &config);
 	pass &= test_load_mapping_entry_string_ptr_empty(rc, &config);
+	pass &= test_load_mapping_entry_binary_whitespace(rc, &config);
 	pass &= test_load_mapping_entry_string_ptr_null_str(rc, &config);
 	pass &= test_load_mapping_entry_string_ptr_null_empty(rc, &config);
 	pass &= test_load_mapping_entry_ignore_optional_scalar(rc, &config);
