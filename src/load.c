@@ -185,7 +185,7 @@ static inline cyaml_err_t cyaml__validate_int(
 	if ((min != 0 || max != 0) && (value < min || value > max)) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
 				"Load: INT value '%" PRIi64 "' out of range "
-				"(min: %" PRIi64 " max: % " PRIi64 ")\n",
+				"(min: %" PRIi64 " max: %" PRIi64 ")\n",
 				value, min, max);
 		return CYAML_ERR_INVALID_VALUE;
 	}
@@ -287,7 +287,7 @@ static inline cyaml_err_t cyaml__validate_uint(
 	if ((min != 0 || max != 0) && (value < min || value > max)) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
 				"Load: UINT value '%" PRIu64 "' out of range "
-				"(min: %" PRIu64 " max: % " PRIu64 ")\n",
+				"(min: %" PRIu64 " max: %" PRIu64 ")\n",
 				value, min, max);
 		return CYAML_ERR_INVALID_VALUE;
 	}
