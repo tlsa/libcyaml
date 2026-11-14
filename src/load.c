@@ -185,7 +185,7 @@ static inline cyaml_err_t cyaml__validate_int(
 	if ((min != 0 || max != 0) && (value < min || value > max)) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
 				"Load: INT value '%" PRIi64 "' out of range "
-				"(min: %" PRIi64 " max: % " PRIi64 ")\n",
+				"(min: %" PRIi64 " max: %" PRIi64 ")\n",
 				value, min, max);
 		return CYAML_ERR_INVALID_VALUE;
 	}
@@ -287,7 +287,7 @@ static inline cyaml_err_t cyaml__validate_uint(
 	if ((min != 0 || max != 0) && (value < min || value > max)) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
 				"Load: UINT value '%" PRIu64 "' out of range "
-				"(min: %" PRIu64 " max: % " PRIu64 ")\n",
+				"(min: %" PRIu64 " max: %" PRIu64 ")\n",
 				value, min, max);
 		return CYAML_ERR_INVALID_VALUE;
 	}
@@ -306,6 +306,7 @@ static inline cyaml_err_t cyaml__validate_uint(
  *
  * \param[in]  ctx       The CYAML loading context.
  * \param[in]  schema    The schema for the value to be stored.
+ * \param[in]  value_str The value to store's string form, or NULL if none.
  * \param[in]  location  The place to write the value in the output data.
  * \param[in]  value     The value to store.
  * \param[in]  validate  Whether to validate the value before storing it.
@@ -314,6 +315,7 @@ static inline cyaml_err_t cyaml__validate_uint(
 static inline cyaml_err_t cyaml__store_uint(
 		const cyaml_ctx_t *ctx,
 		const cyaml_schema_value_t *schema,
+		const char *value_str,
 		uint8_t *location,
 		uint64_t value,
 		bool validate)
@@ -330,9 +332,18 @@ static inline cyaml_err_t cyaml__store_uint(
 
 	max = (~(uint64_t)0) >> ((8 - schema->data_size) * 8);
 	if (value > max) {
-		cyaml__log(ctx->config, CYAML_LOG_ERROR,
-				"Load: Invalid %s value: '%" PRIu64 "'\n",
-				cyaml__type_to_str(schema->type), value);
+		if (value_str != NULL) {
+			cyaml__log(ctx->config, CYAML_LOG_ERROR,
+					"Load: %s value out of range: '%s'\n",
+					cyaml__type_to_str(schema->type),
+					value_str);
+		} else {
+			cyaml__log(ctx->config, CYAML_LOG_ERROR,
+					"Load: %s value out of range: '%"
+							PRIu64 "'\n",
+					cyaml__type_to_str(schema->type),
+					value);
+		}
 		return CYAML_ERR_INVALID_VALUE;
 	}
 
@@ -1480,13 +1491,13 @@ static cyaml_err_t cyaml__field_scalar_apply_default(
 		return cyaml__store_int(ctx, schema, data,
 				schema->enumeration.missing, false);
 	case CYAML_UINT:
-		return cyaml__store_uint(ctx, schema, data,
+		return cyaml__store_uint(ctx, schema, NULL, data,
 				schema->unsigned_integer.missing, false);
 	case CYAML_FLAGS:
-		return cyaml__store_uint(ctx, schema, data,
+		return cyaml__store_uint(ctx, schema, NULL, data,
 				(uint64_t)schema->enumeration.missing, false);
 	case CYAML_BITFIELD:
-		return cyaml__store_uint(ctx, schema, data,
+		return cyaml__store_uint(ctx, schema, NULL, data,
 				schema->bitfield.missing, false);
 	case CYAML_BOOL:
 		return cyaml__store_bool(ctx, schema, data,
@@ -1950,6 +1961,17 @@ static void cyaml__backtrace(
 }
 
 /**
+ * Check if a character is a numeric digit (0-9).
+ *
+ * \param[in] c  The character to check.
+ * \return true if `c` is a numeric digit, false otherwise.
+ */
+static inline bool cyaml__is_digit(char c)
+{
+	return c >= '0' && c <= '9';
+}
+
+/**
  * Read a value of type \ref CYAML_INT.
  *
  * \param[in]  ctx     The CYAML loading context.
@@ -1966,6 +1988,13 @@ static cyaml_err_t cyaml__read_int(
 {
 	long long temp;
 	char *end = NULL;
+
+	if (!cyaml__is_digit(value[0]) && value[0] != '+' && value[0] != '-') {
+		cyaml__log(ctx->config, CYAML_LOG_ERROR,
+				"Load: Invalid INT value: '%s'\n",
+				value);
+		return CYAML_ERR_INVALID_VALUE;
+	}
 
 	errno = 0;
 	temp = strtoll(value, &end, 0);
@@ -1996,12 +2025,19 @@ static inline cyaml_err_t cyaml__read_uint64_t(
 	unsigned long long temp;
 	char *end = NULL;
 
+	if (!cyaml__is_digit(value[0]) && value[0] != '+') {
+		cyaml__log(ctx->config, CYAML_LOG_ERROR,
+				"Load: Invalid UINT value: '%s'\n",
+				value);
+		return CYAML_ERR_INVALID_VALUE;
+	}
+
 	errno = 0;
 	temp = strtoull(value, &end, 0);
 
 	if (end == value || end == NULL || *end != '\0' || errno == ERANGE) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
-				"Load: Invalid uint64_t value: '%s'\n",
+				"Load: Invalid UINT value: '%s'\n",
 				value);
 		return CYAML_ERR_INVALID_VALUE;
 	}
@@ -2033,7 +2069,7 @@ static cyaml_err_t cyaml__read_uint(
 		return err;
 	}
 
-	return cyaml__store_uint(ctx, schema, data, temp, true);
+	return cyaml__store_uint(ctx, schema, value, data, temp, true);
 }
 
 /**
@@ -2354,7 +2390,7 @@ static cyaml_err_t cyaml__read_flags_value(
 		}
 	}
 
-	err = cyaml__store_uint(ctx, schema, data, value, true);
+	err = cyaml__store_uint(ctx, schema, NULL, data, value, true);
 	if (err != CYAML_OK) {
 		return err;
 	}
@@ -2503,7 +2539,7 @@ static cyaml_err_t cyaml__read_bitfield_value(
 		}
 	}
 
-	err = cyaml__store_uint(ctx, schema, data, value, true);
+	err = cyaml__store_uint(ctx, schema, NULL, data, value, true);
 	if (err != CYAML_OK) {
 		return err;
 	}
