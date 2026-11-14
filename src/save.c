@@ -829,6 +829,7 @@ static cyaml_err_t cyaml__write_binary_value(
 
 	assert(schema->type == CYAML_BINARY);
 	assert(state->state == CYAML_STATE_IN_MAP_KEY);
+	assert(state->data != NULL);
 
 	field = CYAML_FIELD_OF_VALUE(schema);
 	data_len = cyaml_data_read(field->count_size,
