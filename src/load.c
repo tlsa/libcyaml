@@ -1961,6 +1961,17 @@ static void cyaml__backtrace(
 }
 
 /**
+ * Check if a character is a numeric digit (0-9).
+ *
+ * \param[in] c  The character to check.
+ * \return true if `c` is a numeric digit, false otherwise.
+ */
+static inline bool cyaml__is_digit(char c)
+{
+	return c >= '0' && c <= '9';
+}
+
+/**
  * Read a value of type \ref CYAML_INT.
  *
  * \param[in]  ctx     The CYAML loading context.
@@ -1977,6 +1988,13 @@ static cyaml_err_t cyaml__read_int(
 {
 	long long temp;
 	char *end = NULL;
+
+	if (!cyaml__is_digit(value[0]) && value[0] != '+' && value[0] != '-') {
+		cyaml__log(ctx->config, CYAML_LOG_ERROR,
+				"Load: Invalid INT value: '%s'\n",
+				value);
+		return CYAML_ERR_INVALID_VALUE;
+	}
 
 	errno = 0;
 	temp = strtoll(value, &end, 0);
@@ -2007,12 +2025,19 @@ static inline cyaml_err_t cyaml__read_uint64_t(
 	unsigned long long temp;
 	char *end = NULL;
 
+	if (!cyaml__is_digit(value[0]) && value[0] != '+') {
+		cyaml__log(ctx->config, CYAML_LOG_ERROR,
+				"Load: Invalid UINT value: '%s'\n",
+				value);
+		return CYAML_ERR_INVALID_VALUE;
+	}
+
 	errno = 0;
 	temp = strtoull(value, &end, 0);
 
 	if (end == value || end == NULL || *end != '\0' || errno == ERANGE) {
 		cyaml__log(ctx->config, CYAML_LOG_ERROR,
-				"Load: Invalid uint64_t value: '%s'\n",
+				"Load: Invalid UINT value: '%s'\n",
 				value);
 		return CYAML_ERR_INVALID_VALUE;
 	}
