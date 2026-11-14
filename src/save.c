@@ -22,6 +22,7 @@
 #include "mem.h"
 #include "data.h"
 #include "util.h"
+#include "base64.h"
 
 /**
  * A CYAML save state machine stack entry.
@@ -470,20 +471,25 @@ static void cyaml__backtrace(
 	}
 }
 
+/** YAML tag for binary data. */
+#define CYAML__YAML_BINARY_TAG "tag:yaml.org,2002:binary"
+
 /**
  * Helper to emit YAML scalar events, using libyaml.
  *
- * \param[in]  ctx     The CYAML saving context.
- * \param[in]  schema  The schema for the value to emit.
- * \param[in]  value   The value to emit as a null-terminated C string.
- * \param[in]  tag     YAML tag to use for output.
+ * \param[in]  ctx           The CYAML saving context.
+ * \param[in]  schema        The schema for the value to emit.
+ * \param[in]  value         The value to emit as a null-terminated C string.
+ * \param[in]  tag           YAML tag to use for output.
+ * \param[in]  tag_implicit  Whether the tag may be omitted from the output.
  * \return \ref CYAML_OK on success, or appropriate error code otherwise.
  */
 static cyaml_err_t cyaml__emit_scalar(
 		const cyaml_ctx_t *ctx,
 		const cyaml_schema_value_t *schema,
 		const char *value,
-		const char *tag)
+		const char *tag,
+		bool tag_implicit)
 {
 	int ret;
 	yaml_event_t event;
@@ -499,7 +505,8 @@ static cyaml_err_t cyaml__emit_scalar(
 			(yaml_char_t *)tag,
 			(yaml_char_t *)value,
 			(int)strlen(value),
-			1, 1, cyaml__get_emit_style_scalar(schema));
+			tag_implicit, tag_implicit,
+			cyaml__get_emit_style_scalar(schema));
 
 	return cyaml__emit_event_helper(ctx, ret, &event);
 }
@@ -621,7 +628,7 @@ static cyaml_err_t cyaml__write_int(
 
 	return cyaml__emit_scalar(ctx, schema,
 			cyaml__get_int(number),
-			YAML_INT_TAG);
+			YAML_INT_TAG, true);
 }
 
 /**
@@ -643,7 +650,8 @@ static cyaml_err_t cyaml__write_uint(
 	number = cyaml_data_read(schema->data_size, data, &err);
 	if (err == CYAML_OK) {
 		const char *string = cyaml__get_uint(number, false);
-		err = cyaml__emit_scalar(ctx, schema, string, YAML_INT_TAG);
+		err = cyaml__emit_scalar(ctx, schema, string,
+				YAML_INT_TAG, true);
 	}
 
 	return err;
@@ -668,7 +676,7 @@ static cyaml_err_t cyaml__write_bool(
 	number = cyaml_data_read(schema->data_size, data, &err);
 	if (err == CYAML_OK) {
 		err = cyaml__emit_scalar(ctx, schema,
-			number ? "true" : "false", YAML_BOOL_TAG);
+			number ? "true" : "false", YAML_BOOL_TAG, true);
 	}
 
 	return err;
@@ -707,7 +715,8 @@ static cyaml_err_t cyaml__write_enum(
 				return cyaml__write_int(ctx, schema, data);
 			}
 		}
-		err = cyaml__emit_scalar(ctx, schema, string, YAML_STR_TAG);
+		err = cyaml__emit_scalar(ctx, schema, string,
+				YAML_STR_TAG, true);
 	}
 
 	return err;
@@ -747,7 +756,7 @@ static cyaml_err_t cyaml__write_float(
 		return CYAML_ERR_INVALID_DATA_SIZE;
 	}
 
-	return cyaml__emit_scalar(ctx, schema, string, YAML_FLOAT_TAG);
+	return cyaml__emit_scalar(ctx, schema, string, YAML_FLOAT_TAG, true);
 }
 
 /**
@@ -764,7 +773,7 @@ static cyaml_err_t cyaml__write_string(
 		const uint8_t *data)
 {
 	return cyaml__emit_scalar(ctx, schema, (const char *)data,
-			YAML_STR_TAG);
+			YAML_STR_TAG, true);
 }
 
 /**
@@ -799,6 +808,57 @@ static cyaml_err_t cyaml__write_scalar_value(
 }
 
 /**
+ * Write a binary value.
+ *
+ * \param[in]  ctx     The CYAML saving context.
+ * \param[in]  schema  The schema for the value to be written.
+ * \param[in]  data    The place to read the value from in the client data.
+ * \return \ref CYAML_OK on success, or appropriate error code otherwise.
+ */
+static cyaml_err_t cyaml__write_binary_value(
+		const cyaml_ctx_t *ctx,
+		const cyaml_schema_value_t *schema,
+		const cyaml_data_t *data)
+{
+	const cyaml_state_t *state = ctx->state;
+	const cyaml_schema_field_t *field;
+	cyaml_err_t err;
+	size_t data_len;
+	size_t str_len;
+	char *str;
+
+	assert(schema->type == CYAML_BINARY);
+	assert(state->state == CYAML_STATE_IN_MAP_KEY);
+
+	field = CYAML_FIELD_OF_VALUE(schema);
+	data_len = cyaml_data_read(field->count_size,
+			state->data + field->count_offset, &err);
+	if (err != CYAML_OK) {
+		return err;
+	}
+
+	if (data == NULL && data_len != 0) {
+		return CYAML_ERR_INVALID_VALUE;
+	}
+
+	str_len = cyaml_base64_calc_encoded_size(data_len);
+	str = cyaml__alloc(ctx->config, str_len + 1, false);
+	if (str == NULL) {
+		return CYAML_ERR_OOM;
+	}
+
+	cyaml_base64_encode(data, data_len, str);
+	str[str_len] = '\0';
+
+	err = cyaml__emit_scalar(ctx, schema, str,
+			CYAML__YAML_BINARY_TAG, false);
+	/* Whether err is an error or not, we have to free str and return err */
+
+	cyaml__free(ctx->config, str);
+	return err;
+}
+
+/**
  * Emit a sequence of flag values.
  *
  * \param[in]  ctx     The CYAML saving context.
@@ -829,7 +889,7 @@ static cyaml_err_t cyaml__emit_flags_sequence(
 		uint64_t flag = (uint64_t)strval->val;
 		if (number & flag) {
 			err = cyaml__emit_scalar(ctx, schema, strval->str,
-					YAML_STR_TAG);
+					YAML_STR_TAG, true);
 			if (err != CYAML_OK) {
 				return err;
 			}
@@ -842,7 +902,7 @@ static cyaml_err_t cyaml__emit_flags_sequence(
 		} else {
 			const char *string = cyaml__get_uint(number, false);
 			err = cyaml__emit_scalar(ctx, schema, string,
-					YAML_STR_TAG);
+					YAML_STR_TAG, true);
 			if (err != CYAML_OK) {
 				return err;
 			}
@@ -926,14 +986,15 @@ static cyaml_err_t cyaml__emit_bitfield_mapping(
 
 		/* Emit bitfield value's name */
 		err = cyaml__emit_scalar(ctx, schema, bitdef[i].name,
-				YAML_STR_TAG);
+				YAML_STR_TAG, true);
 		if (err != CYAML_OK) {
 			return err;
 		}
 
 		/* Emit bitfield value's value */
 		value_str = cyaml__get_uint(value, true);
-		err = cyaml__emit_scalar(ctx, schema, value_str, YAML_INT_TAG);
+		err = cyaml__emit_scalar(ctx, schema, value_str,
+				YAML_INT_TAG, true);
 		if (err != CYAML_OK) {
 			return err;
 		}
@@ -991,6 +1052,12 @@ static cyaml_err_t cyaml__write_value(
 			cyaml__type_to_str(schema->type),
 			schema->flags & CYAML_FLAG_POINTER ? " (pointer)" : "");
 
+	if (schema->type == CYAML_BINARY) {
+		if (ctx->state->state != CYAML_STATE_IN_MAP_KEY) {
+			return CYAML_ERR_MAPPING_REQUIRED;
+		}
+	}
+
 	data = cyaml_data_save_handle_pointer(ctx->config, schema,
 			data, "Save");
 
@@ -998,11 +1065,14 @@ static cyaml_err_t cyaml__write_value(
 		if (cyaml__flag_check_all(schema->flags,
 				CYAML_FLAG_POINTER_NULL_STR)) {
 			return cyaml__emit_scalar(ctx, schema, "null",
-					YAML_STR_TAG);
+					YAML_STR_TAG, true);
 		} else if (cyaml__flag_check_all(schema->flags,
 				CYAML_FLAG_POINTER_NULL)) {
 			return cyaml__emit_scalar(ctx, schema, "",
-					YAML_STR_TAG);
+					YAML_STR_TAG, true);
+		} else if (schema->type == CYAML_BINARY) {
+			/* Empty binary data has no allocation. */
+			return cyaml__write_binary_value(ctx, schema, data);
 		} else {
 			return CYAML_ERR_INVALID_VALUE;
 		}
@@ -1016,6 +1086,9 @@ static cyaml_err_t cyaml__write_value(
 	case CYAML_FLOAT: /* Fall through. */
 	case CYAML_STRING:
 		err = cyaml__write_scalar_value(ctx, schema, data);
+		break;
+	case CYAML_BINARY:
+		err = cyaml__write_binary_value(ctx, schema, data);
 		break;
 	case CYAML_FLAGS:
 		err = cyaml__write_flags_value(ctx, schema, data);
@@ -1140,7 +1213,7 @@ static cyaml_err_t cyaml__write_mapping(
 		}
 
 		err = cyaml__emit_scalar(ctx, ctx->state->schema,
-				field->key, YAML_STR_TAG);
+				field->key, YAML_STR_TAG, true);
 		if (err != CYAML_OK) {
 			return err;
 		}

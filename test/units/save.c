@@ -280,6 +280,159 @@ static bool test_save_mapping_entry_string(
 }
 
 /**
+ * Test saving empty binary values, and loading the result.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_mapping_entry_binary_empty(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char ref1[] =
+		"---\n"
+		"ptr: !!binary \n"
+		"arr: !!binary \n"
+		"...\n";
+	/* libyaml 0.2.5 stopped emitting trailing spaces. */
+	static const unsigned char ref2[] =
+		"---\n"
+		"ptr: !!binary\n"
+		"arr: !!binary\n"
+		"...\n";
+	struct target_struct {
+		uint8_t *ptr;
+		size_t ptr_len;
+		uint8_t arr[8];
+		size_t arr_len;
+	};
+	static const struct target_struct data = {
+		.ptr = NULL,
+		.ptr_len = 0,
+		.arr_len = 0,
+	};
+	struct target_struct *loaded = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_BINARY("ptr", CYAML_FLAG_POINTER,
+				struct target_struct, ptr,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_BINARY("arr", CYAML_FLAG_DEFAULT,
+				struct target_struct, arr,
+				0, sizeof(data.arr)),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer;
+	size_t len;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if ((len != YAML_LEN(ref1) || memcmp(ref1, buffer, len) != 0) &&
+	    (len != YAML_LEN(ref2) || memcmp(ref2, buffer, len) != 0)) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
+				YAML_LEN(ref2), YAML_LEN(ref2), ref2,
+				len, len, buffer);
+	}
+
+	err = cyaml_load_data((const uint8_t *) buffer, len, config,
+			&top_schema, (cyaml_data_t **) &loaded, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, "Reload: %s", cyaml_strerror(err));
+	}
+
+	if (loaded->ptr != NULL || loaded->ptr_len != 0 ||
+	    loaded->arr_len != 0) {
+		cyaml_free(config, &top_schema, loaded, 0);
+		return ttest_fail(&tc, "Reloaded values not empty");
+	}
+
+	cyaml_free(config, &top_schema, loaded, 0);
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test saving a binary.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_save_mapping_entry_binary(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const unsigned char ref[] =
+		"---\n"
+		"test_data: !!binary d2FsdGhhemFyYm9iYWx0aGF6YXI=\n"
+		"...\n";
+	static const struct target_struct {
+		char data[64];
+		size_t data_len;
+	} data = {
+		.data = "walthazarbobalthazar",
+		.data_len = 20,
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_BINARY("test_data", CYAML_FLAG_DEFAULT,
+				struct target_struct, data,
+				0, sizeof(data.data)),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	char *buffer;
+	size_t len;
+	test_data_t td = {
+		.buffer = &buffer,
+		.config = config,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_save_data(&buffer, &len, config, &top_schema,
+				&data, 0);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (len != YAML_LEN(ref) || memcmp(ref, buffer, len) != 0) {
+		return ttest_fail(&tc, "Bad data:\n"
+				"EXPECTED (%zu):\n\n%.*s\n\n"
+				"GOT (%zu):\n\n%.*s\n",
+				YAML_LEN(ref), YAML_LEN(ref), ref,
+				len, len, buffer);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test saving a positive signed integer.
  *
  * \param[in]  report  The test report context.
@@ -4447,6 +4600,8 @@ bool save_tests(
 	pass &= test_save_mapping_entry_float(rc, &config);
 	pass &= test_save_mapping_entry_double(rc, &config);
 	pass &= test_save_mapping_entry_string(rc, &config);
+	pass &= test_save_mapping_entry_binary(rc, &config);
+	pass &= test_save_mapping_entry_binary_empty(rc, &config);
 	pass &= test_save_mapping_entry_int_64(rc, &config);
 	pass &= test_save_mapping_entry_int_pos(rc, &config);
 	pass &= test_save_mapping_entry_int_neg(rc, &config);

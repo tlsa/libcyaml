@@ -690,6 +690,291 @@ static bool test_load_mapping_field_default_string(
 }
 
 /**
+ * Test loading a string with a default value.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_binary(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const uint8_t before = 1;
+	const char *value = "walthazarbobalthazar";
+	size_t value_len = strlen(value);
+	const uint8_t after = 0xff;
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		char data[64];
+		size_t data_len;
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD_PTR(BINARY, "test_data", CYAML_FLAG_OPTIONAL,
+				struct target_struct, data,
+				{
+					.min = 0,
+					.max = sizeof(data_tgt->data),
+					.missing = "walthazarbobalthazar",
+					.missing_len = YAML_LEN("walthazarbobalthazar"),
+				}),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect value before default");
+	}
+
+	if (value_len != data_tgt->data_len) {
+		return ttest_fail(&tc, "Incorrect length");
+	}
+
+	if (memcmp(data_tgt->data, value, value_len) != 0) {
+		fprintf(stderr, "expected:\n");
+		for (unsigned i = 0; i < strlen(value) + 1; i++) {
+			fprintf(stderr, "%2.2x ", value[i]);
+		}
+		fprintf(stderr, "\n");
+		fprintf(stderr, "     got:\n");
+		for (unsigned i = 0; i < sizeof(data_tgt->data); i++) {
+			fprintf(stderr, "%2.2x ", value[i]);
+		}
+		fprintf(stderr, "\n");
+		return ttest_fail(&tc, "Incorrect value");
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect value after default");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading missing optional binary fields with empty defaults.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_binary_empty(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const uint8_t before = 1;
+	static const unsigned char yaml[] =
+		"before: 1\n";
+	struct target_struct {
+		uint8_t before;
+		uint8_t *ptr_no_default;
+		size_t ptr_no_default_len;
+		uint8_t *ptr_empty_default;
+		size_t ptr_empty_default_len;
+		uint8_t arr_no_default[8];
+		size_t arr_no_default_len;
+		uint8_t arr_empty_default[8];
+		size_t arr_empty_default_len;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD_BINARY("ptr_no_default",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct target_struct, ptr_no_default,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_PTR(BINARY, "ptr_empty_default",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct target_struct, ptr_empty_default,
+				{
+					.min = 0,
+					.max = CYAML_UNLIMITED,
+					.missing = "",
+					.missing_len = 0,
+				}),
+		CYAML_FIELD_BINARY("arr_no_default", CYAML_FLAG_OPTIONAL,
+				struct target_struct, arr_no_default,
+				0, 8),
+		CYAML_FIELD_PTR(BINARY, "arr_empty_default",
+				CYAML_FLAG_OPTIONAL,
+				struct target_struct, arr_empty_default,
+				{
+					.min = 0,
+					.max = 8,
+					.missing = "",
+					.missing_len = 0,
+				}),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect value before default");
+	}
+
+	if (data_tgt->ptr_no_default != NULL ||
+	    data_tgt->ptr_no_default_len != 0) {
+		return ttest_fail(&tc, "ptr_no_default not empty");
+	}
+
+	if (data_tgt->ptr_empty_default != NULL ||
+	    data_tgt->ptr_empty_default_len != 0) {
+		return ttest_fail(&tc, "ptr_empty_default not empty");
+	}
+
+	if (data_tgt->arr_no_default_len != 0) {
+		return ttest_fail(&tc, "arr_no_default not empty");
+	}
+
+	if (data_tgt->arr_empty_default_len != 0) {
+		return ttest_fail(&tc, "arr_empty_default not empty");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a string with a default value.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_default_binary_ptr(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const uint8_t before = 1;
+	const char *value = "walthazarbobalthazar";
+	const size_t value_len = strlen(value);
+	const uint8_t after = 0xff;
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		char *data;
+		size_t data_len;
+		uint8_t after;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD_PTR(BINARY, "test_data",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct target_struct, data,
+				{
+					.min = 0,
+					.max = CYAML_UNLIMITED,
+					.missing = "walthazarbobalthazar",
+					.missing_len = YAML_LEN("walthazarbobalthazar"),
+				}),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect value before default");
+	}
+
+	if (value_len != data_tgt->data_len) {
+		return ttest_fail(&tc, "Incorrect length: "
+				"expected %zu, got %zu",
+				value_len, data_tgt->data_len);
+	}
+
+	if (memcmp(data_tgt->data, value, value_len) != 0) {
+		fprintf(stderr, "expected:\n");
+		for (unsigned i = 0; i < strlen(value) + 1; i++) {
+			fprintf(stderr, "%2.2x ", value[i]);
+		}
+		fprintf(stderr, "\n");
+		fprintf(stderr, "     got:\n");
+		for (unsigned i = 0; i < sizeof(data_tgt->data); i++) {
+			fprintf(stderr, "%2.2x ", value[i]);
+		}
+		fprintf(stderr, "\n");
+		return ttest_fail(&tc, "Incorrect value");
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect value after default");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading a bitfield with a default value.
  *
  * \param[in]  report  The test report context.
@@ -4033,6 +4318,520 @@ static bool test_load_mapping_entry_string(
 	}
 
 	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a binary value.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_entry_binary(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const char *value = "walthazarbobalthazar";
+	size_t value_len = strlen(value);
+	static const unsigned char yaml[] =
+		"test_data: d2FsdGhhemFyYm9iYWx0aGF6YXI=\n";
+	struct target_struct {
+		char data[64];
+		size_t data_len;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_BINARY("test_data", CYAML_FLAG_DEFAULT,
+				struct target_struct, data,
+				0, sizeof(data_tgt->data)),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (value_len != data_tgt->data_len) {
+		return ttest_fail(&tc, "Incorrect length");
+	}
+
+	if (memcmp(data_tgt->data, value, value_len) != 0) {
+		fprintf(stderr, "expected:\n");
+		for (unsigned i = 0; i < strlen(value) + 1; i++) {
+			fprintf(stderr, "%2.2x ", value[i]);
+		}
+		fprintf(stderr, "\n");
+		fprintf(stderr, "     got:\n");
+		for (unsigned i = 0; i < sizeof(data_tgt->data); i++) {
+			fprintf(stderr, "%2.2x ", value[i]);
+		}
+		fprintf(stderr, "\n");
+		return ttest_fail(&tc, "Incorrect value");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading a binary value.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_entry_binary_ptr(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const char *value = "walthazarbobalthazar";
+	size_t value_len = strlen(value);
+	static const unsigned char yaml[] =
+		"test_data: d2FsdGhhemFyYm9iYWx0aGF6YXI=\n";
+	struct target_struct {
+		uint8_t *data;
+		size_t data_len;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_BINARY("test_data", CYAML_FLAG_POINTER,
+				struct target_struct, data,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (value_len != data_tgt->data_len) {
+		return ttest_fail(&tc, "Incorrect length");
+	}
+
+	if (memcmp(data_tgt->data, value, value_len) != 0) {
+		fprintf(stderr, "expected:\n");
+		for (unsigned i = 0; i < strlen(value) + 1; i++) {
+			fprintf(stderr, "%2.2x ", value[i]);
+		}
+		fprintf(stderr, "\n");
+		fprintf(stderr, "     got:\n");
+		for (unsigned i = 0; i < sizeof(data_tgt->data); i++) {
+			fprintf(stderr, "%2.2x ", value[i]);
+		}
+		fprintf(stderr, "\n");
+		return ttest_fail(&tc, "Incorrect value");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test loading binary values containing whitespace and line breaks.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_entry_binary_whitespace(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct target_struct {
+		uint8_t *data;
+		size_t data_len;
+	};
+	static const struct {
+		const char *name;
+		const char *yaml;
+		const char *value; /* NULL for "walthazarbobalthazar". */
+	} yaml[] = {
+		{
+			.name = "plain",
+			.yaml = "test_data: d2FsdGhh\n"
+			        "  emFyYm9i\n"
+			        "  YWx0aGF6YXI=\n",
+		},
+		{
+			.name = "literal",
+			.yaml = "test_data: |\n"
+			        "  d2FsdGhh\n"
+			        "  emFyYm9i\n"
+			        "  YWx0aGF6YXI=\n",
+		},
+		{
+			.name = "literal_keep",
+			.yaml = "test_data: |+\n"
+			        "  d2FsdGhh\n"
+			        "\n"
+			        "  emFyYm9i\n"
+			        "  YWx0aGF6YXI=\n"
+			        "\n",
+		},
+		{
+			.name = "literal_crlf",
+			.yaml = "test_data: |\r\n"
+			        "  d2FsdGhh\r\n"
+			        "  emFyYm9i\r\n"
+			        "  YWx0aGF6YXI=\r\n",
+		},
+		{
+			.name = "folded",
+			.yaml = "test_data: >\n"
+			        "  d2FsdGhh\n"
+			        "  emFyYm9i\n"
+			        "  YWx0aGF6YXI=\n",
+		},
+		{
+			.name = "single_quoted",
+			.yaml = "test_data: 'd2FsdGhh\n"
+			        "  emFyYm9i\n"
+			        "  YWx0aGF6YXI='\n",
+		},
+		{
+			.name = "double_quoted",
+			.yaml = "test_data: \"d2FsdGhh\n"
+			        "  emFyYm9i\n"
+			        "  YWx0aGF6YXI=\"\n",
+		},
+		{
+			.name = "double_quoted_continuation",
+			.yaml = "test_data: \"\\\n"
+			        "  d2FsdGhh\\\n"
+			        "  emFyYm9i\\\n"
+			        "  YWx0aGF6YXI=\"\n",
+		},
+		{
+			.name = "escaped_ascii",
+			.yaml = "test_data: \"d2Fs\\tdGhh\\r\\n"
+			        "emFy\\rYm9i\\nYWx0aGF6YXI=\"\n",
+		},
+		{
+			.name = "literal_nel",
+			.yaml = "test_data: |\n"
+			        "  d2FsdGhh\xC2\x85"
+			        "  emFyYm9i\n"
+			        "  YWx0aGF6YXI=\n",
+		},
+		{
+			.name = "split_padding",
+			.yaml = "test_data: |\n"
+			        "  d2FsdGhhemFyYm9iYWx0a\n"
+			        "  GF6YXI\n"
+			        "  =\n",
+		},
+		{
+			.name = "plain_spaces",
+			.yaml = "test_data: d2FsdGhh emFyYm9i YWx0aGF6YXI=\n",
+		},
+		{
+			.name = "plain_space_runs",
+			.yaml = "test_data: d2Fs   dGhh    emFyYm9iYWx0  aGF6YXI=\n",
+		},
+		{
+			.name = "plain_space_every_char",
+			.yaml = "test_data: d 2 F s d G h h e m F y Y m 9 i "
+			        "Y W x 0 a G F 6 Y X I =\n",
+		},
+		{
+			.name = "plain_space_before_padding",
+			.yaml = "test_data: d2FsdGhhemFyYm9iYWx0aGF6YXI =\n",
+		},
+		{
+			.name = "plain_space_inside_padding",
+			.yaml = "test_data: d2FsdGhhemFyYm9iYWx0aGF6YQ= =\n",
+			.value = "walthazarbobalthaza",
+		},
+		{
+			.name = "plain_tab",
+			.yaml = "test_data: d2FsdGhh\temFyYm9iYWx0aGF6YXI=\n",
+		},
+		{
+			.name = "double_quoted_spaces",
+			.yaml = "test_data: \"  d2FsdGhh emFyYm9i "
+			        "YWx0aGF6YXI=  \"\n",
+		},
+		{
+			.name = "single_quoted_spaces",
+			.yaml = "test_data: '  d2FsdGhh emFyYm9i "
+			        "YWx0aGF6YXI=  '\n",
+		},
+		{
+			.name = "literal_spaces",
+			.yaml = "test_data: |\n"
+			        "  d2Fs dGhh\n"
+			        "  emFy  Ym9i YWx0aGF6YXI=\n",
+		},
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_BINARY("test_data", CYAML_FLAG_POINTER,
+				struct target_struct, data,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	bool pass = true;
+
+	for (unsigned i = 0; i < CYAML_ARRAY_LEN(yaml); i++) {
+		const char *value = yaml[i].value != NULL ?
+				yaml[i].value : "walthazarbobalthazar";
+		size_t value_len = strlen(value);
+		struct target_struct *data_tgt = NULL;
+		test_data_t td = {
+			.data = (cyaml_data_t **) &data_tgt,
+			.config = config,
+			.schema = &top_schema,
+		};
+		char name[sizeof(__func__) + 64];
+		cyaml_err_t err;
+		ttest_ctx_t tc;
+
+		sprintf(name, "%s_%s", __func__, yaml[i].name);
+		if (!ttest_start(report, name, cyaml_cleanup, &td, &tc)) {
+			continue;
+		}
+
+		err = cyaml_load_data((const uint8_t *) yaml[i].yaml,
+				strlen(yaml[i].yaml), config, &top_schema,
+				(cyaml_data_t **) &data_tgt, NULL);
+		if (err != CYAML_OK) {
+			pass &= ttest_fail(&tc, cyaml_strerror(err));
+			continue;
+		}
+
+		if (value_len != data_tgt->data_len) {
+			pass &= ttest_fail(&tc, "Incorrect length");
+			continue;
+		}
+
+		if (memcmp(data_tgt->data, value, value_len) != 0) {
+			pass &= ttest_fail(&tc, "Incorrect value");
+			continue;
+		}
+
+		pass &= ttest_pass(&tc);
+	}
+
+	return pass;
+}
+
+/**
+ * Test loading NULL binary values with \ref CYAML_FLAG_POINTER_NULL_STR.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_entry_binary_null_ptr(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const struct {
+		const char *name;
+		const char *yaml;
+	} yaml[] = {
+		{ .name = "empty", .yaml = "test_data:\n" },
+		{ .name = "tilde", .yaml = "test_data: ~\n" },
+		{ .name = "null",  .yaml = "test_data: null\n" },
+		{ .name = "Null",  .yaml = "test_data: Null\n" },
+		{ .name = "NULL",  .yaml = "test_data: NULL\n" },
+	};
+	struct target_struct {
+		uint8_t *data;
+		size_t data_len;
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_BINARY("test_data", CYAML_FLAG_POINTER_NULL_STR,
+				struct target_struct, data,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	bool pass = true;
+
+	for (unsigned i = 0; i < CYAML_ARRAY_LEN(yaml); i++) {
+		struct target_struct *data_tgt = NULL;
+		test_data_t td = {
+			.data = (cyaml_data_t **) &data_tgt,
+			.config = config,
+			.schema = &top_schema,
+		};
+		char name[sizeof(__func__) + 64];
+		cyaml_err_t err;
+		ttest_ctx_t tc;
+
+		sprintf(name, "%s_%s", __func__, yaml[i].name);
+		if (!ttest_start(report, name, cyaml_cleanup, &td, &tc)) {
+			continue;
+		}
+
+		err = cyaml_load_data((const uint8_t *) yaml[i].yaml,
+				strlen(yaml[i].yaml), config, &top_schema,
+				(cyaml_data_t **) &data_tgt, NULL);
+		if (err != CYAML_OK) {
+			pass &= ttest_fail(&tc, cyaml_strerror(err));
+			continue;
+		}
+
+		if (data_tgt->data != NULL || data_tgt->data_len != 0) {
+			pass &= ttest_fail(&tc, "Value not NULL");
+			continue;
+		}
+
+		pass &= ttest_pass(&tc);
+	}
+
+	return pass;
+}
+
+/**
+ * Test loading empty binary values.
+ *
+ * The YAML binary type is a sequence of zero or more octets.  Empty binary
+ * data must load as zero length, with no allocation for pointer values.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_entry_binary_empty(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	static const struct {
+		const char *name;
+		const char *yaml;
+	} yaml[] = {
+		{
+			.name = "plain",
+			.yaml = "ptr:\n"
+			        "arr:\n",
+		},
+		{
+			.name = "single_quoted",
+			.yaml = "ptr: ''\n"
+			        "arr: ''\n",
+		},
+		{
+			.name = "double_quoted",
+			.yaml = "ptr: \"\"\n"
+			        "arr: \"\"\n",
+		},
+		{
+			.name = "literal",
+			.yaml = "ptr: |\n"
+			        "arr: |\n",
+		},
+		{
+			.name = "spaces",
+			.yaml = "ptr: '   '\n"
+			        "arr: '   '\n",
+		},
+		{
+			.name = "line_breaks",
+			.yaml = "ptr: \"\\r\\n\\n\\r\"\n"
+			        "arr: \"\\r\\n\\n\\r\"\n",
+		},
+	};
+	struct target_struct {
+		uint8_t *ptr;
+		size_t ptr_len;
+		uint8_t arr[8];
+		size_t arr_len;
+	};
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_BINARY("ptr", CYAML_FLAG_POINTER,
+				struct target_struct, ptr,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_BINARY("arr", CYAML_FLAG_DEFAULT,
+				struct target_struct, arr,
+				0, sizeof(((struct target_struct *)0)->arr)),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	bool pass = true;
+
+	for (unsigned i = 0; i < CYAML_ARRAY_LEN(yaml); i++) {
+		struct target_struct *data_tgt = NULL;
+		test_data_t td = {
+			.data = (cyaml_data_t **) &data_tgt,
+			.config = config,
+			.schema = &top_schema,
+		};
+		char name[sizeof(__func__) + 64];
+		cyaml_err_t err;
+		ttest_ctx_t tc;
+
+		sprintf(name, "%s_%s", __func__, yaml[i].name);
+		if (!ttest_start(report, name, cyaml_cleanup, &td, &tc)) {
+			continue;
+		}
+
+		err = cyaml_load_data((const uint8_t *) yaml[i].yaml,
+				strlen(yaml[i].yaml), config, &top_schema,
+				(cyaml_data_t **) &data_tgt, NULL);
+		if (err != CYAML_OK) {
+			pass &= ttest_fail(&tc, cyaml_strerror(err));
+			continue;
+		}
+
+		if (data_tgt->ptr != NULL || data_tgt->ptr_len != 0) {
+			pass &= ttest_fail(&tc, "Pointer value not empty: "
+					"%p, length %zu",
+					(void *) data_tgt->ptr,
+					data_tgt->ptr_len);
+			continue;
+		}
+
+		if (data_tgt->arr_len != 0) {
+			pass &= ttest_fail(&tc, "Array value not empty: "
+					"length %zu", data_tgt->arr_len);
+			continue;
+		}
+
+		pass &= ttest_pass(&tc);
+	}
+
+	return pass;
 }
 
 /**
@@ -11440,6 +12239,105 @@ static bool test_load_mapping_field_validate_string(
 }
 
 /**
+ * Binary validation callback.
+ *
+ * \param[in] ctx     Client's private validation context.
+ * \param[in] schema  The schema for the value.
+ * \param[in] value   The value to be validated.
+ * \param[in] len     Number bytes in value.
+ * \return `true` if values is valid, `false` otherwise.
+ */
+static bool test__binary_is_valid(
+		void *ctx,
+		const cyaml_schema_value_t *schema,
+		const uint8_t *value,
+		size_t len)
+{
+	UNUSED(ctx);
+	UNUSED(schema);
+
+	if (value != NULL && len > 3) {
+		if (memcmp(value, "wal", 3) == 0) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/**
+ * Test loading a binary value with a validation callback.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_load_mapping_field_validate_binary(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	const char *value = "walthazarbobalthazar";
+	size_t value_len = strlen(value);
+	static const unsigned char yaml[] =
+		"test_data: d2FsdGhhemFyYm9iYWx0aGF6YXI=\n";
+	struct target_struct {
+		char data[64];
+		size_t data_len;
+	} *data_tgt = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_PTR(BINARY, "test_data", CYAML_FLAG_OPTIONAL,
+				struct target_struct, data,
+				{
+					.min = 0,
+					.max = sizeof(data_tgt->data),
+					.validation_cb = test__binary_is_valid,
+				}),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (value_len != data_tgt->data_len) {
+		return ttest_fail(&tc, "Incorrect length");
+	}
+
+	if (memcmp(data_tgt->data, value, value_len) != 0) {
+		fprintf(stderr, "expected:\n");
+		for (unsigned i = 0; i < strlen(value) + 1; i++) {
+			fprintf(stderr, "%2.2x ", value[i]);
+		}
+		fprintf(stderr, "\n");
+		fprintf(stderr, "     got:\n");
+		for (unsigned i = 0; i < sizeof(data_tgt->data); i++) {
+			fprintf(stderr, "%2.2x ", value[i]);
+		}
+		fprintf(stderr, "\n");
+		return ttest_fail(&tc, "Incorrect value");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test loading a mapping with a validation callback.
  *
  * \param[in]  report  The test report context.
@@ -11687,6 +12585,7 @@ bool load_tests(
 	pass &= test_load_mapping_entry_float(rc, &config);
 	pass &= test_load_mapping_entry_double(rc, &config);
 	pass &= test_load_mapping_entry_string(rc, &config);
+	pass &= test_load_mapping_entry_binary(rc, &config);
 	pass &= test_load_mapping_entry_int_pos(rc, &config);
 	pass &= test_load_mapping_entry_int_neg(rc, &config);
 	pass &= test_load_mapping_entry_enum_ptr(rc, &config);
@@ -11696,6 +12595,10 @@ bool load_tests(
 	pass &= test_load_mapping_entry_bool_false(rc, &config);
 	pass &= test_load_mapping_entry_double_ptr(rc, &config);
 	pass &= test_load_mapping_entry_string_ptr(rc, &config);
+	pass &= test_load_mapping_entry_binary_ptr(rc, &config);
+	pass &= test_load_mapping_entry_binary_whitespace(rc, &config);
+	pass &= test_load_mapping_entry_binary_empty(rc, &config);
+	pass &= test_load_mapping_entry_binary_null_ptr(rc, &config);
 	pass &= test_load_mapping_entry_int_pos_ptr(rc, &config);
 	pass &= test_load_mapping_entry_int_neg_ptr(rc, &config);
 	pass &= test_load_mapping_entry_enum_sparse(rc, &config);
@@ -11836,6 +12739,7 @@ bool load_tests(
 	pass &= test_load_mapping_field_default_float(rc, &config);
 	pass &= test_load_mapping_field_default_double(rc, &config);
 	pass &= test_load_mapping_field_default_string(rc, &config);
+	pass &= test_load_mapping_field_default_binary(rc, &config);
 	pass &= test_load_mapping_field_default_bitfield(rc, &config);
 	pass &= test_load_mapping_field_default_mapping_large(rc, &config);
 	pass &= test_load_mapping_field_default_mapping_small(rc, &config);
@@ -11852,6 +12756,8 @@ bool load_tests(
 	pass &= test_load_mapping_field_default_float_ptr(rc, &config);
 	pass &= test_load_mapping_field_default_double_ptr(rc, &config);
 	pass &= test_load_mapping_field_default_string_ptr(rc, &config);
+	pass &= test_load_mapping_field_default_binary_ptr(rc, &config);
+	pass &= test_load_mapping_field_default_binary_empty(rc, &config);
 	pass &= test_load_mapping_field_default_bitfield_ptr(rc, &config);
 	pass &= test_load_mapping_field_default_mapping_large_ptr(rc, &config);
 	pass &= test_load_mapping_field_default_mapping_small_ptr(rc, &config);
@@ -11888,6 +12794,7 @@ bool load_tests(
 	pass &= test_load_mapping_field_validate_float(rc, &config);
 	pass &= test_load_mapping_field_validate_double(rc, &config);
 	pass &= test_load_mapping_field_validate_string(rc, &config);
+	pass &= test_load_mapping_field_validate_binary(rc, &config);
 	pass &= test_load_mapping_field_validate_mapping(rc, &config);
 	pass &= test_load_mapping_field_validate_bitfield(rc, &config);
 	pass &= test_load_mapping_field_validate_sequence(rc, &config);

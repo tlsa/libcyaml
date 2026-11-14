@@ -994,6 +994,149 @@ static bool test_copy_mapping_entry_string(
 }
 
 /**
+ * Test copying a binary to a character array.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_copy_mapping_entry_binary(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	uint8_t before = 1;
+	uint8_t after = 0xff;
+	const char *value = "walthazarbobalthazar";
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"test_data: d2FsdGhhemFyYm9iYWx0aGF6YXI=\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		char data[64];
+		size_t data_len;
+		uint8_t after;
+	} *data_tgt = NULL;
+	struct target_struct *data_cpy = NULL;
+	struct target_struct data_cpy2 = { 0 };
+	struct target_struct *data_cpy2_ptr = &data_cpy2;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD_BINARY("test_data", CYAML_FLAG_DEFAULT,
+				struct target_struct, data,
+				0, sizeof(data_tgt->data)),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	static const struct cyaml_schema_value top_schema2 = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.copy = (cyaml_data_t **) &data_cpy,
+		.copy2 = (cyaml_data_t *) &data_cpy2,
+		.config = config,
+		.schema = &top_schema,
+		.schema2 = &top_schema2,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect before value from load");
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect after value from load");
+	}
+
+	err = cyaml_copy(config, &top_schema,
+			(cyaml_data_t  *)  data_tgt, 0,
+			(cyaml_data_t **) &data_cpy);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_cpy->before != before) {
+		return ttest_fail(&tc, "Incorrect before value from copy");
+	}
+
+	if (data_cpy->after != after) {
+		return ttest_fail(&tc, "Incorrect after value from copy");
+	}
+
+	if (strlen(value) != data_cpy->data_len) {
+		return ttest_fail(&tc, "Incorrect data length");
+	}
+
+	if (memcmp(data_cpy->data, value, data_cpy->data_len) != 0) {
+		fprintf(stderr, "expected: %s\n", value);
+		for (unsigned i = 0; i < strlen(value) + 1; i++) {
+			fprintf(stderr, "%2.2x ", value[i]);
+		}
+		fprintf(stderr, "\n");
+		fprintf(stderr, "     got: %s\n", data_cpy->data);
+		for (unsigned i = 0; i < sizeof(data_cpy->data); i++) {
+			fprintf(stderr, "%2.2x ", data_cpy->data[i]);
+		}
+		fprintf(stderr, "\n");
+		return ttest_fail(&tc, "Incorrect value");
+	}
+
+	err = cyaml_copy(config, &top_schema2,
+			(cyaml_data_t  *)  data_tgt, 0,
+			(cyaml_data_t **) &data_cpy2_ptr);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_cpy2_ptr->before != before) {
+		return ttest_fail(&tc, "Incorrect before value from copy");
+	}
+
+	if (data_cpy2_ptr->after != after) {
+		return ttest_fail(&tc, "Incorrect after value from copy");
+	}
+
+	if (strlen(value) != data_cpy2_ptr->data_len) {
+		return ttest_fail(&tc, "Incorrect data length");
+	}
+
+	if (memcmp(data_cpy2_ptr->data, value, data_cpy2_ptr->data_len) != 0) {
+		fprintf(stderr, "expected: %s\n", value);
+		for (unsigned i = 0; i < strlen(value) + 1; i++) {
+			fprintf(stderr, "%2.2x ", value[i]);
+		}
+		fprintf(stderr, "\n");
+		fprintf(stderr, "     got: %s\n", data_cpy2_ptr->data);
+		for (unsigned i = 0; i < sizeof(data_cpy2_ptr->data); i++) {
+			fprintf(stderr, "%2.2x ", data_cpy2_ptr->data[i]);
+		}
+		fprintf(stderr, "\n");
+		return ttest_fail(&tc, "Incorrect value");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test copying a string to a allocated char pointer.
  *
  * \param[in]  report  The test report context.
@@ -1067,6 +1210,302 @@ static bool test_copy_mapping_entry_string_ptr(
 	}
 
 	if (strcmp(data_cpy2.test_value_string, value) != 0) {
+		return ttest_fail(&tc, "Incorrect value");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test copying empty binary values.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_copy_mapping_entry_binary_empty(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct target_struct {
+		uint8_t before;
+		uint8_t *ptr;
+		size_t ptr_len;
+		uint8_t arr[8];
+		size_t arr_len;
+		uint8_t after;
+	};
+	static const struct target_struct data = {
+		.before = 1,
+		.ptr = NULL,
+		.ptr_len = 0,
+		.arr_len = 0,
+		.after = 0xff,
+	};
+	struct target_struct *data_cpy = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD_BINARY("ptr", CYAML_FLAG_POINTER,
+				struct target_struct, ptr,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_BINARY("arr", CYAML_FLAG_DEFAULT,
+				struct target_struct, arr,
+				0, sizeof(data.arr)),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.copy = (cyaml_data_t **) &data_cpy,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_copy(config, &top_schema,
+			(const cyaml_data_t *) &data, 0,
+			(cyaml_data_t **) &data_cpy);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_cpy->before != data.before ||
+	    data_cpy->after != data.after) {
+		return ttest_fail(&tc, "Incorrect surrounding values");
+	}
+
+	if (data_cpy->ptr != NULL || data_cpy->ptr_len != 0) {
+		return ttest_fail(&tc, "Pointer value not empty");
+	}
+
+	if (data_cpy->arr_len != 0) {
+		return ttest_fail(&tc, "Array value not empty");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test copying an optional binary pointer with NULL data and non-zero length.
+ *
+ * The NULL data is treated as a missing optional field, so the copy is
+ * empty.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_copy_mapping_entry_binary_optional_null(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct target_struct {
+		uint8_t before;
+		uint8_t *data;
+		size_t data_len;
+		uint8_t after;
+	};
+	static const struct target_struct data = {
+		.before = 1,
+		.data = NULL,
+		.data_len = 3,
+		.after = 0xff,
+	};
+	struct target_struct *data_cpy = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD_BINARY("data",
+				CYAML_FLAG_POINTER | CYAML_FLAG_OPTIONAL,
+				struct target_struct, data,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.copy = (cyaml_data_t **) &data_cpy,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_copy(config, &top_schema,
+			(const cyaml_data_t *) &data, 0,
+			(cyaml_data_t **) &data_cpy);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_cpy->before != data.before ||
+	    data_cpy->after != data.after) {
+		return ttest_fail(&tc, "Incorrect surrounding values");
+	}
+
+	if (data_cpy->data != NULL || data_cpy->data_len != 0) {
+		return ttest_fail(&tc, "Copy not empty: %p, length %zu",
+				(void *) data_cpy->data, data_cpy->data_len);
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
+ * Test copying a binary to a character array.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_copy_mapping_entry_binary_ptr(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	uint8_t before = 1;
+	uint8_t after = 0xff;
+	const char *value = "walthazarbobalthazar";
+	static const unsigned char yaml[] =
+		"before: 1\n"
+		"test_data: d2FsdGhhemFyYm9iYWx0aGF6YXI=\n"
+		"after: 0xff\n";
+	struct target_struct {
+		uint8_t before;
+		char *data;
+		size_t data_len;
+		uint8_t after;
+	} *data_tgt = NULL;
+	struct target_struct *data_cpy = NULL;
+	struct target_struct data_cpy2 = { 0 };
+	struct target_struct *data_cpy2_ptr = &data_cpy2;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD_BINARY("test_data", CYAML_FLAG_POINTER,
+				struct target_struct, data,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	static const struct cyaml_schema_value top_schema2 = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.data = (cyaml_data_t **) &data_tgt,
+		.copy = (cyaml_data_t **) &data_cpy,
+		.copy2 = (cyaml_data_t *) &data_cpy2,
+		.config = config,
+		.schema = &top_schema,
+		.schema2 = &top_schema2,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_load_data(yaml, YAML_LEN(yaml), config, &top_schema,
+			(cyaml_data_t **) &data_tgt, NULL);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_tgt->before != before) {
+		return ttest_fail(&tc, "Incorrect before value from load");
+	}
+
+	if (data_tgt->after != after) {
+		return ttest_fail(&tc, "Incorrect after value from load");
+	}
+
+	err = cyaml_copy(config, &top_schema,
+			(cyaml_data_t  *)  data_tgt, 0,
+			(cyaml_data_t **) &data_cpy);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_cpy->before != before) {
+		return ttest_fail(&tc, "Incorrect before value from copy");
+	}
+
+	if (data_cpy->after != after) {
+		return ttest_fail(&tc, "Incorrect after value from copy");
+	}
+
+	if (strlen(value) != data_cpy->data_len) {
+		return ttest_fail(&tc, "Incorrect data length");
+	}
+
+	if (memcmp(data_cpy->data, value, data_cpy->data_len) != 0) {
+		fprintf(stderr, "expected: %s\n", value);
+		for (unsigned i = 0; i < strlen(value) + 1; i++) {
+			fprintf(stderr, "%2.2x ", value[i]);
+		}
+		fprintf(stderr, "\n");
+		fprintf(stderr, "     got: %s\n", data_cpy->data);
+		for (unsigned i = 0; i < sizeof(data_cpy->data); i++) {
+			fprintf(stderr, "%2.2x ", data_cpy->data[i]);
+		}
+		fprintf(stderr, "\n");
+		return ttest_fail(&tc, "Incorrect value");
+	}
+
+	err = cyaml_copy(config, &top_schema2,
+			(cyaml_data_t  *)  data_tgt, 0,
+			(cyaml_data_t **) &data_cpy2_ptr);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_cpy2_ptr->before != before) {
+		return ttest_fail(&tc, "Incorrect before value from copy");
+	}
+
+	if (data_cpy2_ptr->after != after) {
+		return ttest_fail(&tc, "Incorrect after value from copy");
+	}
+
+	if (strlen(value) != data_cpy2_ptr->data_len) {
+		return ttest_fail(&tc, "Incorrect data length");
+	}
+
+	if (memcmp(data_cpy2_ptr->data, value, data_cpy2_ptr->data_len) != 0) {
+		fprintf(stderr, "expected: %s\n", value);
+		for (unsigned i = 0; i < strlen(value) + 1; i++) {
+			fprintf(stderr, "%2.2x ", value[i]);
+		}
+		fprintf(stderr, "\n");
+		fprintf(stderr, "     got: %s\n", data_cpy2_ptr->data);
+		for (unsigned i = 0; i < sizeof(data_cpy2_ptr->data); i++) {
+			fprintf(stderr, "%2.2x ", data_cpy2_ptr->data[i]);
+		}
+		fprintf(stderr, "\n");
 		return ttest_fail(&tc, "Incorrect value");
 	}
 
@@ -7987,11 +8426,15 @@ bool copy_tests(
 	pass &= test_copy_mapping_entry_float(rc, &config);
 	pass &= test_copy_mapping_entry_double(rc, &config);
 	pass &= test_copy_mapping_entry_string(rc, &config);
+	pass &= test_copy_mapping_entry_binary(rc, &config);
 	pass &= test_copy_mapping_entry_int_pos(rc, &config);
 	pass &= test_copy_mapping_entry_int_neg(rc, &config);
 	pass &= test_copy_mapping_entry_bool_true(rc, &config);
 	pass &= test_copy_mapping_entry_bool_false(rc, &config);
 	pass &= test_copy_mapping_entry_string_ptr(rc, &config);
+	pass &= test_copy_mapping_entry_binary_ptr(rc, &config);
+	pass &= test_copy_mapping_entry_binary_empty(rc, &config);
+	pass &= test_copy_mapping_entry_binary_optional_null(rc, &config);
 	pass &= test_copy_mapping_entry_enum_sparse(rc, &config);
 	pass &= test_copy_mapping_entry_enum_strict(rc, &config);
 	pass &= test_copy_mapping_entry_ignore_deep(rc, &config);
