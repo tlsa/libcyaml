@@ -58,4 +58,29 @@ jobs:
     - name: scan-build
       run: |
        make clean
-       scan-build make
+       scan-build -sarif --keep-empty -o build/sarif make
+
+    # Clang writes one SARIF run per translation unit but GitHub allows one run.
+    - name: Merge SARIF files
+      run: |
+       find build/sarif -name '*.sarif' -print0 | xargs -0 jq -s '
+         [.[].runs[]] as $runs
+         | {
+             "$schema": .[0]["$schema"],
+             version: "2.1.0",
+             runs: [($runs[0] | del(.artifacts)) + {
+               tool: {driver: ($runs[0].tool.driver + {
+                 rules: ([$runs[].tool.driver.rules[]?] | unique_by(.id))
+               })},
+               results: [$runs[].results[]? | del(.ruleIndex)
+                 | walk(if type == "object" and has("uri")
+                        then del(.index) else . end)]
+             }]
+           }' > build/scan-build.sarif
+       jq -e '.runs | length == 1' build/scan-build.sarif
+
+    - name: upload scan-build
+      uses: github/codeql-action/upload-sarif@v4
+      with:
+        sarif_file: build/scan-build.sarif
+        category: scan-build
