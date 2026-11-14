@@ -505,6 +505,7 @@ static cyaml_err_t cyaml__store_string(
  * \param[in]  ctx          The CYAML loading context.
  * \param[in]  schema       The schema for the value to be stored.
  * \param[in]  location     The place to write the value in the output data.
+ *                          May be NULL if `decoded_len` is zero.
  * \param[in]  decoded      Decoded value to store, or NULL.
  * \param[in]  decoded_len  The length of the decoded value in bytes.
  * \param[in]  encoded      Base64 encoded value to decode and store, or NULL.
@@ -548,7 +549,7 @@ static cyaml_err_t cyaml__store_binary(
 
 	if (encoded != NULL) {
 		cyaml_base64_decode(encoded, encoded_len, location);
-	} else {
+	} else if (decoded_len > 0) {
 		memcpy(location, decoded, decoded_len);
 	}
 
@@ -1413,6 +1414,12 @@ static cyaml_err_t cyaml__field_scalar_apply_default(
 		}
 	}
 
+	if (schema->type == CYAML_BINARY) {
+		if (schema->binary.missing == NULL) {
+			return CYAML_OK;
+		}
+	}
+
 	if (schema->flags & CYAML_FLAG_POINTER) {
 		uint8_t *value_data = NULL;
 		size_t size;
@@ -1429,15 +1436,19 @@ static cyaml_err_t cyaml__field_scalar_apply_default(
 			break;
 		}
 
-		value_data = cyaml__realloc(ctx->config, value_data, 0,
-				size, true);
-		if (value_data == NULL) {
-			return CYAML_ERR_OOM;
-		}
+		/* Only empty binary data can have zero size, and that
+		 * has no allocation. */
+		if (size > 0) {
+			value_data = cyaml__realloc(ctx->config, value_data,
+					0, size, true);
+			if (value_data == NULL) {
+				return CYAML_ERR_OOM;
+			}
 
-		cyaml__log(ctx->config, CYAML_LOG_DEBUG,
-				"Load: Allocation: %p (%zu bytes)\n",
-				value_data, size);
+			cyaml__log(ctx->config, CYAML_LOG_DEBUG,
+					"Load: Allocation: %p (%zu bytes)\n",
+					value_data, size);
+		}
 
 		cyaml_data_write_pointer(value_data, data);
 		data = value_data;
@@ -1843,6 +1854,12 @@ static cyaml_err_t cyaml__data_handle_pointer(
 				return CYAML_ERR_BASE64_MIN_LEN;
 			} else if (delta > schema->binary.max) {
 				return CYAML_ERR_BASE64_MAX_LEN;
+			}
+			if (delta == 0) {
+				/* Empty binary data has no allocation. */
+				cyaml_data_write_pointer(NULL, *value_data_io);
+				*value_data_io = NULL;
+				return CYAML_OK;
 			}
 			break;
 		case CYAML_SEQUENCE:

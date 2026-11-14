@@ -163,10 +163,6 @@ cyaml_err_t cyaml_base64_calc_decoded_size(
 		}
 	}
 
-	if (len < 2) {
-		return CYAML_ERR_INVALID_BASE64;
-	}
-
 	switch (len & 0x3U) {
 		case 3:
 			if (padding && padding != 1) {

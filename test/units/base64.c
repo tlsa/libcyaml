@@ -35,6 +35,7 @@ static const struct string_pairs {
 	const char *dec;
 	size_t dec_len;
 } data[] = {
+	STRING_PAIRS(""          , ""                ),
 	STRING_PAIRS("😸"        , "8J+YuA=="        ),
 	STRING_PAIRS("Cat"       , "Q2F0"            ),
 	STRING_PAIRS("Cats"      , "Q2F0cw=="        ),
@@ -165,6 +166,26 @@ static bool test_base64_decode_odd(
 		size_t dec_len;
 		cyaml_err_t err;
 	} odd_data[] = {
+		{
+			.name = "whitespace_only",
+			.enc = " \t\r\n",
+			.enc_len = 4,
+			.dec = "",
+			.dec_len = 0,
+			.err = CYAML_OK,
+		},
+		{
+			.name = "padding_only_1",
+			.enc = "=",
+			.enc_len = 1,
+			.err = CYAML_ERR_INVALID_BASE64,
+		},
+		{
+			.name = "padding_only_2",
+			.enc = "==",
+			.enc_len = 2,
+			.err = CYAML_ERR_INVALID_BASE64,
+		},
 		{
 			.name = "str_len",
 			.enc = "C",

@@ -1217,6 +1217,85 @@ static bool test_copy_mapping_entry_string_ptr(
 }
 
 /**
+ * Test copying empty binary values.
+ *
+ * \param[in]  report  The test report context.
+ * \param[in]  config  The CYAML config to use for the test.
+ * \return true if test passes, false otherwise.
+ */
+static bool test_copy_mapping_entry_binary_empty(
+		ttest_report_ctx_t *report,
+		const cyaml_config_t *config)
+{
+	struct target_struct {
+		uint8_t before;
+		uint8_t *ptr;
+		size_t ptr_len;
+		uint8_t arr[8];
+		size_t arr_len;
+		uint8_t after;
+	};
+	static const struct target_struct data = {
+		.before = 1,
+		.ptr = NULL,
+		.ptr_len = 0,
+		.arr_len = 0,
+		.after = 0xff,
+	};
+	struct target_struct *data_cpy = NULL;
+	static const struct cyaml_schema_field mapping_schema[] = {
+		CYAML_FIELD_UINT("before", CYAML_FLAG_DEFAULT,
+				struct target_struct, before),
+		CYAML_FIELD_BINARY("ptr", CYAML_FLAG_POINTER,
+				struct target_struct, ptr,
+				0, CYAML_UNLIMITED),
+		CYAML_FIELD_BINARY("arr", CYAML_FLAG_DEFAULT,
+				struct target_struct, arr,
+				0, sizeof(data.arr)),
+		CYAML_FIELD_UINT("after", CYAML_FLAG_DEFAULT,
+				struct target_struct, after),
+		CYAML_FIELD_END
+	};
+	static const struct cyaml_schema_value top_schema = {
+		CYAML_VALUE_MAPPING(CYAML_FLAG_POINTER,
+				struct target_struct, mapping_schema),
+	};
+	test_data_t td = {
+		.copy = (cyaml_data_t **) &data_cpy,
+		.config = config,
+		.schema = &top_schema,
+	};
+	cyaml_err_t err;
+	ttest_ctx_t tc;
+
+	if (!ttest_start(report, __func__, cyaml_cleanup, &td, &tc)) {
+		return true;
+	}
+
+	err = cyaml_copy(config, &top_schema,
+			(const cyaml_data_t *) &data, 0,
+			(cyaml_data_t **) &data_cpy);
+	if (err != CYAML_OK) {
+		return ttest_fail(&tc, cyaml_strerror(err));
+	}
+
+	if (data_cpy->before != data.before ||
+	    data_cpy->after != data.after) {
+		return ttest_fail(&tc, "Incorrect surrounding values");
+	}
+
+	if (data_cpy->ptr != NULL || data_cpy->ptr_len != 0) {
+		return ttest_fail(&tc, "Pointer value not empty");
+	}
+
+	if (data_cpy->arr_len != 0) {
+		return ttest_fail(&tc, "Array value not empty");
+	}
+
+	return ttest_pass(&tc);
+}
+
+/**
  * Test copying a binary to a character array.
  *
  * \param[in]  report  The test report context.
@@ -8280,6 +8359,7 @@ bool copy_tests(
 	pass &= test_copy_mapping_entry_bool_false(rc, &config);
 	pass &= test_copy_mapping_entry_string_ptr(rc, &config);
 	pass &= test_copy_mapping_entry_binary_ptr(rc, &config);
+	pass &= test_copy_mapping_entry_binary_empty(rc, &config);
 	pass &= test_copy_mapping_entry_enum_sparse(rc, &config);
 	pass &= test_copy_mapping_entry_enum_strict(rc, &config);
 	pass &= test_copy_mapping_entry_ignore_deep(rc, &config);

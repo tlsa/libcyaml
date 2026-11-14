@@ -248,6 +248,22 @@ static cyaml_err_t cyaml__data_handle_pointer(
 		uint8_t *value_copy = NULL;
 		cyaml_err_t err;
 
+		if (schema->type == CYAML_BINARY) {
+			field = CYAML_FIELD_OF_VALUE(schema);
+			delta = cyaml_data_read(field->count_size,
+					state->data + field->count_offset,
+					&err);
+			if (err != CYAML_OK) {
+				return err;
+			}
+			if (delta == 0) {
+				/* Empty binary data has no allocation. */
+				cyaml_data_write_pointer(NULL, *value_copy_io);
+				*value_copy_io = NULL;
+				return CYAML_OK;
+			}
+		}
+
 		if (*value_data_io == NULL) {
 			return CYAML_ERR_BAD_PARAM_NULL_DATA;
 		}
@@ -259,13 +275,7 @@ static cyaml_err_t cyaml__data_handle_pointer(
 			delta = strlen((const char *) *value_data_io) + 1;
 			break;
 		case CYAML_BINARY:
-			field = CYAML_FIELD_OF_VALUE(schema);
-			delta = cyaml_data_read(field->count_size,
-					state->data + field->count_offset,
-					&err);
-			if (err != CYAML_OK) {
-				return err;
-			}
+			/* Already set, above. */
 			break;
 		case CYAML_SEQUENCE:
 			delta *= state->sequence.count;
@@ -408,7 +418,9 @@ static cyaml_err_t cyaml__clone_binary(
 		return err;
 	}
 
-	memcpy(copy, data, len);
+	if (len > 0) {
+		memcpy(copy, data, len);
+	}
 
 	memcpy(state->copy + field->count_offset,
 	       state->data + field->count_offset, field->count_size);

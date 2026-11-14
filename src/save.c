@@ -829,6 +829,10 @@ static cyaml_err_t cyaml__write_binary_value(
 		return err;
 	}
 
+	if (data == NULL && data_len != 0) {
+		return CYAML_ERR_INVALID_VALUE;
+	}
+
 	str_len = cyaml_base64_calc_encoded_size(data_len);
 	str = cyaml__alloc(ctx->config, str_len + 1, false);
 	if (str == NULL) {
@@ -1056,6 +1060,9 @@ static cyaml_err_t cyaml__write_value(
 				CYAML_FLAG_POINTER_NULL)) {
 			return cyaml__emit_scalar(ctx, schema, "",
 					YAML_STR_TAG);
+		} else if (schema->type == CYAML_BINARY) {
+			/* Empty binary data has no allocation. */
+			return cyaml__write_binary_value(ctx, schema, data);
 		} else {
 			return CYAML_ERR_INVALID_VALUE;
 		}

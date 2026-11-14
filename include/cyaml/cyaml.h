@@ -98,6 +98,9 @@ typedef enum cyaml_type {
 	 * or in an allocation, with the \ref CYAML_FLAG_POINTER flag.
 	 * For byte arrays, the maximum data length must be no more than the
 	 * size of the array.
+	 *
+	 * Binary data may be empty (zero length).  For \ref CYAML_FLAG_POINTER
+	 * values, empty data has no allocation, so the pointer is `NULL`.
 	 */
 	CYAML_BINARY,
 	/**
@@ -451,6 +454,7 @@ typedef bool (*cyaml_validate_string_fn_t)(
  * \param[in] ctx     Client's private validation context.
  * \param[in] schema  The schema for the value.
  * \param[in] value   The binary data value to be validated.
+ *                    May be `NULL` if `len` is zero.
  * \param[in] len     The length of the binary data in bytes.
  * \return `true` if values is valid, `false` otherwise.
  */
@@ -702,6 +706,7 @@ typedef struct cyaml_schema_value {
 			 *
 			 * \note This may be NULL, if no default value is
 			 *       wanted for a missing field in the YAML.
+			 *       In that case the field is left empty.
 			 */
 			const void *missing;
 			/**
